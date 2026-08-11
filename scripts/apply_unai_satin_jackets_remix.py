@@ -36,9 +36,11 @@ def execute_unai_remix_integration():
     print(" [1/4] Tempo global ajustado a 116.0 BPM (Do Menor / Cmin)")
 
     # 2. House Producers 19-Track Mixer Setup
-    from scripts.flstudio_legion_house_matrix import apply_house_legion_matrix
-    apply_house_legion_matrix()
+    from scripts.flstudio_legion_house_matrix import HouseLegionMatrixOrchestrator
+    orchestrator = HouseLegionMatrixOrchestrator()
+    orchestrator.execute_full_house_matrix()
     print(" [2/4] Matriz de Mezcla de 19 Pistas y Sidechain de Kick cargados")
+
 
     # 3. Vocal Dub FX Envíos
     from scripts.flstudio_vocal_dub_fx import setup_vocal_dub_fx
