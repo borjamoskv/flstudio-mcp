@@ -408,8 +408,22 @@ def fl_trigger_gross_beat_slot(slot_index: int = 1) -> str:
     return automate_gross_beat_slot(port, slot_index=slot_index)
 
 
+@mcp.tool()
+def fl_apply_master_legion_architecture() -> str:
+    """
+    Applies the full Master .legion 19-Track Architecture mapping all generators, effects, VST3/AU plugins, and panning/sidechain routing.
+    """
+    from scripts.legion_master_mapper import export_master_legion_architecture, apply_master_legion_over_midi
+    out_file = export_master_legion_architecture()
+    success = apply_master_legion_over_midi()
+    if success:
+        return f"Applied Master .legion 19-Track Architecture successfully to FL Studio 2025! Schema -> {out_file}"
+    return "Error applying Master .legion Architecture."
+
+
 if __name__ == "__main__":
     mcp.run()
+
 
 
 
