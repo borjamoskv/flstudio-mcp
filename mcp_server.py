@@ -372,8 +372,45 @@ def fl_audit_plugin_inventory() -> str:
     return f"FL Studio Plugin Audit Results:\nNative Generators ({summary['native_generators_count']}): {', '.join(summary['generators'][:10])}...\nNative Effects ({summary['native_effects_count']}): {', '.join(summary['effects'][:10])}...\nThird-Party VST3/AU ({summary['third_party_vst3_count']}): {', '.join(summary['vst3'])}"
 
 
+@mcp.tool()
+def fl_automate_tb303_acid(cutoff: float = 0.8, resonance: float = 0.85, env_mod: float = 0.9) -> str:
+    """
+    Automates Transistor Bass (TB-303 Acid Synth) Cutoff, Resonance, and Env Mod via MIDI CC.
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+    from scripts.fl_preset_automation_matrix import automate_tb303_acid
+    return automate_tb303_acid(port, cutoff=cutoff, resonance=resonance, env_mod=env_mod)
+
+
+@mcp.tool()
+def fl_automate_luxeverb_shimmer(decay: float = 0.85, shimmer: float = 0.60) -> str:
+    """
+    Automates LuxeVerb Decay time and Shimmer amount via MIDI CC.
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+    from scripts.fl_preset_automation_matrix import automate_luxeverb_shimmer
+    return automate_luxeverb_shimmer(port, decay=decay, shimmer=shimmer)
+
+
+@mcp.tool()
+def fl_trigger_gross_beat_slot(slot_index: int = 1) -> str:
+    """
+    Triggers Gross Beat Time/Volume Slot (1 to 36).
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+    from scripts.fl_preset_automation_matrix import automate_gross_beat_slot
+    return automate_gross_beat_slot(port, slot_index=slot_index)
+
+
 if __name__ == "__main__":
     mcp.run()
+
 
 
 
