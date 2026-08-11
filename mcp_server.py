@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Antigravity FL Studio Native MCP Server
+Antigravity FL Studio Native MCP Server (SOTA Ultramax)
 Full Model Context Protocol Server providing native AI control tools for FL Studio 2025 via FastMCP.
 """
 
@@ -8,6 +8,7 @@ import sys
 import os
 import time
 import mido
+from typing import List, Dict, Optional
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP Server
@@ -140,6 +141,24 @@ def fl_generate_groove_midi(bpm: float = 116.0, length_bars: int = 4, swing_ms: 
     output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/micro_shaker_groove.mid")
     res = bridge.generate_humanized_groove_midi(output_path, bpm=bpm, length_bars=length_bars, swing_ms=swing_ms)
     return f"Generated micro-groove MIDI saved to {res}."
+
+
+@mcp.tool()
+def fl_generate_chords(key_root: str = "C", scale_type: str = "minor", octave: int = 4, bpm: float = 116.0) -> str:
+    """Generates a sophisticated 7th/9th MIDI chord progression file (i - VII - VI - v)."""
+    from scripts.flstudio_algorithmic_composer import generate_chord_progression_midi
+    output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/chords_{key_root}_{scale_type}.mid")
+    res = generate_chord_progression_midi(output_path, key_root=key_root, scale_type=scale_type, octave=octave, bpm=bpm)
+    return f"Generated 7th/9th chord progression MIDI saved to {res}."
+
+
+@mcp.tool()
+def fl_generate_bassline(key_root: str = "C", scale_type: str = "minor", octave: int = 1, bpm: float = 116.0) -> str:
+    """Generates a syncopated Minimal/Dub sub-bassline MIDI file."""
+    from scripts.flstudio_algorithmic_composer import generate_sub_bassline_midi
+    output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/sub_bass_{key_root}.mid")
+    res = generate_sub_bassline_midi(output_path, key_root=key_root, scale_type=scale_type, octave=octave, bpm=bpm)
+    return f"Generated syncopated sub-bassline MIDI saved to {res}."
 
 
 @mcp.tool()
