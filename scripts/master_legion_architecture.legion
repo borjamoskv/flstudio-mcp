@@ -1,0 +1,139 @@
+{
+  "version": "5.0-SOVEREIGN",
+  "architecture": "Legi\u00f3n de Productores HOUSE & SOTA Microtonal Matrix",
+  "tracks": [
+    {
+      "id": 1,
+      "name": "Sub Bass (12-TET Mono)",
+      "plugin": "3x Osc / BooBass",
+      "freq_range": "20Hz - 80Hz",
+      "pan": 0.0,
+      "sidechain_target": 17
+    },
+    {
+      "id": 2,
+      "name": "Mid Bass (Drive Saturation)",
+      "plugin": "Transistor Bass / BassDrum",
+      "freq_range": "80Hz - 250Hz",
+      "pan": 0.0,
+      "sidechain_target": 17
+    },
+    {
+      "id": 3,
+      "name": "Kick Sub (Maceo Plex 50Hz)",
+      "plugin": "Sampler / BassDrum",
+      "freq_range": "40Hz - 90Hz",
+      "pan": 0.0,
+      "is_sidechain_source": true
+    },
+    {
+      "id": 4,
+      "name": "Kick Click (Transient)",
+      "plugin": "Sampler",
+      "freq_range": "1kHz - 4kHz",
+      "pan": 0.0,
+      "is_sidechain_source": true
+    },
+    {
+      "id": 5,
+      "name": "Clap & Snare Matrix",
+      "plugin": "FPC / Slicex",
+      "freq_range": "200Hz - 8kHz",
+      "pan": 0.0
+    },
+    {
+      "id": 6,
+      "name": "Kerri Chandler Shaker Swing",
+      "plugin": "FPC",
+      "swing": "62% MPC-60",
+      "pan": 0.2
+    },
+    {
+      "id": 7,
+      "name": "Hi-Hats Open/Closed",
+      "plugin": "Sampler / FPC",
+      "pan": -0.15
+    },
+    {
+      "id": 8,
+      "name": "Satin Jackets Penrose Chords",
+      "plugin": "FLEX / Harmor",
+      "tuning": "19-TET",
+      "pan": 0.0,
+      "sidechain_target": 17
+    },
+    {
+      "id": 9,
+      "name": "24-TET Makam Bayati Lead",
+      "plugin": "Vital VST3 / Sytrus",
+      "tuning": "24-TET Quarter-Tone",
+      "pan": 0.1
+    },
+    {
+      "id": 10,
+      "name": "AIR Moon Safari Rhodes",
+      "plugin": "FLEX / FL Keys",
+      "chords": "Am9 -> D9 -> Fmaj7 -> E7#9",
+      "pan": -0.25
+    },
+    {
+      "id": 11,
+      "name": "Locrian Acid Synth",
+      "plugin": "Transistor Bass",
+      "mode": "Locrian b5 Tritone",
+      "pan": 0.15
+    },
+    {
+      "id": 12,
+      "name": "Frankie Knuckles Vocal Chops",
+      "plugin": "Slicex / Vocodex",
+      "call_response": true,
+      "pan": 0.0
+    },
+    {
+      "id": 13,
+      "name": "Solina String Ensemble Pad",
+      "plugin": "FLEX / Harmor",
+      "pan": 0.0,
+      "send_fx": 15
+    },
+    {
+      "id": 14,
+      "name": "3/16 Dub Delay Send",
+      "plugin": "Fruity Delay 3",
+      "delay_ms": 387.9,
+      "hp_filter": 350.0
+    },
+    {
+      "id": 15,
+      "name": "LuxeVerb Shimmer Reverb Send",
+      "plugin": "LuxeVerb",
+      "shimmer": 0.6,
+      "decay": 0.85
+    },
+    {
+      "id": 16,
+      "name": "Parallel Saturation Bus",
+      "plugin": "Fruity Soft Clipper / Distructor",
+      "drive": 2.4
+    },
+    {
+      "id": 17,
+      "name": "Sidechain Master Ducking",
+      "plugin": "Fruity Peak Controller / Gross Beat",
+      "ratio": "4:1 RMS"
+    },
+    {
+      "id": 18,
+      "name": "Pre-Master Bus",
+      "plugin": "Fruity Parametric EQ 2",
+      "low_cut": 25.0
+    },
+    {
+      "id": 19,
+      "name": "Master Out (LUFS Target)",
+      "plugin": "Maximus + Ozone 11 + LANDR",
+      "lufs_target": -8.5
+    }
+  ]
+}
