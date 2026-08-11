@@ -321,7 +321,49 @@ def fl_generate_locrian_sota_techno(bpm: float = 125.0) -> str:
     return f"Generated SOTA Locrian & Xenharmonic Techno MIDI saved to {res}."
 
 
+@mcp.tool()
+def fl_flex_set_macro(macro_index: int, value: float) -> str:
+    """
+    Controls Macro 1..8 parameters on the focused instance of FL Studio's FLEX synth.
+    macro_index: 1 to 8 (1=Cutoff, 2=Resonance, 3=Env Mod, 4=Pitch/Decay, 5=Chorus, 6=Delay, 7=Reverb, 8=Limiter).
+    value: 0.0 (minimum) to 1.0 (maximum).
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+    macro_index = max(1, min(8, int(macro_index)))
+    cc_number = 20 + macro_index  # CC 21..28 mapped to FLEX Macros 1..8
+    val_byte = max(0, min(127, int(value * 127)))
+    port.send(mido.Message('control_change', channel=15, control=cc_number, value=val_byte))
+    return f"FLEX Synth Macro {macro_index} set to {value:.2f} (MIDI CC {cc_number}: {val_byte})."
+
+
+@mcp.tool()
+def fl_flex_apply_preset_vibe(vibe: str = "rhodes") -> str:
+    """
+    Automates FLEX macros for target production vibes: 'rhodes', 'sub_bass', 'solina_strings', 'acid_lead', 'synthwave_pad'.
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+    
+    vibes_map = {
+        "rhodes": [(1, 0.70), (2, 0.30), (5, 0.40), (7, 0.35)],       # Warm Fender Rhodes
+        "sub_bass": [(1, 0.45), (2, 0.60), (3, 0.80), (7, 0.00)],     # Deep Sub Bass
+        "solina_strings": [(1, 0.85), (4, 0.90), (5, 0.60), (7, 0.50)], # Shimmering Solina Strings
+        "acid_lead": [(1, 0.90), (2, 0.85), (3, 0.95), (6, 0.40)],     # Resonant Acid Cutoff
+        "synthwave_pad": [(1, 0.65), (2, 0.40), (5, 0.50), (7, 0.60)]  # Lush Analog Pad
+    }
+    target = vibes_map.get(vibe.lower(), vibes_map["rhodes"])
+    for m_idx, val in target:
+        cc_num = 20 + m_idx
+        v_byte = int(val * 127)
+        port.send(mido.Message('control_change', channel=15, control=cc_num, value=v_byte))
+    return f"Applied FLEX Macro Preset Vibe '{vibe}' ({len(target)} parameters automated via CoreMIDI)."
+
+
 if __name__ == "__main__":
     mcp.run()
+
 
 
