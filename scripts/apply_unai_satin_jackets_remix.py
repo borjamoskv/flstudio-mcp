@@ -13,7 +13,13 @@ import os
 import time
 import mido
 
+# Ensure parent directory is in python path
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 def execute_unai_remix_integration():
+
     print("="*70)
     print(" INTEGRACIÓN MAESTRA: 'NO LO ENTIENDE' (UNAI STEMS) x SATIN JACKETS REMIX")
     print("="*70)
