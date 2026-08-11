@@ -287,5 +287,18 @@ def fl_apply_no_lo_entiende_template() -> str:
     return "SOTA Mix Template for 'No Lo Entiende' applied successfully to FL Studio 2025."
 
 
+@mcp.tool()
+def fl_generate_sota_microtonal_house(subgenre: str = "19tet_deep_house") -> str:
+    """
+    Generates specialized SOTA Microtonal House MIDI files based on Plomp-Levelt psychoacoustic optimization.
+    Subgenres: '19tet_deep_house', '24tet_makam_minimal', '31tet_soulful_house', 'bohlen_pierce_techno_house', 'slendro_tech_house'.
+    """
+    from scripts.flstudio_microtonal_sota import generate_sota_microtonal_house_midi
+    output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/sota_microtonal_{subgenre}.mid")
+    info = generate_sota_microtonal_house_midi(subgenre_key=subgenre, output_path=output_path)
+    return f"SOTA Microtonal House Generated ({info['subgenre']}): {info['description']} at {info['bpm']} BPM. MIDI -> {info['output_path']}"
+
+
 if __name__ == "__main__":
     mcp.run()
+
