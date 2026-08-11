@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-Antigravity MCP Bridge SOTA Pro for FL Studio 21+
-Standalone Repository: /Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp
-
-Advanced AI Audio Orchestrator, Algorithmic Micro-Groove Generator, Sidechain Matrix & Real-Time Telemetry.
+Antigravity MCP Bridge SOTA Pro for FL Studio 2025
+Multi-channel MIDI mapping to support 125 tracks, FLEX macros, TB-303, and global transport.
 """
 
 import sys
@@ -28,33 +26,37 @@ class FLStudioMCPBridge:
             print(f"[MCP Bridge SOTA] Error initializing virtual port: {e}")
 
     def set_mixer_volume(self, track_id: int, volume: float):
-        """Sets track volume (0.0 to 1.0)"""
+        """Sets track volume (0.0 to 1.0) on Ch 1 (Index 0)"""
         if not self.outport:
             return
         track_id = max(0, min(125, int(track_id)))
         vol_byte = max(0, min(127, int(volume * 127)))
-        self.outport.send(mido.Message('control_change', channel=15, control=10, value=vol_byte))
+        self.outport.send(mido.Message('control_change', channel=0, control=track_id, value=vol_byte))
         print(f"[MCP] Mixer Track {track_id:02d} Volume -> {volume:.2f}")
 
     def set_mixer_pan(self, track_id: int, pan: float):
-        """Sets track panning (-1.0 to +1.0)"""
+        """Sets track panning (-1.0 to +1.0) on Ch 2 (Index 1)"""
         if not self.outport:
             return
         track_id = max(0, min(125, int(track_id)))
         pan_byte = max(0, min(127, int((pan + 1.0) * 63.5)))
-        self.outport.send(mido.Message('control_change', channel=15, control=11, value=pan_byte))
+        self.outport.send(mido.Message('control_change', channel=1, control=track_id, value=pan_byte))
         print(f"[MCP] Mixer Track {track_id:02d} Pan -> {pan:+.2f}")
 
     def set_mute(self, track_id: int, mute: bool):
+        """Sets track mute state on Ch 3 (Index 2)"""
         if not self.outport:
             return
-        self.outport.send(mido.Message('control_change', channel=15, control=12, value=127 if mute else 0))
+        track_id = max(0, min(125, int(track_id)))
+        self.outport.send(mido.Message('control_change', channel=2, control=track_id, value=127 if mute else 0))
         print(f"[MCP] Mixer Track {track_id:02d} Mute -> {mute}")
 
     def set_solo(self, track_id: int, solo: bool):
+        """Sets track solo state on Ch 4 (Index 3)"""
         if not self.outport:
             return
-        self.outport.send(mido.Message('control_change', channel=15, control=13, value=127 if solo else 0))
+        track_id = max(0, min(125, int(track_id)))
+        self.outport.send(mido.Message('control_change', channel=3, control=track_id, value=127 if solo else 0))
         print(f"[MCP] Mixer Track {track_id:02d} Solo -> {solo}")
 
     def transport_play(self):
@@ -78,31 +80,20 @@ class FLStudioMCPBridge:
     def set_bpm(self, bpm: float):
         if not self.outport:
             return
-        bpm_int = max(60, min(187, int(bpm)))
-        val = bpm_int - 60
-        self.outport.send(mido.Message('control_change', channel=15, control=15, value=val))
-        print(f"[MCP] Global Tempo set -> {bpm_int} BPM")
+        bpm_int = max(60, min(187, int(bpm)) - 60)
+        self.outport.send(mido.Message('control_change', channel=15, control=15, value=bpm_int))
+        print(f"[MCP] Global Tempo set -> {bpm_int + 60} BPM")
 
     def setup_sidechain(self, source_track: int, dest_track: int):
         """Routes source_track to dest_track as sidechain send"""
         if not self.outport:
             return
-        msg = mido.Message('control_change', channel=15, control=18, value=dest_track)
-        self.outport.send(msg)
+        source_track = max(0, min(125, int(source_track)))
+        dest_track = max(0, min(125, int(dest_track)))
+        self.outport.send(mido.Message('control_change', channel=15, control=18, value=dest_track))
         print(f"[MCP] Sidechain Routing: Track {source_track:02d} ===> Track {dest_track:02d}")
 
-    def set_plugin_parameter(self, param_index: int, value_norm: float):
-        """Sets focused VST plugin parameter (0.0 to 1.0)"""
-        if not self.outport:
-            return
-        val_byte = max(0, min(127, int(value_norm * 127)))
-        self.outport.send(mido.Message('control_change', channel=15, control=19, value=val_byte))
-        print(f"[MCP] Plugin Param {param_index} -> {value_norm:.2f}")
-
     def generate_humanized_groove_midi(self, output_path: str, bpm: float = 116.0, length_bars: int = 4, swing_ms: float = 6.0) -> str:
-        """
-        Generates a micro-shifted, humanized MIDI file for Shakers & Claps with micro-timing offsets.
-        """
         mid = mido.MidiFile(type=1)
         ticks_per_beat = 480
         mid.ticks_per_beat = ticks_per_beat
@@ -136,7 +127,6 @@ class FLStudioMCPBridge:
             print("[MCP Bridge] Closed Virtual MIDI Port")
 
 
-# Production Template Layout for "No Lo Entiende" (116 BPM - Cmin)
 TRACK_PRESETS = {
     1: {"name": "No Lo Entiende 2-unai kiks selections.wav", "role": "Kick/Sub", "vol": 0.85, "pan": 0.0, "sidechain_targets": [2, 3, 9, 10]},
     2: {"name": "No Lo Entiende LOW END.wav", "role": "Sub Bass", "vol": 0.75, "pan": 0.0, "eq": "Cut > 150Hz"},
