@@ -53,6 +53,27 @@ MICROTONAL_SYSTEMS = {
     "makam_rast": {
         "description": "Arabian Makam Rast (Featuring E neutral 3rd & B neutral 7th ~ half-flats)",
         "cents": [0.0, 200.0, 350.0, 500.0, 700.0, 900.0, 1050.0]
+    },
+    "slendro": {
+        "description": "Indonesian Gamelan Slendro (5-tone quasi-equidistant pentatonic scale)",
+        "cents": [0.0, 240.0, 480.0, 720.0, 960.0]
+    },
+    "pelog": {
+        "description": "Indonesian Gamelan Pelog Selisir (7-tone heptatonic scale with narrow 2nds)",
+        "cents": [0.0, 120.0, 270.0, 540.0, 670.0, 780.0, 950.0]
+    },
+    "wendy_carlos_alpha": {
+        "description": "Wendy Carlos Alpha Scale (78.0 cents per step - 15.385 steps per octave)",
+        "cents": [i * 78.0 for i in range(15)]
+    },
+    "partch_43": {
+        "description": "Harry Partch 43-Tone Just Intonation Monophonic Fabric",
+        "cents": [
+            0.0, 21.51, 62.96, 105.0, 150.64, 182.4, 203.91, 231.17, 266.87, 294.13, 315.64,
+            347.41, 386.31, 417.51, 435.08, 470.78, 498.04, 519.55, 551.32, 582.51, 617.49,
+            648.68, 680.45, 701.96, 729.22, 764.92, 782.49, 813.69, 852.59, 884.36, 905.87,
+            933.13, 968.83, 996.09, 1017.6, 1049.36, 1094.92, 1126.69, 1149.36, 1178.49
+        ]
     }
 }
 
@@ -71,10 +92,11 @@ def cents_to_pitch_bend(cents_offset: float, semitone_range: float = 2.0) -> int
 def generate_microtonal_midi(
     output_path: str,
     system_name: str = "24tet",
-    scale_steps: List[int] = [0, 3, 7, 10, 14, 17, 21],  # Scale indices
+    scale_steps: List[int] = [0, 3, 7, 10, 14, 17, 21],
     bpm: float = 116.0,
     length_bars: int = 4,
-    semitone_range: float = 2.0
+    semitone_range: float = 2.0,
+    polyphonic: bool = True
 ) -> str:
     """
     Generates an MPE-compliant Multi-Channel Microtonal MIDI file.
@@ -102,12 +124,11 @@ def generate_microtonal_midi(
     track_notes.append(mido.MetaMessage('track_name', name=f'Microtonal Notes ({system_name})'))
 
     ticks_per_step = ticks_per_beat // 2  # 8th note steps
-    total_notes = length_bars * 8
+    total_steps = length_bars * 8
 
-    # Assign notes across MIDI channels 0 to 14 (15 channels for MPE)
     channel_idx = 0
 
-    for i in range(total_notes):
+    for i in range(total_steps):
         step_idx = scale_steps[i % len(scale_steps)]
         
         # Calculate total cents from root
@@ -119,7 +140,7 @@ def generate_microtonal_midi(
 
         # Calculate exact 14-bit pitch bend
         pb_val = cents_to_pitch_bend(cent_offset, semitone_range=semitone_range)
-        cur_chan = (channel_idx % 14)  # MPE Channels 0..13
+        cur_chan = (channel_idx % 14) if polyphonic else 0  # MPE Channels 0..13
 
         # Send Pitch Bend message on specific channel before note_on
         track_notes.append(mido.Message('pitchwheel', channel=cur_chan, pitch=pb_val, time=0 if i > 0 else ticks_per_step))
@@ -164,3 +185,33 @@ def export_scala_scl_file(system_name: str, output_path: str) -> str:
 
     print(f"[Scala Exporter] Saved Scala Tuning File (.scl) -> {output_path}")
     return output_path
+
+
+def export_scala_kbm_file(output_path: str, middle_note: int = 60, ref_note: int = 69, ref_freq: float = 440.0) -> str:
+    """
+    Exports a Scala Keyboard Mapping (.kbm) file for exact note-to-frequency mapping in plugins.
+    """
+    lines = [
+        "! Default Keyboard Mapping",
+        "! Map size:",
+        "0",
+        "! First MIDI note number to retune:",
+        "0",
+        "! Last MIDI note number to retune:",
+        "127",
+        "! Middle note where 1/1 ratio is located:",
+        f"{middle_note}",
+        "! Reference note for given frequency:",
+        f"{ref_note}",
+        "! Reference frequency in Hz:",
+        f"{ref_freq:.4f}",
+        "! Scale degree for formal octave:",
+        "0"
+    ]
+    content = "\n".join(lines) + "\n"
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"[Scala KBM Exporter] Saved Scala Keyboard Mapping (.kbm) -> {output_path}")
+    return output_path
+

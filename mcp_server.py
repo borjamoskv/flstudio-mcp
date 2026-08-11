@@ -177,12 +177,24 @@ def fl_generate_microtonal_midi(system_name: str = "24tet", bpm: float = 116.0, 
 def fl_export_scala_tuning(system_name: str = "24tet") -> str:
     """
     Exports a Scala (.scl) microtonal tuning file for native FL Studio VSTs (Sytrus, Harmor, FLEX).
-    Systems: '24tet', '19tet', '31tet', 'just_intonation', 'bohlen_pierce', 'makam_bayati', 'makam_rast'.
+    Systems: '24tet', '19tet', '31tet', 'just_intonation', 'bohlen_pierce', 'makam_bayati', 'makam_rast', 'slendro', 'pelog', 'wendy_carlos_alpha', 'partch_43'.
     """
     from scripts.flstudio_microtonal import export_scala_scl_file
     output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/{system_name}.scl")
     res = export_scala_scl_file(system_name=system_name, output_path=output_path)
     return f"Exported Scala Tuning File (.scl) to {res}."
+
+
+@mcp.tool()
+def fl_export_scala_kbm(middle_note: int = 60, ref_note: int = 69, ref_freq: float = 440.0) -> str:
+    """
+    Exports a Scala Keyboard Mapping (.kbm) file for fine-grained note frequency anchoring.
+    """
+    from scripts.flstudio_microtonal import export_scala_kbm_file
+    output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/default.kbm")
+    res = export_scala_kbm_file(output_path=output_path, middle_note=middle_note, ref_note=ref_note, ref_freq=ref_freq)
+    return f"Exported Scala Keyboard Mapping File (.kbm) to {res}."
+
 
 
 @mcp.tool()
