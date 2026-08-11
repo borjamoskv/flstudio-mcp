@@ -67,8 +67,27 @@ REFERENCE_STYLES = {
         "chords": [[55, 58, 62, 65, 69], [51, 55, 58, 62, 65], [53, 57, 60, 64], [50, 53, 57, 60]],
         "swing": 0.58,
         "vibe": "uk_garage"
+    },
+    "air_moon_safari": {
+        "bpm": 88.0,
+        "key_root": "A",
+        "scale": "minor",
+        "description": "AIR Moon Safari (Vintage Fender Rhodes/Solina Space-Pop: Am9 -> D9 -> Fmaj7 -> E7#9)",
+        "chords": [[45, 55, 60, 64, 71], [50, 54, 60, 64, 69], [41, 57, 60, 64, 67], [40, 56, 62, 67, 73]],
+        "swing": 0.54,
+        "vibe": "french_downtempo"
+    },
+    "maceo_plex": {
+        "bpm": 124.0,
+        "key_root": "A",
+        "scale": "minor",
+        "description": "Maceo Plex Melodic Techno (Dark analog sub-kick, 50Hz fundamental, 16th sub-rumble)",
+        "chords": [[45, 57, 60, 64, 69], [43, 55, 58, 62, 67], [41, 53, 57, 60, 65], [40, 52, 56, 59, 64]],
+        "swing": 0.52,
+        "vibe": "melodic_techno"
     }
 }
+
 
 
 def note_name_to_midi(name: str, octave: int = 4) -> int:
