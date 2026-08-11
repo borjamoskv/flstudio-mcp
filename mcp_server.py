@@ -221,6 +221,19 @@ def fl_setup_vocal_dub_fx() -> str:
 
 
 @mcp.tool()
+def fl_generate_full_arrangement() -> str:
+    """
+    Generates a full 128-Bar House Producers arrangement suite (Intro, Verse, Dub Breakdown, Peak Drop, Outro).
+    """
+    from scripts.flstudio_full_arrangement_generator import generate_full_arrangement
+    success = generate_full_arrangement()
+    if success:
+        return "Full 128-Bar House Producers Arrangement Suite generated successfully!"
+    return "Error generating House Producers Arrangement Suite."
+
+
+
+@mcp.tool()
 def fl_apply_no_lo_entiende_template() -> str:
     """Applies full SOTA mix preset, sidechain matrix, and gains for 'No Lo Entiende' (116 BPM, Cmin)."""
     from scripts.flstudio_mcp_bridge import execute_sota_setup
