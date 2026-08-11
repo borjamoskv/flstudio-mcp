@@ -138,12 +138,23 @@ def fl_set_plugin_param(param_index: int, value: float) -> str:
 def fl_create_from_reference(reference_name: str, bpm: Optional[float] = None) -> str:
     """
     Creates a full production template & MIDI sequence matching a reference song or artist style.
-    Reference styles: 'satin_jackets', 'kerri_chandler', 'frankie_knuckles', 'ricardo_villalobos', 'fred_again'.
+    Reference styles: 'satin_jackets', 'kerri_chandler', 'frankie_knuckles', 'ricardo_villalobos', 'fred_again', 'air_moon_safari', 'maceo_plex'.
     """
     from scripts.flstudio_algorithmic_composer import generate_reference_style_midi
     output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/ref_{reference_name.lower().replace(' ', '_')}.mid")
     info = generate_reference_style_midi(reference_name=reference_name, output_path=output_path, bpm=bpm)
     return f"Generated Reference Style Track ('{reference_name}'): {info['style']} at {info['bpm']} BPM. MIDI saved to {info['output_path']}."
+
+
+@mcp.tool()
+def fl_generate_air_moon_safari_multitrack(bpm: float = 88.0) -> str:
+    """
+    Generates a full 3-track MIDI arrangement (Rhodes, Minimoog, Solina Strings) in the style of AIR (Moon Safari).
+    """
+    from scripts.air_moon_safari_engine import generate_air_moon_safari_multitrack
+    output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/samples/air_moon_safari_multitrack.mid")
+    res = generate_air_moon_safari_multitrack(output_path=output_path, bpm=bpm)
+    return f"Generated AIR Moon Safari Multi-Track MIDI saved to {res}."
 
 
 @mcp.tool()
