@@ -362,8 +362,19 @@ def fl_flex_apply_preset_vibe(vibe: str = "rhodes") -> str:
     return f"Applied FLEX Macro Preset Vibe '{vibe}' ({len(target)} parameters automated via CoreMIDI)."
 
 
+@mcp.tool()
+def fl_audit_plugin_inventory() -> str:
+    """
+    Audits and returns the full scanned inventory of native generators, effects, VST3/AU plugins, and presets.
+    """
+    from scripts.fl_plugin_registry import get_plugin_inventory_summary
+    summary = get_plugin_inventory_summary()
+    return f"FL Studio Plugin Audit Results:\nNative Generators ({summary['native_generators_count']}): {', '.join(summary['generators'][:10])}...\nNative Effects ({summary['native_effects_count']}): {', '.join(summary['effects'][:10])}...\nThird-Party VST3/AU ({summary['third_party_vst3_count']}): {', '.join(summary['vst3'])}"
+
+
 if __name__ == "__main__":
     mcp.run()
+
 
 
 
