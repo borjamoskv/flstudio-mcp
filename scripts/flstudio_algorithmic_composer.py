@@ -16,8 +16,11 @@ SCALES = {
     "harmonic_minor": [0, 2, 3, 5, 7, 8, 11], # Harmonic Minor
     "dorian": [0, 2, 3, 5, 7, 9, 10],         # Dorian
     "phrygian": [0, 1, 3, 5, 7, 8, 10],       # Phrygian
-    "major": [0, 2, 4, 5, 7, 9, 11]          # Major
+    "locrian": [0, 1, 3, 5, 6, 8, 10],        # Locrian (Half-Diminished / Dissonant Dark)
+    "super_locrian": [0, 1, 3, 4, 6, 8, 10],  # Super Locrian / Altered Scale
+    "major": [0, 2, 4, 5, 7, 9, 11]           # Major
 }
+
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
