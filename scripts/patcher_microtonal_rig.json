@@ -1,0 +1,71 @@
+{
+  "name": "Antigravity SOTA Microtonal Modular Patcher Rig",
+  "version": "2.0-SOVEREIGN",
+  "nodes": [
+    {
+      "id": "MIDI_IN",
+      "type": "FL Studio Native MIDI Input"
+    },
+    {
+      "id": "VFX_KEY_MAPPER",
+      "type": "VFX Key Mapper",
+      "scale": "24-TET Makam Bayati"
+    },
+    {
+      "id": "VFX_SPLITTER",
+      "type": "VFX Keyboard Splitter",
+      "split_note": "C4 (MIDI 60)"
+    },
+    {
+      "id": "SUB_SYNTH",
+      "type": "3x Osc / BooBass",
+      "freq_range": "20Hz - 90Hz",
+      "mode": "12-TET Strict Mono"
+    },
+    {
+      "id": "CHORD_SYNTH",
+      "type": "Harmor / FLEX",
+      "freq_range": "> 90Hz",
+      "mode": "19-TET / 24-TET Microtonal"
+    },
+    {
+      "id": "SIDECHAIN_SHAPER",
+      "type": "Fruity Love Philter / Gross Beat",
+      "curve": "Logarithmic 4/4 RMS Ducking"
+    },
+    {
+      "id": "AUDIO_OUT",
+      "type": "FL Studio Audio Output"
+    }
+  ],
+  "connections": [
+    {
+      "from": "MIDI_IN",
+      "to": "VFX_KEY_MAPPER"
+    },
+    {
+      "from": "VFX_KEY_MAPPER",
+      "to": "VFX_SPLITTER"
+    },
+    {
+      "from": "VFX_SPLITTER.low",
+      "to": "SUB_SYNTH"
+    },
+    {
+      "from": "VFX_SPLITTER.high",
+      "to": "CHORD_SYNTH"
+    },
+    {
+      "from": "SUB_SYNTH",
+      "to": "SIDECHAIN_SHAPER"
+    },
+    {
+      "from": "CHORD_SYNTH",
+      "to": "SIDECHAIN_SHAPER"
+    },
+    {
+      "from": "SIDECHAIN_SHAPER",
+      "to": "AUDIO_OUT"
+    }
+  ]
+}
