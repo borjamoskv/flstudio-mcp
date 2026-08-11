@@ -1,35 +1,50 @@
-# FL Studio MCP Controller & Telemetry Bridge
+# FL Studio Native MCP Server & Telemetry Bridge
 
 **Repository:** `flstudio-mcp`  
 **Location:** `/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp`
 
-Bridge de integración bidireccional entre Agentes IA (vía Model Context Protocol / CoreMIDI) y **FL Studio 21+**.
+Servidor MCP nativo (Model Context Protocol) basado en **FastMCP** para control, orquestación y mezcla en tiempo real de **FL Studio 2025** mediante IA.
 
 ---
 
-## 🏗️ Arquitectura de Componentes
+## 🛠️ Herramientas Expuestas en el Servidor MCP
 
-1. **Hardware Controller Script (`device_Antigravity_MCP.py`)**
-   - Instalado en: `~/Documents/Image-Line/FL Studio/Settings/Hardware/AntigravityMCP/`
-   - Escucha en tiempo real sobre MIDI Channel 16 / SysEx y mapea llamadas a las APIs de FL Studio (`mixer`, `channels`, `patterns`, `transport`, `general`, `plugins`).
-
-2. **Python MCP Bridge (`scripts/flstudio_mcp_bridge.py`)**
-   - Abre un puerto virtual de CoreMIDI en macOS (`Antigravity MCP Out`).
-   - Generador de micro-grooves rítmicos (`.mid`) con desfase microtonal y desalineación milimétrica para claps/shakers.
-   - Enrutamiento de matrículas de Sidechain automático.
-   - Enrutador de Gain/Panorámica y presets de mezcla para stems.
+| Nombre de la Herramienta | Descripción | Parámetros |
+| :--- | :--- | :--- |
+| `fl_set_tempo` | Ajusta el tempo global en BPM | `bpm: float` |
+| `fl_set_mixer_volume` | Ajusta el volumen de un canal del mezclador (0-125) | `track_id: int, volume: float` (0.0 a 1.0) |
+| `fl_set_mixer_pan` | Ajusta la panorámica de un canal | `track_id: int, pan: float` (-1.0 a 1.0) |
+| `fl_mute_track` | Silencia/activa un canal del mezclador | `track_id: int, mute: bool` |
+| `fl_solo_track` | Pone en solo un canal del mezclador | `track_id: int, solo: bool` |
+| `fl_transport_control` | Control de transporte (`play`, `stop`, `record`, `loop`) | `action: str` |
+| `fl_setup_sidechain` | Configura el envío sidechain entre dos canales | `source_track: int, target_track: int` |
+| `fl_set_plugin_param` | Automatiza parámetros del plugin VST enfocado | `param_index: int, value: float` |
+| `fl_generate_groove_midi` | Genera archivo `.mid` con micro-swing y jitter humano | `bpm: float, length_bars: int, swing_ms: float` |
+| `fl_apply_no_lo_entiende_template` | Aplica la matriz de mezcla completa para "No Lo Entiende" | N/A |
 
 ---
 
-## 🚀 Uso Rápido
+## 🚀 Cómo Iniciar el Servidor MCP
+
+Para ejecutar el servidor MCP nativo por entrada/salida estándar (stdio):
 
 ```bash
-# Ejecutar configuración de mezcla y prueba de puerto virtual
-python3 scripts/flstudio_mcp_bridge.py
+python3 mcp_server.py
 ```
 
-### Configuración en FL Studio
-1. Abre **FL Studio**.
-2. Ve a `Options > MIDI settings`.
-3. En la lista de puertos de entrada, selecciona **"Antigravity MCP Out"**.
-4. En **Controller type**, selecciona `Antigravity MCP Controller` (o asigna el puerto MIDI `15`).
+### Configuración en Antigravity / Claude Desktop
+
+Añadir a la configuración de MCP (`mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "flstudio": {
+      "command": "python3",
+      "args": [
+        "/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp/mcp_server.py"
+      ]
+    }
+  }
+}
+```
