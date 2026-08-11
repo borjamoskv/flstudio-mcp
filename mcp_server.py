@@ -246,6 +246,17 @@ def fl_generate_satin_jackets_loop(bpm: float = 116.0) -> str:
 
 
 @mcp.tool()
+def fl_generate_false_drop_major(bpm: float = 116.0) -> str:
+    """
+    Generates a False Drop ('Falso Drop') progression shifting from C minor tension into Eb Major / C Major euphoric expansion.
+    """
+    from scripts.flstudio_false_drop_major_expansion import generate_false_drop_major_expansion
+    output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/false_drop_major_expansion.mid")
+    res = generate_false_drop_major_expansion(output_path=output_path, bpm=bpm)
+    return f"Generated False Drop Major Expansion MIDI saved to {res}."
+
+
+@mcp.tool()
 def fl_apply_no_lo_entiende_template() -> str:
     """Applies full SOTA mix preset, sidechain matrix, and gains for 'No Lo Entiende' (116 BPM, Cmin)."""
     from scripts.flstudio_mcp_bridge import execute_sota_setup
@@ -255,5 +266,6 @@ def fl_apply_no_lo_entiende_template() -> str:
 
 if __name__ == "__main__":
     mcp.run()
+
 
 
