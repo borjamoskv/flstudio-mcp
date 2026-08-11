@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Antigravity FL Studio Native MCP Server (SOTA Ultramax)
-Full Model Context Protocol Server providing native AI control tools for FL Studio 2025 via FastMCP.
+Antigravity FL Studio Native MCP Server (SOTA Microtonal & Xenharmonic Ultramax)
+Full Model Context Protocol Server providing native AI control, microtonal tuning, and MIDI orchestration tools for FL Studio 2025 via FastMCP.
 """
 
 import sys
@@ -159,6 +159,30 @@ def fl_generate_bassline(key_root: str = "C", scale_type: str = "minor", octave:
     output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/sub_bass_{key_root}.mid")
     res = generate_sub_bassline_midi(output_path, key_root=key_root, scale_type=scale_type, octave=octave, bpm=bpm)
     return f"Generated syncopated sub-bassline MIDI saved to {res}."
+
+
+@mcp.tool()
+def fl_generate_microtonal_midi(system_name: str = "24tet", bpm: float = 116.0, length_bars: int = 4) -> str:
+    """
+    Generates a Sub-Cent MPE Polyphonic Microtonal MIDI file.
+    Systems: '24tet' (quarter-tones), '19tet', '31tet', 'just_intonation', 'bohlen_pierce', 'makam_bayati', 'makam_rast'.
+    """
+    from scripts.flstudio_microtonal import generate_microtonal_midi
+    output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/microtonal_{system_name}.mid")
+    res = generate_microtonal_midi(output_path, system_name=system_name, bpm=bpm, length_bars=length_bars)
+    return f"Generated Microtonal MPE MIDI ({system_name}) saved to {res}."
+
+
+@mcp.tool()
+def fl_export_scala_tuning(system_name: str = "24tet") -> str:
+    """
+    Exports a Scala (.scl) microtonal tuning file for native FL Studio VSTs (Sytrus, Harmor, FLEX).
+    Systems: '24tet', '19tet', '31tet', 'just_intonation', 'bohlen_pierce', 'makam_bayati', 'makam_rast'.
+    """
+    from scripts.flstudio_microtonal import export_scala_scl_file
+    output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/{system_name}.scl")
+    res = export_scala_scl_file(system_name=system_name, output_path=output_path)
+    return f"Exported Scala Tuning File (.scl) to {res}."
 
 
 @mcp.tool()
