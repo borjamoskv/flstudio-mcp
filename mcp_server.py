@@ -196,6 +196,17 @@ def fl_export_scala_kbm(middle_note: int = 60, ref_note: int = 69, ref_freq: flo
     return f"Exported Scala Keyboard Mapping File (.kbm) to {res}."
 
 
+@mcp.tool()
+def fl_apply_house_legion_matrix() -> str:
+    """
+    Applies the full Legión de Productores HOUSE 19-Track Mixer Matrix & Sidechain Ducking in FL Studio.
+    """
+    from scripts.flstudio_legion_house_matrix import apply_house_legion_matrix
+    success = apply_house_legion_matrix()
+    if success:
+        return "Legión de Productores HOUSE Matrix applied successfully to FL Studio 2025!"
+    return "Error applying House Legion Matrix to FL Studio."
+
 
 @mcp.tool()
 def fl_apply_no_lo_entiende_template() -> str:
