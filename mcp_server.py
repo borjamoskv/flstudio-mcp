@@ -209,6 +209,18 @@ def fl_apply_house_legion_matrix() -> str:
 
 
 @mcp.tool()
+def fl_setup_vocal_dub_fx() -> str:
+    """
+    Sets up 3/16 Dotted 8th Dub Delay sends and Shimmer Reverb automation for vocals at 116 BPM.
+    """
+    from scripts.flstudio_vocal_dub_fx import setup_vocal_dub_fx
+    success = setup_vocal_dub_fx()
+    if success:
+        return "Vocal Dub FX & 3/16 Delay Sends configured successfully in FL Studio!"
+    return "Error configuring Vocal Dub FX in FL Studio."
+
+
+@mcp.tool()
 def fl_apply_no_lo_entiende_template() -> str:
     """Applies full SOTA mix preset, sidechain matrix, and gains for 'No Lo Entiende' (116 BPM, Cmin)."""
     from scripts.flstudio_mcp_bridge import execute_sota_setup
@@ -218,3 +230,4 @@ def fl_apply_no_lo_entiende_template() -> str:
 
 if __name__ == "__main__":
     mcp.run()
+
