@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Antigravity FL Studio Native MCP Server (SOTA Microtonal & Xenharmonic Ultramax)
-Full Model Context Protocol Server providing native AI control, microtonal tuning, and MIDI orchestration tools for FL Studio 2025 via FastMCP.
+Antigravity FL Studio Native MCP Server (SOTA Microtonal, Xenharmonic & 100-Agent Swarm Ultramax)
+Full Model Context Protocol Server providing native AI control, microtonal tuning, reference song style matching, and MIDI orchestration tools for FL Studio 2025 via FastMCP.
 """
 
 import sys
 import os
 import time
 import mido
+import subprocess
 from typing import List, Dict, Optional
 from mcp.server.fastmcp import FastMCP
 
@@ -134,6 +135,43 @@ def fl_set_plugin_param(param_index: int, value: float) -> str:
 
 
 @mcp.tool()
+def fl_create_from_reference(reference_name: str, bpm: Optional[float] = None) -> str:
+    """
+    Creates a full production template & MIDI sequence matching a reference song or artist style.
+    Reference styles: 'satin_jackets', 'kerri_chandler', 'frankie_knuckles', 'ricardo_villalobos', 'fred_again'.
+    """
+    from scripts.flstudio_algorithmic_composer import generate_reference_style_midi
+    output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/ref_{reference_name.lower().replace(' ', '_')}.mid")
+    info = generate_reference_style_midi(reference_name=reference_name, output_path=output_path, bpm=bpm)
+    return f"Generated Reference Style Track ('{reference_name}'): {info['style']} at {info['bpm']} BPM. MIDI saved to {info['output_path']}."
+
+
+@mcp.tool()
+def fl_generate_100_agents_polyrhythm(bpm: float = 116.0) -> str:
+    """
+    Generates a 100-Agent polyrhythmic swarm matrix combining 3:4:5:7 cross-rhythms and phase shifts.
+    """
+    from scripts.flstudio_algorithmic_composer import generate_100_agents_polyrhythm_midi
+    output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/100_agents_polyrhythm.mid")
+    res = generate_100_agents_polyrhythm_midi(output_path=output_path, bpm=bpm)
+    return f"Generated 100-Agent Polyrhythmic Swarm Matrix MIDI saved to {res}."
+
+
+@mcp.tool()
+def fl_swarm_quantum_collapse(p_cores: int = 4, s_threads: int = 1) -> str:
+    """
+    Executes empirical PxS Swarm Quantum Collapse across workspace nodes.
+    Purges git locks, anchors main branches, executes deterministic synchronization, and measures kernel context switch telemetry.
+    """
+    script_path = "/tmp/quantum_collapse_swarm.py"
+    if not os.path.exists(script_path):
+        return f"Error: Swarm collapse script {script_path} not found."
+    cmd = f"python3 {script_path} --p {p_cores} --s {s_threads}"
+    res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    return f"Swarm Quantum Collapse Execution Results:\n{res.stdout}\n{res.stderr}"
+
+
+@mcp.tool()
 def fl_generate_groove_midi(bpm: float = 116.0, length_bars: int = 4, swing_ms: float = 6.0) -> str:
     """Generates a micro-shifted, humanized MIDI groove file for percussion with micro-swing timing."""
     from scripts.flstudio_mcp_bridge import FLStudioMCPBridge
@@ -177,7 +215,6 @@ def fl_generate_microtonal_midi(system_name: str = "24tet", bpm: float = 116.0, 
 def fl_export_scala_tuning(system_name: str = "24tet") -> str:
     """
     Exports a Scala (.scl) microtonal tuning file for native FL Studio VSTs (Sytrus, Harmor, FLEX).
-    Systems: '24tet', '19tet', '31tet', 'just_intonation', 'bohlen_pierce', 'makam_bayati', 'makam_rast', 'slendro', 'pelog', 'wendy_carlos_alpha', 'partch_43'.
     """
     from scripts.flstudio_microtonal import export_scala_scl_file
     output_path = os.path.expanduser(f"~/10_PROJECTS/flstudio-mcp/scripts/{system_name}.scl")
@@ -187,9 +224,7 @@ def fl_export_scala_tuning(system_name: str = "24tet") -> str:
 
 @mcp.tool()
 def fl_export_scala_kbm(middle_note: int = 60, ref_note: int = 69, ref_freq: float = 440.0) -> str:
-    """
-    Exports a Scala Keyboard Mapping (.kbm) file for fine-grained note frequency anchoring.
-    """
+    """Exports a Scala Keyboard Mapping (.kbm) file for fine-grained note frequency anchoring."""
     from scripts.flstudio_microtonal import export_scala_kbm_file
     output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/default.kbm")
     res = export_scala_kbm_file(output_path=output_path, middle_note=middle_note, ref_note=ref_note, ref_freq=ref_freq)
@@ -198,9 +233,7 @@ def fl_export_scala_kbm(middle_note: int = 60, ref_note: int = 69, ref_freq: flo
 
 @mcp.tool()
 def fl_apply_house_legion_matrix() -> str:
-    """
-    Applies the full Legión de Productores HOUSE 19-Track Mixer Matrix & Sidechain Ducking in FL Studio.
-    """
+    """Applies the full Legión de Productores HOUSE 19-Track Mixer Matrix & Sidechain Ducking in FL Studio."""
     from scripts.flstudio_legion_house_matrix import apply_house_legion_matrix
     success = apply_house_legion_matrix()
     if success:
@@ -210,9 +243,7 @@ def fl_apply_house_legion_matrix() -> str:
 
 @mcp.tool()
 def fl_setup_vocal_dub_fx() -> str:
-    """
-    Sets up 3/16 Dotted 8th Dub Delay sends and Shimmer Reverb automation for vocals at 116 BPM.
-    """
+    """Sets up 3/16 Dotted 8th Dub Delay sends and Shimmer Reverb automation for vocals at 116 BPM."""
     from scripts.flstudio_vocal_dub_fx import setup_vocal_dub_fx
     success = setup_vocal_dub_fx()
     if success:
@@ -222,9 +253,7 @@ def fl_setup_vocal_dub_fx() -> str:
 
 @mcp.tool()
 def fl_generate_full_arrangement() -> str:
-    """
-    Generates a full 128-Bar House Producers arrangement suite (Intro, Verse, Dub Breakdown, Peak Drop, Outro).
-    """
+    """Generates a full 128-Bar House Producers arrangement suite (Intro, Verse, Dub Breakdown, Peak Drop, Outro)."""
     from scripts.flstudio_full_arrangement_generator import generate_full_arrangement
     success = generate_full_arrangement()
     if success:
@@ -232,13 +261,9 @@ def fl_generate_full_arrangement() -> str:
     return "Error generating House Producers Arrangement Suite."
 
 
-
 @mcp.tool()
 def fl_generate_satin_jackets_loop(bpm: float = 116.0) -> str:
-    """
-    Generates a Satin Jackets style non-resolving Penrose Stair chord loop in C minor.
-    The tonic (Cm9) arrives on the 2nd-to-last step (Bar 5-6), followed by an unresolved Fm9 suspension.
-    """
+    """Generates a Satin Jackets style non-resolving Penrose Stair chord loop in C minor."""
     from scripts.flstudio_infinite_harmonic_loop import generate_satin_jackets_infinite_loop
     output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/satin_jackets_infinite_loop.mid")
     res = generate_satin_jackets_infinite_loop(output_path=output_path, bpm=bpm)
@@ -247,9 +272,7 @@ def fl_generate_satin_jackets_loop(bpm: float = 116.0) -> str:
 
 @mcp.tool()
 def fl_generate_false_drop_major(bpm: float = 116.0) -> str:
-    """
-    Generates a False Drop ('Falso Drop') progression shifting from C minor tension into Eb Major / C Major euphoric expansion.
-    """
+    """Generates a False Drop ('Falso Drop') progression shifting from C minor tension into Eb Major / C Major euphoric expansion."""
     from scripts.flstudio_false_drop_major_expansion import generate_false_drop_major_expansion
     output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/false_drop_major_expansion.mid")
     res = generate_false_drop_major_expansion(output_path=output_path, bpm=bpm)
@@ -266,6 +289,3 @@ def fl_apply_no_lo_entiende_template() -> str:
 
 if __name__ == "__main__":
     mcp.run()
-
-
-
