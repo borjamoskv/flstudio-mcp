@@ -234,6 +234,18 @@ def fl_generate_full_arrangement() -> str:
 
 
 @mcp.tool()
+def fl_generate_satin_jackets_loop(bpm: float = 116.0) -> str:
+    """
+    Generates a Satin Jackets style non-resolving Penrose Stair chord loop in C minor.
+    The tonic (Cm9) arrives on the 2nd-to-last step (Bar 5-6), followed by an unresolved Fm9 suspension.
+    """
+    from scripts.flstudio_infinite_harmonic_loop import generate_satin_jackets_infinite_loop
+    output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/satin_jackets_infinite_loop.mid")
+    res = generate_satin_jackets_infinite_loop(output_path=output_path, bpm=bpm)
+    return f"Generated Satin Jackets Infinite Loop MIDI saved to {res}."
+
+
+@mcp.tool()
 def fl_apply_no_lo_entiende_template() -> str:
     """Applies full SOTA mix preset, sidechain matrix, and gains for 'No Lo Entiende' (116 BPM, Cmin)."""
     from scripts.flstudio_mcp_bridge import execute_sota_setup
@@ -243,4 +255,5 @@ def fl_apply_no_lo_entiende_template() -> str:
 
 if __name__ == "__main__":
     mcp.run()
+
 
