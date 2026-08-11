@@ -310,6 +310,18 @@ def fl_generate_sota_microtonal_house(subgenre: str = "19tet_deep_house") -> str
     return f"SOTA Microtonal House Generated ({info['subgenre']}): {info['description']} at {info['bpm']} BPM. MIDI -> {info['output_path']}"
 
 
+@mcp.tool()
+def fl_generate_locrian_sota_techno(bpm: float = 125.0) -> str:
+    """
+    Generates a 3-track SOTA Locrian & Xenharmonic Techno MIDI arrangement (Acid Sub-Tritone, 24-TET Neutral-2nd Arp, Super-Locrian Stabs).
+    """
+    from scripts.locrian_microtonal_engine import generate_locrian_sota_suite
+    output_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/samples/locrian_sota_techno_suite.mid")
+    res = generate_locrian_sota_suite(output_path=output_path, bpm=bpm)
+    return f"Generated SOTA Locrian & Xenharmonic Techno MIDI saved to {res}."
+
+
 if __name__ == "__main__":
     mcp.run()
+
 
