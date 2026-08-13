@@ -11,3 +11,9 @@
   3. **Conmutación Soberana por Fallo**: Si la API remota de Moonshot devuelve errores 429/500 o fallos de red, conmutar inmediatamente al backend local `local_vllm` (`localhost:8000`) o `local_mlx`.
   4. **Reducción de Anergía**: Canalizar los outputs paralelos del enjambre a través de `AnergyReducer` antes de presentar el artefacto sintético final.
 
+- **Arquitectura de Producción Musical Híbrida FL Studio MCP.** Al componer, generar scripts de Piano Roll o sintetizar arreglos DSP en FL Studio 2025, el agente DEBE:
+  1. **Matriz Híbrida Satin/Maceo/AIR**: Integrar las progresiones armónicas elegantes de Satin Jackets, el punch de graves industrial DSP de Maceo Plex y la textura ambiental orgánica de AIR.
+  2. **Microtonalidad Xenarmónica Determinista**: Aplicar afinaciones microtonales (24-TET, Makam o mapeos Scala `.scl`/`.kbm`) en las notas del Piano Roll mediante pitch bend MIDI programático sin alucinación de frecuencias.
+  3. **Generación No-Destructiva**: Producir scripts de Piano Roll Python idempotentes y reproducibles que puedan ejecutarse directamente sobre el motor IPC de FL Studio 2025.
+
+
