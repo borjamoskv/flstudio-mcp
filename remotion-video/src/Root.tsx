@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { CyberEpistemology20Min } from "./Composition";
 import { VideoCocodriloFilosofo } from "./VideoCocodriloFilosofo";
 import { ParodiaDiscursoOdio } from "./ParodiaDiscursoOdio";
+import { Test1MinVideo } from "./Test1MinVideo";
 
 import narrativeData from "../public/narrative_20min.json";
 import cocodriloData from "../public/cocodrilo_estructura.json";
