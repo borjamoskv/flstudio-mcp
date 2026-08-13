@@ -3,7 +3,6 @@ import {
   useCurrentFrame,
   useVideoConfig,
   interpolate,
-  Audio,
   Img,
   staticFile,
   AbsoluteFill,
@@ -44,7 +43,7 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
     extrapolateRight: 'clamp',
   });
 
-  const pulseScale = 1 + 0.02 * Math.sin(frame * 0.15);
+  const pulseScale = 1 + 0.015 * Math.sin(frame * 0.12);
 
   return (
     <div
@@ -53,7 +52,7 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
         top: 80,
         right: 60,
         width: 450,
-        backgroundColor: 'rgba(24, 24, 27, 0.92)',
+        backgroundColor: 'rgba(24, 24, 27, 0.94)',
         border: '1.5px solid #D97706',
         padding: '16px 22px',
         borderRadius: 12,
@@ -95,7 +94,7 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
   );
 };
 
-// Holographic Data Chart Box (Upper Left / Center Left)
+// Holographic Data Chart Box (Upper Left)
 const HolographicChartBox: React.FC<{ title: string; stat: string }> = ({
   title,
   stat,
@@ -118,11 +117,11 @@ const HolographicChartBox: React.FC<{ title: string; stat: string }> = ({
         top: 150,
         left: 60,
         width: 420,
-        backgroundColor: 'rgba(9, 9, 11, 0.88)',
-        border: '1px solid rgba(0, 206, 209, 0.5)', // Cyan border
+        backgroundColor: 'rgba(9, 9, 11, 0.9)',
+        border: '1px solid rgba(0, 206, 209, 0.5)',
         padding: '20px 24px',
         borderRadius: 14,
-        boxShadow: '0 0 30px rgba(0, 206, 209, 0.2), inset 0 0 15px rgba(0, 206, 209, 0.1)',
+        boxShadow: '0 0 30px rgba(0, 206, 209, 0.2)',
         backdropFilter: 'blur(12px)',
         opacity,
         zIndex: 45,
@@ -188,8 +187,8 @@ const HolographicChartBox: React.FC<{ title: string; stat: string }> = ({
   );
 };
 
-// Editorial Subtitle Banner (Bottom Center)
-const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
+// Podcast Style Subtitle Banner (Bottom Center — NO MUSIC / RAW PODCAST)
+const SubtituloFalsoPodcast: React.FC<{ subtitulo: string; bloque: string }> = ({
   subtitulo,
   bloque,
 }) => {
@@ -206,13 +205,13 @@ const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
 
   return (
     <>
-      {/* Top Left Badge: Channel Branding */}
+      {/* Top Left Badge: Fake Podcast LIVE Streaming Status */}
       <div
         style={{
           position: 'absolute',
           top: 40,
           left: 60,
-          backgroundColor: 'rgba(9, 9, 11, 0.9)',
+          backgroundColor: 'rgba(9, 9, 11, 0.92)',
           color: '#E4E4E7',
           padding: '10px 22px',
           borderRadius: 8,
@@ -223,18 +222,20 @@ const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
           letterSpacing: 2,
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 12,
           backdropFilter: 'blur(8px)',
         }}
       >
-        <span style={{ color: '#22C55E' }}>🐊 UCVH</span>
+        <span style={{ color: '#EF4444', animation: 'pulse 1s infinite' }}>🔴 EN DIRECTO</span>
+        <span style={{ color: '#71717A', fontWeight: 400 }}>|</span>
+        <span style={{ color: '#22C55E' }}>🐊 UCVH FALSO PODCAST</span>
         <span style={{ color: '#71717A', fontWeight: 400 }}>|</span>
         <span style={{ fontSize: 13, color: '#A1A1AA', fontWeight: 500 }}>
           {bloque}
         </span>
       </div>
 
-      {/* Bottom Subtitle Banner: Essay Editorial Style */}
+      {/* Bottom Subtitle Banner: Dry Monologue Style */}
       <div
         style={{
           position: 'absolute',
@@ -250,7 +251,7 @@ const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
       >
         <div
           style={{
-            backgroundColor: 'rgba(9, 9, 11, 0.95)',
+            backgroundColor: 'rgba(9, 9, 11, 0.96)',
             color: '#F4F4F5',
             fontFamily: "Georgia, 'Times New Roman', serif",
             fontSize: 28,
@@ -260,7 +261,7 @@ const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
             borderRadius: 10,
             maxWidth: 1300,
             border: '1px solid rgba(63, 63, 70, 0.7)',
-            boxShadow: '0 15px 35px rgba(0,0,0,0.85)',
+            boxShadow: '0 15px 35px rgba(0,0,0,0.9)',
             lineHeight: 1.4,
           }}
         >
@@ -276,8 +277,7 @@ export const ParodiaDiscursoOdio: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#0D0D11' }}>
-      {/* Background Audio Track */}
-      <Audio src={staticFile('Satin_Maceo_AIR_Flow_Master.wav')} loop volume={0.25} />
+      {/* ⚠️ FALSO PODCAST: ZERO MUSIC LAYER (NO BACKGROUND MUSIC) */}
 
       {/* Series Loop for the 120 Scenes */}
       <Series>
@@ -295,7 +295,7 @@ export const ParodiaDiscursoOdio: React.FC = () => {
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    opacity: 0.85,
+                    opacity: 0.95,
                   }}
                 />
 
@@ -310,8 +310,8 @@ export const ParodiaDiscursoOdio: React.FC = () => {
                 {/* Moderation Warning Card Overlay */}
                 <ModerationWarningBox warningText={escena.warning} />
 
-                {/* Subtitles & Branding */}
-                <SubtituloUCVH
+                {/* Subtitles & Fake Podcast LIVE Branding */}
+                <SubtituloFalsoPodcast
                   subtitulo={escena.subtitulo}
                   bloque={escena.bloque}
                 />
