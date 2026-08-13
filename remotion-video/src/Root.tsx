@@ -31,14 +31,14 @@ export const RemotionRoot: React.FC = () => {
         height={cocodriloData.metadata.height}
       />
 
-      {/* Composición 3: UCVH — Sátira Discurso de Odio y Moderación (20 Min) */}
+      {/* Composición 4: Vídeo de Prueba 1 Minuto (60s / 1800 frames) */}
       <Composition
-        id="ParodiaDiscursoOdio"
-        component={ParodiaDiscursoOdio}
-        durationInFrames={ucvhData.metadata.totalDurationFrames}
-        fps={ucvhData.metadata.fps}
-        width={ucvhData.metadata.width}
-        height={ucvhData.metadata.height}
+        id="Test1MinVideo"
+        component={Test1MinVideo}
+        durationInFrames={1800}
+        fps={30}
+        width={1920}
+        height={1080}
       />
     </>
   );
