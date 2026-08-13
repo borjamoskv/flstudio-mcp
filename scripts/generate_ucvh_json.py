@@ -1,85 +1,80 @@
 #!/usr/bin/env python3
 """
-Generador de Estructura Narrativa: "UCVH — ¿Qué Opinaría un Cocodrilo?" (20 Minutos)
-================================================================================
-Sátira tecno-filosófica sobre la libertad de expresión, algoritmos de moderación,
-sesgo biológico de los mamíferos y la censura en plataformas digitales.
+Generador de Estructura Narrativa UCVH v2.0
+===========================================
+Sátira tecno-filosófica de 20 Minutos (120 escenas) basada en los dos ejes estructurales:
+1. Libertad de Expresión Absoluta vs. Demandas a Nutrias por Memes.
+2. Objetividad del 'Analista de Datos' vs. Activismo de Trinchera del Fango.
 """
 
 import json
 import os
 
-MONOLOGOS_UCVH = [
-    # Bloque 1: El Sesgo Biológico de la Moderación Algorítmica
+BLOQUES_UCVH = [
+    # Eje 1: La Paradoja de la Libertad de Expresión vs. Demandas Judiciales a la Fauna
     {
-        "bloque": "BLOQUE 1: CENSURA Y SESGO MAMÍFERO",
-        "audioTexto": "Hoy en día, cualquier manifestación de la naturaleza reptiliana es etiquetada inmediatamente por los mamíferos como discurso de odio. Si digo que prefiero el agua templada, soy excluyente.",
-        "subtitulo": "Cualquier manifestación de la naturaleza reptiliana es etiquetada por los mamíferos como discurso de odio.",
-        "warning": "⚠️ MODERACIÓN ALGORÍTMICA: Contenido bajo análisis por sesgo endotérmico.",
-        "geminiPrompt": "Cinematic shot of a realistic green crocodile with tiny round glasses in a dark podcast studio with warm spotlight, leaning toward a Shure SM7B microphone, 16:9 photorealistic 8k"
+        "bloque": "EJE 1: LIBERTAD DE LIBRE RUGIDO VS. LA VÍA JUDICIAL",
+        "audioTexto": "Yo defiendo que cualquier animal pueda rugir lo que quiera en la selva. El libre mercado de las ideas. Pero si una nutria hace un meme de mis escamas, le meto una demanda por el código civil de la fauna.",
+        "subtitulo": "Defiendo el rugido libre... hasta que una nutria me hace un meme.",
+        "warning": "⚖️ QUERELLA EN CURSO: Demanda interpuesta a Nutria_Satírica_99 por vulneración del derecho al honor reptiliano.",
+        "chartData": {"title": "Estadística de Demandas Judiciales por Memes", "stat": "+450% Querellas en Pantanos"},
+        "geminiPrompt": "A green crocodile podcaster looking very stern and protective, adjusting its microphone in a dark studio. Sharp look. 16:9 aspect ratio."
     },
     {
-        "bloque": "BLOQUE 1: CENSURA Y SESGO MAMÍFERO",
-        "audioTexto": "Se confunde el debate sobre la termorregulación con la incitación a la violencia. La censura de las plataformas está llegando a un punto donde tener escamas ya te pone bajo sospecha algorítmica.",
-        "subtitulo": "Se confunde el debate sobre termorregulación con la incitación a la violencia.",
-        "warning": "🚫 ADVERTENCIA: Este contenido viola los Términos de Servicio del Pantano (Sección 4.2).",
-        "geminiPrompt": "Macro extreme close-up of a crocodile's cold amber eye reflecting studio LED panels, dramatic cinematic lighting"
-    },
-    {
-        "bloque": "BLOQUE 1: CENSURA Y SESGO MAMÍFERO",
-        "audioTexto": "Un usuario mamífero publica 'amamos el calor corporal' y recibe un millón de likes. Yo digo 'el lodo es neutro' y me suspenden la cuenta 30 días por odio biológico.",
-        "subtitulo": "Un mamífero publica 'amamos el calor corporal' y recibe un millón de likes. A mí me suspenden 30 días.",
-        "warning": "⚠️ REVISIÓN DE HECHOS: Independiente.com confirma que los reptiles no poseen empatía endotérmica.",
-        "geminiPrompt": "Crocodile looking dryly at a glowing tablet screen displaying social media error codes, dark room atmosphere"
-    },
-    {
-        "bloque": "BLOQUE 1: CENSURA Y SESGO MAMÍFERO",
-        "audioTexto": "El algoritmo está optimizado para mamíferos de sangre caliente. Si tu pulso cardíaco cae de 40 latidos por minuto, la IA asume que eres un bot o un extremista del Jurásico.",
-        "subtitulo": "Si tu pulso cae de 40 bpm, la IA asume que eres un bot o un extremista del Jurásico.",
-        "warning": "⚡ TRÁFICO REDUCIDO: Shadowban aplicado por inactividad metabólica sospechosa.",
-        "geminiPrompt": "Crocodile resting in a studio chair near neon pink and deep blue accent lights, cinematic wide shot"
+        "bloque": "EJE 1: LIBERTAD DE LIBRE RUGIDO VS. LA VÍA JUDICIAL",
+        "audioTexto": "Condeno severamente la cultura de la cancelación de los mamíferos. Sin embargo, si un castor critica mi tono en un videoensayo, exijo la clausura inmediata de su presa por difamación institucional.",
+        "subtitulo": "Condeno la cancelación mamífera... pero exijo clausurar la presa del castor por difamación.",
+        "warning": "🚫 ORDEN JUDICIAL CAUTELAR: Bloqueo de presa y embargo preventivo de madera.",
+        "chartData": {"title": "Presas Clausuradas por Orden Tribunal Mammalia", "stat": "127 Presas Embargadas"},
+        "geminiPrompt": "Crocodile looking dryly at a stack of legal subpoenas on a mahogany desk, dark podcast room, cinematic light"
     },
 
-    # Bloque 2: Términos de Servicio de las Ciénagas
+    # Eje 2: Objetividad del Analista Neutral vs. Activismo de Trinchera
     {
-        "bloque": "BLOQUE 2: TÉRMINOS DE SERVICIO DEL PANTANO",
-        "audioTexto": "Analicemos los Términos de Servicio del Pantano Digital. Artículo 12: 'Se prohíbe todo chasquido de mandíbula que pueda resultar amenazante para las ardillas de la audiencia'.",
-        "subtitulo": "Artículo 12: 'Se prohíbe todo chasquido de mandíbula que pueda resultar amenazante para las ardillas'.",
-        "warning": "⚠️ AVISO DE COMUNIDAD: Lenguaje de presión mandibular no incluyente.",
-        "geminiPrompt": "Crocodile adjusting its glasses while reading a scroll marked 'TOS 2026', dramatic dark humor framing"
+        "bloque": "EJE 2: ANALISTA NEUTRAL VS. ACTIVISMO DEL FANGO",
+        "audioTexto": "Dicen que soy un activista del fango, pero yo solo leo datos. Que el noventa por ciento de las cebras mueran a manos de leones no es un problema sistémico de los felinos, es pura biología matemática.",
+        "subtitulo": "Yo solo leo datos... no es un problema sistémico felino, es pura biología matemática.",
+        "warning": "📊 ESTUDIO FACT-CHECK: Estadística validada por el Instituto de Biología Cuantitativa de los Pantanos.",
+        "chartData": {"title": "Mortalidad de Cebras vs Felinos", "stat": "90.4% Biología Matemática"},
+        "geminiPrompt": "Close up of the crocodile pointing at a glowing holographic bar chart on screen with an analytical expression. 16:9 aspect ratio."
     },
     {
-        "bloque": "BLOQUE 2: TÉRMINOS DE SERVICIO DEL PANTANO",
-        "audioTexto": "Nos exigen diplomacia endotérmica. Pero el debate público necesita fricción. Sin la mordida de giro de la verdad, solo queda un consenso tibio masticado por roedores.",
-        "subtitulo": "Sin la mordida de giro de la verdad, solo queda un consenso tibio masticado por roedores.",
-        "warning": "📢 ANÁLISIS CRÍTICO: Demostración de mordida de giro descalificada por la comisión de ética.",
-        "geminiPrompt": "Crocodile gesturing dryly with one claw near a podcast soundboard, atmospheric moody lighting"
+        "bloque": "EJE 2: ANALISTA NEUTRAL VS. ACTIVISMO DEL FANGO",
+        "audioTexto": "Miren mi estética: tono pausado, gafas de lectura, micrófono Shure SM7B y luz azul de estudio. Es imposible que alguien con este setup sea un agitador ideológico. Es simple ciencia computacional.",
+        "subtitulo": "Micrófono Shure SM7B y luz azul de estudio... es imposible que alguien con este setup sea un agitador.",
+        "warning": "🎙️ NEUTRALIDAD DE SETUP: Certificado de Analista Objetivo 100% Neón.",
+        "chartData": {"title": "Índice de Percepción de Objetividad por Setup", "stat": "99.8% Tono Pausado"},
+        "geminiPrompt": "Crocodile sitting in a high-tech studio with glowing LED bar charts floating in air, professional video essayist aesthetic"
     },
 
-    # Bloque 3: Polarización Digital y Cámaras de Eco
+    # Eje 3: Términos de Servicio y Algoritmos del Pantano
     {
-        "bloque": "BLOQUE 3: CÁMARAS DE ECO Y POLARIZACIÓN",
-        "audioTexto": "La polarización digital ha dividido el ecosistema: a un lado del río están los militantes del pelo corporal; al otro, los absolutistas de la escama. Nadie cruza el agua.",
-        "subtitulo": "A un lado del río están los militantes del pelo corporal; al otro, los absolutistas de la escama.",
-        "warning": "🔥 TENDENCIA POLARIZADA: #CancelReptiles acumula 4.2 millones de impresiones.",
-        "geminiPrompt": "Split lighting portrait of a crocodile, half illuminated by cold blue light, half by fiery orange light"
+        "bloque": "EJE 3: CENSURA ALGORÍTMICA DE LAS PLATAFORMAS",
+        "audioTexto": "El algoritmo favorece al pelaje suave porque genera más clics por empatía endotérmica. A los que tenemos sangre fría nos aplican shadowban sistemático por baja tasa de pulso cardíaco.",
+        "subtitulo": "El algoritmo favorece al pelaje suave. A los de sangre fría nos aplican shadowban por baja tasa de pulso.",
+        "warning": "⚡ RESTRICCIÓN DE ALGORITMO: Shadowban por inactividad metabólica sospechosa.",
+        "chartData": {"title": "Alcance Algorítmico: Sangre Caliente vs Sangre Fría", "stat": "-78% Impr. Reptiles"},
+        "geminiPrompt": "Crocodile staring intensely at a laptop screen displaying red declining analytics charts, dark moody background"
     },
+
+    # Eje 4: La Paradoja de la Termorregulación
     {
-        "bloque": "BLOQUE 3: CÁMARAS DE ECO Y POLARIZACIÓN",
-        "audioTexto": "Si no apoyas la narrativa del pelaje suave, te acusan de 'nostálgico del Cretácico'. El matiz ha muerto en la ciénaga de la indignación algorítmica.",
-        "subtitulo": "Si no apoyas la narrativa del pelaje suave, te acusan de 'nostálgico del Cretácico'.",
-        "warning": "⚠️ ETIQUETA DE CENSURA: Etiquetado como contenido revisionista mesozoico.",
-        "geminiPrompt": "Crocodile looking up at dark raining matrix style digital code in a swamp background, 8k cinematic render"
+        "bloque": "EJE 4: DEBATE SOBRE TERMORREGULACIÓN",
+        "audioTexto": "Se confunde el debate de la termorregulación con la incitación a la violencia. Si digo que prefiero el lodo tibio a 32 grados, las ardillas del chat me acusan de supremacismo ectotérmico.",
+        "subtitulo": "Si digo que prefiero el lodo a 32 grados, me acusan de supremacismo ectotérmico.",
+        "warning": "⚠️ AUDITORÍA DE CHAT: 4,000 comentarios marcados por incitación a la temperatura.",
+        "chartData": {"title": "Temperatura Óptima del Lodo", "stat": "32.5°C Ectotermia Neutra"},
+        "geminiPrompt": "Macro shot of crocodile eyes reflecting green matrix code while floating in shallow warm mud"
     }
 ]
 
-def generate_ucvh_structure(output_path):
+def generate_ucvh_v2_structure(output_path):
     scenes = []
     scene_id = 1
     
-    # 120 scenes total (cycling through the monologues)
-    for cycle in range(15): # 8 template scenes * 15 cycles = 120 scenes = 1200 seconds = 20 mins
-        for item in MONOLOGOS_UCVH:
+    # Generate 120 total scenes (cycling through the 6 core template scenes)
+    for cycle in range(20): # 6 scenes * 20 cycles = 120 scenes = 20 mins
+        for item in BLOQUES_UCVH:
             scene = {
                 "id": scene_id,
                 "bloque": item["bloque"],
@@ -88,6 +83,7 @@ def generate_ucvh_structure(output_path):
                 "audioTexto": item["audioTexto"],
                 "subtitulo": item["subtitulo"],
                 "warning": item["warning"],
+                "chartData": item["chartData"],
                 "geminiPrompt": item["geminiPrompt"],
                 "clipVideo": f"/clips/ucvh_{scene_id}.mp4",
                 "keyframeFallback": f"/shot{(scene_id % 4)*2 + 1}_keyframe.png"
@@ -97,8 +93,8 @@ def generate_ucvh_structure(output_path):
             
     data = {
         "metadata": {
-            "title": "UCVH — El Discurso de Odio Reptiliana",
-            "subtitle": "Sátira Tecno-Filosófica sobre la Moderación Digital (20 Minutos)",
+            "title": "UCVH — La Paradoja del Discurso Reptiliano",
+            "subtitle": "Sátira Tecno-Filosófica sobre la Libertad de Expresión y la Vía Judicial (20 Minutos)",
             "totalScenes": len(scenes),
             "totalDurationSeconds": len(scenes) * 10, # 1200s
             "totalDurationFrames": len(scenes) * 300, # 36000 frames
@@ -117,5 +113,5 @@ def generate_ucvh_structure(output_path):
 
 if __name__ == "__main__":
     target = "/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp/remotion-video/public/ucvh_odio.json"
-    generate_ucvh_structure(target)
-    print(f"✅ Generated UCVH Satire JSON: {target}")
+    generate_ucvh_v2_structure(target)
+    print(f"✅ Generated UCVH v2.0 JSON dataset: {target}")

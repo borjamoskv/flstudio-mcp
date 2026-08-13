@@ -11,7 +11,7 @@ import {
   Easing,
 } from 'remotion';
 
-// Import JSON structure for UCVH Hate Speech Satire
+// Import updated UCVH v2.0 JSON dataset
 import estructuraUcvh from '../public/ucvh_odio.json';
 
 interface EscenaUCVH {
@@ -22,11 +22,16 @@ interface EscenaUCVH {
   audioTexto: string;
   subtitulo: string;
   warning: string;
+  chartData: {
+    title: string;
+    stat: string;
+  };
   geminiPrompt: string;
   clipVideo: string;
   keyframeFallback: string;
 }
 
+// Moderation Warning Box (Upper Right)
 const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }) => {
   const frame = useCurrentFrame();
 
@@ -39,7 +44,6 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
     extrapolateRight: 'clamp',
   });
 
-  // Pulse effect
   const pulseScale = 1 + 0.02 * Math.sin(frame * 0.15);
 
   return (
@@ -48,9 +52,9 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
         position: 'absolute',
         top: 80,
         right: 60,
-        width: 440,
-        backgroundColor: 'rgba(24, 24, 27, 0.92)', // zinc-900
-        border: '1.5px solid #D97706', // amber-600
+        width: 450,
+        backgroundColor: 'rgba(24, 24, 27, 0.92)',
+        border: '1.5px solid #D97706',
         padding: '16px 22px',
         borderRadius: 12,
         boxShadow: '0 20px 40px rgba(0,0,0,0.7), 0 0 25px rgba(217, 119, 6, 0.2)',
@@ -62,7 +66,7 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
     >
       <div
         style={{
-          color: '#F59E0B', // amber-500
+          color: '#F59E0B',
           fontWeight: 700,
           fontSize: 13,
           letterSpacing: 1.5,
@@ -78,7 +82,7 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
       </div>
       <div
         style={{
-          color: '#D4D4D8', // zinc-300
+          color: '#D4D4D8',
           fontSize: 13,
           fontFamily: "'Inter', sans-serif",
           lineHeight: 1.45,
@@ -91,6 +95,100 @@ const ModerationWarningBox: React.FC<{ warningText: string }> = ({ warningText }
   );
 };
 
+// Holographic Data Chart Box (Upper Left / Center Left)
+const HolographicChartBox: React.FC<{ title: string; stat: string }> = ({
+  title,
+  stat,
+}) => {
+  const frame = useCurrentFrame();
+
+  const opacity = interpolate(frame, [15, 30, 260, 280], [0, 1, 1, 0], {
+    extrapolateRight: 'clamp',
+  });
+
+  const barWidth = interpolate(frame, [30, 80], [0, 100], {
+    easing: Easing.out(Easing.quad),
+    extrapolateRight: 'clamp',
+  });
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 150,
+        left: 60,
+        width: 420,
+        backgroundColor: 'rgba(9, 9, 11, 0.88)',
+        border: '1px solid rgba(0, 206, 209, 0.5)', // Cyan border
+        padding: '20px 24px',
+        borderRadius: 14,
+        boxShadow: '0 0 30px rgba(0, 206, 209, 0.2), inset 0 0 15px rgba(0, 206, 209, 0.1)',
+        backdropFilter: 'blur(12px)',
+        opacity,
+        zIndex: 45,
+      }}
+    >
+      <div
+        style={{
+          color: '#00CED1',
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: 2,
+          fontFamily: "'Inter', sans-serif",
+          textTransform: 'uppercase',
+          marginBottom: 8,
+        }}
+      >
+        📊 ESTADÍSTICA DE TRINCHERA REPTILIANA
+      </div>
+      <div
+        style={{
+          color: '#FFFFFF',
+          fontSize: 16,
+          fontWeight: 600,
+          fontFamily: "'Inter', sans-serif",
+          marginBottom: 12,
+        }}
+      >
+        {title}
+      </div>
+
+      {/* Progress Bar */}
+      <div
+        style={{
+          width: '100%',
+          height: 10,
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: 5,
+          overflow: 'hidden',
+          marginBottom: 10,
+        }}
+      >
+        <div
+          style={{
+            width: `${barWidth}%`,
+            height: '100%',
+            background: 'linear-gradient(90deg, #00CED1, #E01882)',
+            borderRadius: 5,
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          color: '#FFB347',
+          fontSize: 22,
+          fontWeight: 800,
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        {stat}
+      </div>
+    </div>
+  );
+};
+
+// Editorial Subtitle Banner (Bottom Center)
 const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
   subtitulo,
   bloque,
@@ -108,13 +206,13 @@ const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
 
   return (
     <>
-      {/* Top Left Badge: Channel branding */}
+      {/* Top Left Badge: Channel Branding */}
       <div
         style={{
           position: 'absolute',
           top: 40,
-          left: 50,
-          backgroundColor: 'rgba(9, 9, 11, 0.85)',
+          left: 60,
+          backgroundColor: 'rgba(9, 9, 11, 0.9)',
           color: '#E4E4E7',
           padding: '10px 22px',
           borderRadius: 8,
@@ -152,16 +250,16 @@ const SubtituloUCVH: React.FC<{ subtitulo: string; bloque: string }> = ({
       >
         <div
           style={{
-            backgroundColor: 'rgba(9, 9, 11, 0.94)', // zinc-950
-            color: '#F4F4F5', // zinc-100
-            fontFamily: "Georgia, 'Times New Roman', serif", // Video Essay Editorial Font
+            backgroundColor: 'rgba(9, 9, 11, 0.95)',
+            color: '#F4F4F5',
+            fontFamily: "Georgia, 'Times New Roman', serif",
             fontSize: 28,
             fontWeight: 400,
             textAlign: 'center',
             padding: '22px 42px',
             borderRadius: 10,
             maxWidth: 1300,
-            border: '1px solid rgba(63, 63, 70, 0.7)', // zinc-700
+            border: '1px solid rgba(63, 63, 70, 0.7)',
             boxShadow: '0 15px 35px rgba(0,0,0,0.85)',
             lineHeight: 1.4,
           }}
@@ -181,7 +279,7 @@ export const ParodiaDiscursoOdio: React.FC = () => {
       {/* Background Audio Track */}
       <Audio src={staticFile('Satin_Maceo_AIR_Flow_Master.wav')} loop volume={0.25} />
 
-      {/* Series loop for the 120 scenes */}
+      {/* Series Loop for the 120 Scenes */}
       <Series>
         {estructuraUcvh.scenes.map((escena: EscenaUCVH) => {
           return (
@@ -201,10 +299,18 @@ export const ParodiaDiscursoOdio: React.FC = () => {
                   }}
                 />
 
-                {/* Moderation Warning Card Overlay (Alternating scenes) */}
+                {/* Holographic Chart Data Overlay */}
+                {escena.chartData && (
+                  <HolographicChartBox
+                    title={escena.chartData.title}
+                    stat={escena.chartData.stat}
+                  />
+                )}
+
+                {/* Moderation Warning Card Overlay */}
                 <ModerationWarningBox warningText={escena.warning} />
 
-                {/* Editorial Subtitle Banner & Branding */}
+                {/* Subtitles & Branding */}
                 <SubtituloUCVH
                   subtitulo={escena.subtitulo}
                   bloque={escena.bloque}
