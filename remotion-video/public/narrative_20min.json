@@ -1,0 +1,1428 @@
+{
+  "metadata": {
+    "title": "Satin x Maceo x AIR: 20-Minute Cyber-Epistemology",
+    "bpm": 118,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "loopDurationSeconds": 16.2712,
+    "totalDurationSeconds": 1204.07,
+    "totalFrames": 36122,
+    "totalScenes": 74
+  },
+  "colorPalette": {
+    "obsidianBase": "#0A0A0F",
+    "magentaNeon": "#E01882",
+    "cyanDeep": "#00CED1",
+    "goldenPicardy": "#FFB347",
+    "purpleIndustrial": "#5B2C6F"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "loopIndex": 0,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 0.0,
+      "durationSeconds": 16.271,
+      "startFrame": 0,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 01 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 1/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 2,
+      "loopIndex": 1,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 16.271,
+      "durationSeconds": 16.271,
+      "startFrame": 488,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 02 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 2/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 3,
+      "loopIndex": 2,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 32.542,
+      "durationSeconds": 16.271,
+      "startFrame": 976,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 03 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 3/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 4,
+      "loopIndex": 3,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 48.814,
+      "durationSeconds": 16.271,
+      "startFrame": 1464,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 04 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 4/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 5,
+      "loopIndex": 4,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 65.085,
+      "durationSeconds": 16.271,
+      "startFrame": 1953,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 05 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 5/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 6,
+      "loopIndex": 5,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 81.356,
+      "durationSeconds": 16.271,
+      "startFrame": 2441,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 06 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 6/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 7,
+      "loopIndex": 6,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 97.627,
+      "durationSeconds": 16.271,
+      "startFrame": 2929,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 07 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 7/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 8,
+      "loopIndex": 7,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 113.898,
+      "durationSeconds": 16.271,
+      "startFrame": 3417,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 08 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 8/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 9,
+      "loopIndex": 8,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 130.169,
+      "durationSeconds": 16.271,
+      "startFrame": 3905,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 09 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 9/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 10,
+      "loopIndex": 9,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 146.441,
+      "durationSeconds": 16.271,
+      "startFrame": 4393,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 10 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 10/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 11,
+      "loopIndex": 10,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 162.712,
+      "durationSeconds": 16.271,
+      "startFrame": 4881,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 11 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 11/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 12,
+      "loopIndex": 11,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 178.983,
+      "durationSeconds": 16.271,
+      "startFrame": 5369,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 12 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 12/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 13,
+      "loopIndex": 12,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 195.254,
+      "durationSeconds": 16.271,
+      "startFrame": 5858,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 13 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 13/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 14,
+      "loopIndex": 13,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 211.525,
+      "durationSeconds": 16.271,
+      "startFrame": 6346,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 14 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 14/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 15,
+      "loopIndex": 14,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 227.797,
+      "durationSeconds": 16.271,
+      "startFrame": 6834,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 15 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 15/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 16,
+      "loopIndex": 15,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 244.068,
+      "durationSeconds": 16.271,
+      "startFrame": 7322,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 16 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 16/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 17,
+      "loopIndex": 16,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 260.339,
+      "durationSeconds": 16.271,
+      "startFrame": 7810,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 17 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 17/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 18,
+      "loopIndex": 17,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 276.61,
+      "durationSeconds": 16.271,
+      "startFrame": 8298,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 18 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 18/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 19,
+      "loopIndex": 18,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 292.881,
+      "durationSeconds": 16.271,
+      "startFrame": 8786,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 19 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 19/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 20,
+      "loopIndex": 19,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 309.153,
+      "durationSeconds": 16.271,
+      "startFrame": 9275,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 20 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 20/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 21,
+      "loopIndex": 20,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 325.424,
+      "durationSeconds": 16.271,
+      "startFrame": 9763,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 21 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 21/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 22,
+      "loopIndex": 21,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 341.695,
+      "durationSeconds": 16.271,
+      "startFrame": 10251,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 22 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 22/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 23,
+      "loopIndex": 22,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 357.966,
+      "durationSeconds": 16.271,
+      "startFrame": 10739,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 23 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 23/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 24,
+      "loopIndex": 23,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 374.237,
+      "durationSeconds": 16.271,
+      "startFrame": 11227,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 24 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 24/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 25,
+      "loopIndex": 24,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 390.508,
+      "durationSeconds": 16.271,
+      "startFrame": 11715,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 25 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 25/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 26,
+      "loopIndex": 25,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 406.78,
+      "durationSeconds": 16.271,
+      "startFrame": 12203,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 26 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 26/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 27,
+      "loopIndex": 26,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 423.051,
+      "durationSeconds": 16.271,
+      "startFrame": 12692,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 27 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 27/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 28,
+      "loopIndex": 27,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 439.322,
+      "durationSeconds": 16.271,
+      "startFrame": 13180,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 28 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 28/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 29,
+      "loopIndex": 28,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 455.593,
+      "durationSeconds": 16.271,
+      "startFrame": 13668,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 29 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 29/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 30,
+      "loopIndex": 29,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 471.864,
+      "durationSeconds": 16.271,
+      "startFrame": 14156,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 30 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 30/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 31,
+      "loopIndex": 30,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 488.136,
+      "durationSeconds": 16.271,
+      "startFrame": 14644,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 31 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 31/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 32,
+      "loopIndex": 31,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 504.407,
+      "durationSeconds": 16.271,
+      "startFrame": 15132,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 32 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 32/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 33,
+      "loopIndex": 32,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 520.678,
+      "durationSeconds": 16.271,
+      "startFrame": 15620,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 33 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 33/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 34,
+      "loopIndex": 33,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 536.949,
+      "durationSeconds": 16.271,
+      "startFrame": 16108,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 34 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 34/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 35,
+      "loopIndex": 34,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 553.22,
+      "durationSeconds": 16.271,
+      "startFrame": 16597,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 35 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 35/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 36,
+      "loopIndex": 35,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 569.492,
+      "durationSeconds": 16.271,
+      "startFrame": 17085,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 36 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 36/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 37,
+      "loopIndex": 36,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 585.763,
+      "durationSeconds": 16.271,
+      "startFrame": 17573,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 37 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 37/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 38,
+      "loopIndex": 37,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 602.034,
+      "durationSeconds": 16.271,
+      "startFrame": 18061,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 38 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 38/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 39,
+      "loopIndex": 38,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 618.305,
+      "durationSeconds": 16.271,
+      "startFrame": 18549,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 39 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 39/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 40,
+      "loopIndex": 39,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 634.576,
+      "durationSeconds": 16.271,
+      "startFrame": 19037,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 40 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 40/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 41,
+      "loopIndex": 40,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 650.847,
+      "durationSeconds": 16.271,
+      "startFrame": 19525,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 41 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 41/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 42,
+      "loopIndex": 41,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 667.119,
+      "durationSeconds": 16.271,
+      "startFrame": 20014,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 42 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 42/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 43,
+      "loopIndex": 42,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 683.39,
+      "durationSeconds": 16.271,
+      "startFrame": 20502,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 43 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 43/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 44,
+      "loopIndex": 43,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 699.661,
+      "durationSeconds": 16.271,
+      "startFrame": 20990,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 44 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 44/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 45,
+      "loopIndex": 44,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 715.932,
+      "durationSeconds": 16.271,
+      "startFrame": 21478,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 45 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 45/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 46,
+      "loopIndex": 45,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 732.203,
+      "durationSeconds": 16.271,
+      "startFrame": 21966,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 46 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 46/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 47,
+      "loopIndex": 46,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 748.475,
+      "durationSeconds": 16.271,
+      "startFrame": 22454,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 47 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 47/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 48,
+      "loopIndex": 47,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 764.746,
+      "durationSeconds": 16.271,
+      "startFrame": 22942,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 48 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 48/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 49,
+      "loopIndex": 48,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 781.017,
+      "durationSeconds": 16.271,
+      "startFrame": 23431,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 49 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 49/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 50,
+      "loopIndex": 49,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 797.288,
+      "durationSeconds": 16.271,
+      "startFrame": 23919,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 50 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 50/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 51,
+      "loopIndex": 50,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 813.559,
+      "durationSeconds": 16.271,
+      "startFrame": 24407,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 51 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 51/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 52,
+      "loopIndex": 51,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 829.831,
+      "durationSeconds": 16.271,
+      "startFrame": 24895,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 52 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 52/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 53,
+      "loopIndex": 52,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 846.102,
+      "durationSeconds": 16.271,
+      "startFrame": 25383,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 53 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 53/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 54,
+      "loopIndex": 53,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 862.373,
+      "durationSeconds": 16.271,
+      "startFrame": 25871,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 54 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 54/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 55,
+      "loopIndex": 54,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 878.644,
+      "durationSeconds": 16.271,
+      "startFrame": 26359,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 55 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 55/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 56,
+      "loopIndex": 55,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 894.915,
+      "durationSeconds": 16.271,
+      "startFrame": 26847,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 56 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 56/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 57,
+      "loopIndex": 56,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 911.186,
+      "durationSeconds": 16.271,
+      "startFrame": 27336,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 57 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 57/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 58,
+      "loopIndex": 57,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 927.458,
+      "durationSeconds": 16.271,
+      "startFrame": 27824,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 58 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 58/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 59,
+      "loopIndex": 58,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 943.729,
+      "durationSeconds": 16.271,
+      "startFrame": 28312,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 59 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 59/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 60,
+      "loopIndex": 59,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 960.0,
+      "durationSeconds": 16.271,
+      "startFrame": 28800,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 60 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 60/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 61,
+      "loopIndex": 60,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 976.271,
+      "durationSeconds": 16.271,
+      "startFrame": 29288,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 61 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 61/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 62,
+      "loopIndex": 61,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 992.542,
+      "durationSeconds": 16.271,
+      "startFrame": 29776,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 62 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 62/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 63,
+      "loopIndex": 62,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 1008.814,
+      "durationSeconds": 16.271,
+      "startFrame": 30264,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 63 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 63/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 64,
+      "loopIndex": 63,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 1025.085,
+      "durationSeconds": 16.271,
+      "startFrame": 30753,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 64 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 64/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 65,
+      "loopIndex": 64,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 1041.356,
+      "durationSeconds": 16.271,
+      "startFrame": 31241,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 65 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 65/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 66,
+      "loopIndex": 65,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 1057.627,
+      "durationSeconds": 16.271,
+      "startFrame": 31729,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 66 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 66/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 67,
+      "loopIndex": 66,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 1073.898,
+      "durationSeconds": 16.271,
+      "startFrame": 32217,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 67 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 67/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 68,
+      "loopIndex": 67,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 1090.169,
+      "durationSeconds": 16.271,
+      "startFrame": 32705,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 68 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 68/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 69,
+      "loopIndex": 68,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 1106.441,
+      "durationSeconds": 16.271,
+      "startFrame": 33193,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 69 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 69/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 70,
+      "loopIndex": 69,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 1122.712,
+      "durationSeconds": 16.271,
+      "startFrame": 33681,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 70 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 70/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 71,
+      "loopIndex": 70,
+      "act": "ACT III \u2014 XENHARMONIC ASCENSION",
+      "description": "C\u00fapula observatorio retro-futurista con anillos arm\u00f3nicos giran en afinaci\u00f3n 24-TET.",
+      "startSeconds": 1138.983,
+      "durationSeconds": 16.271,
+      "startFrame": 34169,
+      "durationFrames": 488,
+      "colorToken": "cyanDeep",
+      "colorHex": "#00CED1",
+      "keyframeImage": "shot5_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 71 // ACT III \u2014 XENHARMONIC ASCENSION",
+        "subtitle": "Loop 71/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 72,
+      "loopIndex": 71,
+      "act": "ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+      "description": "Silencio de transitorios en el comp\u00e1s 7 seguido de modulaci\u00f3n brillante Picardy Cmaj9.",
+      "startSeconds": 1155.254,
+      "durationSeconds": 16.271,
+      "startFrame": 34658,
+      "durationFrames": 488,
+      "colorToken": "goldenPicardy",
+      "colorHex": "#FFB347",
+      "keyframeImage": "shot7_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 72 // ACT IV \u2014 FALSE DROP & PICARDY SUNBURST",
+        "subtitle": "Loop 72/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 73,
+      "loopIndex": 72,
+      "act": "ACT I \u2014 GENESIS & PENROSE STAIR",
+      "description": "Exploraci\u00f3n de la estructura arm\u00f3nica Abmaj7 -> Bb9 -> Cm9 -> Fm9 con Rhodes de cristal en ingravidez.",
+      "startSeconds": 1171.525,
+      "durationSeconds": 16.271,
+      "startFrame": 35146,
+      "durationFrames": 488,
+      "colorToken": "magentaNeon",
+      "colorHex": "#E01882",
+      "keyframeImage": "shot1_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 73 // ACT I \u2014 GENESIS & PENROSE STAIR",
+        "subtitle": "Loop 73/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    },
+    {
+      "id": 74,
+      "loopIndex": 73,
+      "act": "ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+      "description": "Golpe de bombo DSP Maceo Plex (3.8kHz -> 50Hz) y deformaci\u00f3n magn\u00e9tica de ferrofluido.",
+      "startSeconds": 1187.797,
+      "durationSeconds": 16.271,
+      "startFrame": 35634,
+      "durationFrames": 488,
+      "colorToken": "purpleIndustrial",
+      "colorHex": "#5B2C6F",
+      "keyframeImage": "shot3_keyframe.png",
+      "audioTrack": "Satin_Maceo_AIR_Flow_Master.wav",
+      "typography": {
+        "title": "SCENE 74 // ACT II \u2014 INDUSTRIAL TECHNO IMPACT",
+        "subtitle": "Loop 74/74 \u2022 118 BPM 24-TET",
+        "font": "Inter"
+      }
+    }
+  ]
+}
