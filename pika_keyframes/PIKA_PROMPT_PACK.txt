@@ -1,0 +1,126 @@
+================================================================================
+PIKA 2.5 PRO - PROMPT PACK: Satin Jackets x Maceo Plex x AIR
+Storyboard v2.0 | 118 BPM | 8 Compases | Industrial Noir
+================================================================================
+
+NEGATIVE PROMPT GLOBAL: morphing, bad quality, blurry, watermark, text overlay, distorted faces, jpeg artifacts
+
+--------------------------------------------------------------------------------
+[1/8] Shot 1 - GENESIS (Image-to-Video - shot1_genesis.png)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  A dark obsidian monolith floating in zero gravity, vintage Fender Rhodes piano visible inside translucent crystal, soft magenta and cyan volumetric light, golden dust particles drifting slowly, 35mm anamorphic lens, gentle dolly-in
+
+  PARAMETERS: -ar 16:9 -motion 1 -fps 24 -gs 14
+  NEGATIVE:   -neg morphing, blurry, text, watermark
+  FEATURE:    Image-to-Video (usar shot1_genesis.png como input)
+
+  COPY-PASTE READY:
+  A dark obsidian monolith floating in zero gravity, vintage Fender Rhodes piano visible inside translucent crystal, soft magenta and cyan volumetric light, golden dust particles drifting slowly, 35mm anamorphic lens, gentle dolly-in -ar 16:9 -motion 1 -fps 24 -gs 14 -neg morphing, blurry, text, watermark
+
+--------------------------------------------------------------------------------
+[2/8] Shot 2 - CRYSTALLIZATION (Scene Extension desde Shot 1)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  The obsidian crystal monolith begins glowing brighter from within, magenta and cyan light intensifying through fractures in the dark stone, Rhodes piano keys subtly vibrating, particles accelerating outward, 35mm anamorphic lens, slow push in
+
+  PARAMETERS: -ar 16:9 -motion 2 -fps 24 -gs 14
+  NEGATIVE:   -neg morphing, blurry, text
+  FEATURE:    Scene Extension (ultimo frame del Shot 1 como base)
+
+  COPY-PASTE READY:
+  The obsidian crystal monolith begins glowing brighter from within, magenta and cyan light intensifying through fractures in the dark stone, Rhodes piano keys subtly vibrating, particles accelerating outward, 35mm anamorphic lens, slow push in -ar 16:9 -motion 2 -fps 24 -gs 14 -neg morphing, blurry, text
+
+--------------------------------------------------------------------------------
+[3/8] Shot 3 - IMPACT (Image-to-Video - shot3_impact.png)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  Extreme macro of dark magnetic ferrofluid forming sharp geometric spikes on brushed titanium, pulsing rhythmically, teal and deep purple rim lighting, industrial warehouse atmosphere, high-speed camera aesthetic, steady tracking shot left to right
+
+  PARAMETERS: -ar 16:9 -motion 3 -fps 24 -gs 16
+  NEGATIVE:   -neg morphing, blurry, text, faces
+  FEATURE:    Image-to-Video (usar shot3_impact.png como input) + Pikaffects
+
+  COPY-PASTE READY:
+  Extreme macro of dark magnetic ferrofluid forming sharp geometric spikes on brushed titanium, pulsing rhythmically, teal and deep purple rim lighting, industrial warehouse atmosphere, high-speed camera aesthetic, steady tracking shot left to right -ar 16:9 -motion 3 -fps 24 -gs 16 -neg morphing, blurry, text, faces
+
+--------------------------------------------------------------------------------
+[4/8] Shot 4 - PULSE (Scene Extension desde Shot 3)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  The ferrofluid spikes collapse and reform in rhythmic pulses synchronized with bass frequencies, dark titanium surface reflecting teal light, subtle slow-motion ripple effect, macro lens 100mm, gentle arc right
+
+  PARAMETERS: -ar 16:9 -motion 2 -fps 24 -gs 14
+  NEGATIVE:   -neg morphing, blurry, text
+  FEATURE:    Scene Extension (ultimo frame del Shot 3 como base)
+
+  COPY-PASTE READY:
+  The ferrofluid spikes collapse and reform in rhythmic pulses synchronized with bass frequencies, dark titanium surface reflecting teal light, subtle slow-motion ripple effect, macro lens 100mm, gentle arc right -ar 16:9 -motion 2 -fps 24 -gs 14 -neg morphing, blurry, text
+
+--------------------------------------------------------------------------------
+[5/8] Shot 5 - ASCENSION (Image-to-Video - shot5_ascension.png)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  Inside a retro-futuristic observatory dome, giant holographic light rings slowly spinning, 1970s analog film grain, warm golden glow merging with cyan cosmic nebula through the glass dome, vintage synthesizer console in foreground, ultra-wide angle, slow tilt up
+
+  PARAMETERS: -ar 16:9 -motion 2 -fps 24 -gs 14
+  NEGATIVE:   -neg morphing, blurry, text, modern
+  FEATURE:    Image-to-Video (usar shot5_ascension.png como input) + Pikascenes
+
+  COPY-PASTE READY:
+  Inside a retro-futuristic observatory dome, giant holographic light rings slowly spinning, 1970s analog film grain, warm golden glow merging with cyan cosmic nebula through the glass dome, vintage synthesizer console in foreground, ultra-wide angle, slow tilt up -ar 16:9 -motion 2 -fps 24 -gs 14 -neg morphing, blurry, text, modern
+
+--------------------------------------------------------------------------------
+[6/8] Shot 6 - RESONANCE (Scene Extension desde Shot 5)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  The holographic rings inside the observatory dome spin faster, golden light intensifies, cosmic dust particles swirling inward toward the center, all light converging to a single bright point, 1970s film grain, dramatic crescendo atmosphere, slow push in
+
+  PARAMETERS: -ar 16:9 -motion 3 -fps 24 -gs 16
+  NEGATIVE:   -neg morphing, blurry, text
+  FEATURE:    Scene Extension (ultimo frame del Shot 5 como base)
+
+  COPY-PASTE READY:
+  The holographic rings inside the observatory dome spin faster, golden light intensifies, cosmic dust particles swirling inward toward the center, all light converging to a single bright point, 1970s film grain, dramatic crescendo atmosphere, slow push in -ar 16:9 -motion 3 -fps 24 -gs 16 -neg morphing, blurry, text
+
+--------------------------------------------------------------------------------
+[7/8] Shot 7 - THE FALSE DROP (Image-to-Video - shot7_false_drop.png)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  Dramatic explosion of pure golden sunlight shattering through dark obsidian monolithic geometry, brilliant anamorphic lens flares, dark stone fragments floating in slow motion, transition from deep industrial darkness to radiant ethereal golden horizon, volumetric god rays, epic scale, cinematic 4k
+
+  PARAMETERS: -ar 16:9 -motion 4 -fps 24 -gs 18
+  NEGATIVE:   -neg morphing, blurry, text, faces
+  FEATURE:    Image-to-Video (usar shot7_false_drop.png como input) + Pikatwists (shatter)
+
+  COPY-PASTE READY:
+  Dramatic explosion of pure golden sunlight shattering through dark obsidian monolithic geometry, brilliant anamorphic lens flares, dark stone fragments floating in slow motion, transition from deep industrial darkness to radiant ethereal golden horizon, volumetric god rays, epic scale, cinematic 4k -ar 16:9 -motion 4 -fps 24 -gs 18 -neg morphing, blurry, text, faces
+
+--------------------------------------------------------------------------------
+[8/8] Shot 8 - RECOMPOSITION (Scene Extension + Pikaframes)
+--------------------------------------------------------------------------------
+
+  PROMPT:
+  The scattered obsidian stone fragments slowly reassemble in reverse, reforming the dark monolith from the opening shot, golden light fading to soft magenta and cyan glow, dust particles settling, 35mm anamorphic lens, slow dolly-out, fade to black
+
+  PARAMETERS: -ar 16:9 -motion 1 -fps 24 -gs 12
+  NEGATIVE:   -neg morphing, blurry, text
+  FEATURE:    Scene Extension (ultimo frame Shot 7) + Pikaframes (destino: shot1_genesis.png)
+
+  COPY-PASTE READY:
+  The scattered obsidian stone fragments slowly reassemble in reverse, reforming the dark monolith from the opening shot, golden light fading to soft magenta and cyan glow, dust particles settling, 35mm anamorphic lens, slow dolly-out, fade to black -ar 16:9 -motion 1 -fps 24 -gs 12 -neg morphing, blurry, text
+
+================================================================================
+KEYFRAME FILES (subir a Pika como Image-to-Video):
+  Shot 1: pika_keyframes/shot1_genesis.png
+  Shot 3: pika_keyframes/shot3_impact.png
+  Shot 5: pika_keyframes/shot5_ascension.png
+  Shot 7: pika_keyframes/shot7_false_drop.png
+================================================================================
