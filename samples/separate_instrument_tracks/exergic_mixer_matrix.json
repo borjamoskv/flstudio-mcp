@@ -1,0 +1,96 @@
+{
+  "engine": "C5-REAL High-Exergy Mixer Architecture v5.0",
+  "target_lufs": -9.0,
+  "master_headroom_db": -0.1,
+  "tracks": [
+    {
+      "insert": 1,
+      "name": "01_Maceo_Kick_DSP",
+      "target_peak_db": -6.0,
+      "hpf_hz": 30,
+      "lpf_hz": 12000,
+      "pan": 0,
+      "stereo_width_percent": 0,
+      "sidechain_source": true,
+      "color_rgb": "#FF3333"
+    },
+    {
+      "insert": 2,
+      "name": "02_Minimoog_Sub_Bass",
+      "target_peak_db": -8.0,
+      "hpf_hz": 35,
+      "lpf_hz": 4500,
+      "pan": 0,
+      "stereo_width_percent": 10,
+      "sidechain_ducking_db": -6.0,
+      "color_rgb": "#FF9900"
+    },
+    {
+      "insert": 3,
+      "name": "03_Fender_Rhodes_73",
+      "target_peak_db": -12.0,
+      "hpf_hz": 120,
+      "lpf_hz": 16000,
+      "pan": -15,
+      "stereo_width_percent": 35,
+      "sidechain_ducking_db": -3.5,
+      "color_rgb": "#33CC99"
+    },
+    {
+      "insert": 4,
+      "name": "04_Solina_Strings_Pad",
+      "target_peak_db": -14.0,
+      "hpf_hz": 180,
+      "lpf_hz": 18000,
+      "pan": 15,
+      "stereo_width_percent": 80,
+      "sidechain_ducking_db": -4.0,
+      "color_rgb": "#3399FF"
+    },
+    {
+      "insert": 5,
+      "name": "05_Maceo_303_Acid_Lead",
+      "target_peak_db": -10.0,
+      "hpf_hz": 160,
+      "lpf_hz": 20000,
+      "pan": 0,
+      "stereo_width_percent": 40,
+      "cc74_automation": true,
+      "color_rgb": "#CC33FF"
+    },
+    {
+      "insert": 6,
+      "name": "06_AIR_Vocoder_Lead",
+      "target_peak_db": -9.0,
+      "hpf_hz": 200,
+      "lpf_hz": 19000,
+      "pan": 0,
+      "stereo_width_percent": 50,
+      "color_rgb": "#FF33CC"
+    },
+    {
+      "insert": 7,
+      "name": "07_Percussion_Swung_Hats",
+      "target_peak_db": -14.0,
+      "hpf_hz": 350,
+      "lpf_hz": 22000,
+      "pan": 10,
+      "stereo_width_percent": 60,
+      "color_rgb": "#FFFF33"
+    }
+  ],
+  "master_chain": [
+    {
+      "plugin": "Fruity Parametric EQ 2",
+      "preset": "Surgical Linear Phase Highpass 30Hz"
+    },
+    {
+      "plugin": "Maximus",
+      "preset": "3-Band High-Exergy Loudness Maximizer"
+    },
+    {
+      "plugin": "Fruity Soft Clipper",
+      "preset": "Tanh Saturation Threshold 0dB"
+    }
+  ]
+}

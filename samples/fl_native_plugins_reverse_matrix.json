@@ -1,0 +1,280 @@
+{
+  "fl_studio_version": "2025.1 SOTA (macOS ARM64)",
+  "total_generators": 51,
+  "total_effects": 89,
+  "generators": [
+    "3x Osc",
+    "Autogun",
+    "BassDrum",
+    "BeepMap",
+    "BooBass",
+    "Dashboard",
+    "DirectWave",
+    "Drumaxx",
+    "Drumpad",
+    "FL Keys",
+    "FL Slayer",
+    "FL Studio Mobile",
+    "FL Studio Mobile Rack",
+    "FLEX",
+    "FPC",
+    "Fruit Kick",
+    "Fruity DX10",
+    "Fruity Dance",
+    "Fruity DrumSynth Live",
+    "Fruity Envelope Controller",
+    "Fruity Granulizer",
+    "Fruity Keyboard Controller",
+    "Fruity Slicer",
+    "Fruity Slicer 2",
+    "Fruity Video Player",
+    "Fruity Voltage Controller",
+    "Fruity Wrapper",
+    "GMS",
+    "Harmless",
+    "Harmor",
+    "Kepler",
+    "Kepler Exo",
+    "MIDI Out",
+    "MiniSynth",
+    "Morphine",
+    "Ogun",
+    "Patcher",
+    "Plucked!",
+    "PoiZone",
+    "ReWired",
+    "Sakura",
+    "Sawer",
+    "SimSynth",
+    "Slicex",
+    "Soundfont Player",
+    "Sytrus",
+    "Toxic Biohazard",
+    "Transistor Bass",
+    "Wasp",
+    "Wasp XT",
+    "Wave Traveller"
+  ],
+  "effects": [
+    "Control Surface",
+    "Distructor",
+    "EQUO",
+    "Edison",
+    "Effector",
+    "Emphasis",
+    "Emphasizer",
+    "FL Studio Mobile Rack FX",
+    "Frequency Shifter",
+    "Frequency Splitter",
+    "Fruity 7 Band EQ",
+    "Fruity Balance",
+    "Fruity Bass Boost",
+    "Fruity Big Clock",
+    "Fruity Blood Overdrive",
+    "Fruity Center",
+    "Fruity Chorus",
+    "Fruity Compressor",
+    "Fruity Convolver",
+    "Fruity Delay",
+    "Fruity Delay 2",
+    "Fruity Delay 3",
+    "Fruity Delay Bank",
+    "Fruity Fast Dist",
+    "Fruity Fast LP",
+    "Fruity Filter",
+    "Fruity Flanger",
+    "Fruity Flangus",
+    "Fruity Formula Controller",
+    "Fruity Free Filter",
+    "Fruity HTML NoteBook",
+    "Fruity LSD",
+    "Fruity Limiter",
+    "Fruity Love Philter",
+    "Fruity Multiband Compressor",
+    "Fruity Mute 2",
+    "Fruity NoteBook",
+    "Fruity NoteBook 2",
+    "Fruity PanOMatic",
+    "Fruity Parametric EQ",
+    "Fruity Parametric EQ 2",
+    "Fruity Peak Controller",
+    "Fruity Phase Inverter",
+    "Fruity Phaser",
+    "Fruity Reeverb",
+    "Fruity Reeverb 2",
+    "Fruity Scratcher",
+    "Fruity Send",
+    "Fruity Soft Clipper",
+    "Fruity Spectroman",
+    "Fruity Squeeze",
+    "Fruity Stereo Enhancer",
+    "Fruity Stereo Shaper",
+    "Fruity Vocoder",
+    "Fruity WaveShaper",
+    "Fruity Wrapper",
+    "Fruity X-Y Controller",
+    "Fruity X-Y-Z Controller",
+    "Fruity dB meter",
+    "Gross Beat",
+    "Hardcore",
+    "Hyper Chorus",
+    "Low Lifter",
+    "LuxeVerb",
+    "Maximus",
+    "Multiband Delay",
+    "Newtime",
+    "Newtone",
+    "Patcher",
+    "Pitch Shifter",
+    "Pitcher",
+    "Razer Chroma",
+    "Soundgoodizer",
+    "Spreader",
+    "Transient Processor",
+    "Transporter",
+    "Tuner",
+    "VFX Color Mapper",
+    "VFX Envelope",
+    "VFX Key Mapper",
+    "VFX Keyboard Splitter",
+    "VFX Level Scaler",
+    "VFX Script",
+    "VFX Sequencer",
+    "Vintage Chorus",
+    "Vintage Phaser",
+    "Vocodex",
+    "Wave Candy",
+    "ZGameEditor Visualizer"
+  ],
+  "specifications": {
+    "Generators": {
+      "Harmor": {
+        "type": "Additive / Resynthesis Engine",
+        "partials": 512,
+        "features": [
+          "Spectral Image Resynthesis",
+          "Formant Shifting",
+          "Microtonal SCL Loading",
+          "Custom Envelope Mapping"
+        ],
+        "cc_mapping": {
+          "1": "Cutoff",
+          "2": "Resonance",
+          "74": "Filter Frequency",
+          "11": "Expression"
+        }
+      },
+      "Sytrus": {
+        "type": "6-Operator FM / Additive Synthesizer",
+        "operators": 6,
+        "features": [
+          "Matrix Frequency Modulation",
+          "Custom Sine Partials",
+          "Global LFO Matrix",
+          "24-TET Bayati Microtonality"
+        ],
+        "cc_mapping": {
+          "1": "Mod Wheel",
+          "74": "Cutoff",
+          "71": "Resonance"
+        }
+      },
+      "FLEX": {
+        "type": "Wavetable / Performance Synth",
+        "features": [
+          "Macro Control Matrix (8 Knobs)",
+          "Built-in Reverb/Delay/Limiter",
+          "Multi-sample Preset Packs"
+        ],
+        "macros": [
+          "Cutoff",
+          "Resonance",
+          "Env Mod",
+          "Pitch/Decay",
+          "Chorus",
+          "Delay",
+          "Reverb",
+          "Limiter"
+        ]
+      },
+      "Kepler Exo": {
+        "type": "Analog Modeling (Jupiter-8 / Juno-106)",
+        "features": [
+          "Dual DCO Oscillators",
+          "Sub-oscillator Wave Shaping",
+          "BBD Stereo Chorus I/II",
+          "Unison Detune"
+        ]
+      },
+      "Transistor Bass": {
+        "type": "TB-303 Analog Synthesizer Emulation",
+        "features": [
+          "18dB/oct Diode Ladder Filter",
+          "Accent Decay Circuit",
+          "Tanh Soft-Clipping Saturation"
+        ],
+        "controls": [
+          "Cutoff",
+          "Resonance",
+          "Env Mod",
+          "Decay",
+          "Accent"
+        ]
+      },
+      "3x Osc": {
+        "type": "3-Oscillator Subtractive Synth",
+        "features": [
+          "Phase Offset Modulation",
+          "Stereo Detune",
+          "AM/FM Inter-oscillator Modulation"
+        ]
+      }
+    },
+    "Effects": {
+      "Gross Beat": {
+        "type": "Time & Volume Envelope Shaper",
+        "slots": 36,
+        "features": [
+          "1/2 Speed Gating",
+          "Scratch Envelopes",
+          "Sidechain Ducking Profiles",
+          "Spline Curve Automation"
+        ]
+      },
+      "Vocodex": {
+        "type": "Advanced 100-Band Vocoder",
+        "bands": 100,
+        "features": [
+          "Carrier/Modulator Matrix",
+          "Built-in Sound Synthesizer",
+          "Spatial Band Panning"
+        ]
+      },
+      "Maximus": {
+        "type": "3-Band Mastering Limiter & Dynamics Processor",
+        "bands": 3,
+        "features": [
+          "Custom I/O Compression Spline",
+          "Lookahead Peak Limiting",
+          "Stereo Width Expansion"
+        ]
+      },
+      "LuxeVerb": {
+        "type": "Algorithmic Reverb",
+        "features": [
+          "Pitch-Shifted Shimmer Tails",
+          "Diffusion Feedback Control",
+          "Damping EQ"
+        ]
+      },
+      "Fruity Delay 3": {
+        "type": "Analog/Digital BPM Delay",
+        "features": [
+          "Tape Pitch Modulation",
+          "Bitcrusher Sample Reduction",
+          "3/16 Dub Delay Math (387.9ms at 116 BPM)"
+        ]
+      }
+    }
+  }
+}
