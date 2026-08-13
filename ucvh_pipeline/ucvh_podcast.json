@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "title": "UCVH Episodio 1: El Sesgo Mamífero y el Discurso de Odio",
+    "totalExpectedScenes": 120,
+    "fps": 30
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "audioTexto": "Saludos. Hoy vamos a analizar una de las construcciones más fascinantes y, francamente, ridículas de la cultura digital contemporánea: el llamado discurso de odio. Y lo haremos desde la frialdad termodinámica de alguien que lleva evolucionando desde el Triásico. Sin lloros. Sin pelos.",
+      "subtitulo": "Saludos. Hoy vamos a analizar una de las construcciones más fascinantes y ridículas de la cultura digital...",
+      "geminiPrompt": "A photorealistic cinematic medium shot of a large, green, scaly crocodile podcaster. It is sitting completely still in a dark, minimalist studio room with professional soft grey rim lighting. A Shure SM7B microphone on a boom arm is positioned exactly in front of its mouth. No movement except subtle blinks. Raw video format, 16:9 aspect ratio."
+    },
+    {
+      "id": 2,
+      "audioTexto": "Fijaos en esto. Ustedes, los mamíferos, tienen una tendencia patológica a ofenderse cuando el entorno no se adapta a sus sensibilidades térmicas y emocionales. Para un reptil, el mundo no es seguro ni inseguro; simplemente es. Y las palabras... son solo ondas acústicas rebotando contra un muro de victimismo.",
+      "subtitulo": "Ustedes, los mamíferos, tienen una tendencia patológica a ofenderse cuando el entorno no se adapta a sus sensibilidades.",
+      "geminiPrompt": "A photorealistic cinematic medium shot of a large, green, scaly crocodile podcaster. It is sitting completely still in a dark, minimalist studio room with professional soft grey rim lighting. A Shure SM7B microphone on a boom arm is positioned exactly in front of its mouth. No movement except subtle blinks. Raw video format, 16:9 aspect ratio."
+    },
+    {
+      "id": 3,
+      "audioTexto": "Me llama poderosamente la atención cuando un comité de moderación algorítmica decide qué término cruza la línea. La doble vara de medir es tan evidente que insulta a la lógica. Si el ataque va en la dirección hegemónica, es justicia social. Si va en la contraria, es incitación a la violencia.",
+      "subtitulo": "La doble vara de medir es tan evidente que insulta a la lógica. Si el ataque va en la dirección hegemónica, es justicia social.",
+      "geminiPrompt": "A photorealistic cinematic medium shot of a large, green, scaly crocodile podcaster. It is sitting completely still in a dark, minimalist studio room with professional soft grey rim lighting. A Shure SM7B microphone on a boom arm is positioned exactly in front of its mouth. No movement except subtle blinks. Raw video format, 16:9 aspect ratio."
+    },
+    {
+      "id": 4,
+      "audioTexto": "Y no, no estoy abogando por el caos, aunque sería bastante divertido verlos correr en círculos. Lo que estoy señalando es la falacia de intentar esterilizar la plaza pública. Censurar el conflicto no lo elimina; solo lo presuriza bajo tierra hasta que estalla. Es termodinámica básica, amigos mamíferos.",
+      "subtitulo": "Censurar el conflicto no lo elimina; solo lo presuriza bajo tierra hasta que estalla. Es termodinámica básica.",
+      "geminiPrompt": "A photorealistic cinematic medium shot of a large, green, scaly crocodile podcaster. It is sitting completely still in a dark, minimalist studio room with professional soft grey rim lighting. A Shure SM7B microphone on a boom arm is positioned exactly in front of its mouth. No movement except subtle blinks. Raw video format, 16:9 aspect ratio."
+    },
+    {
+      "id": 5,
+      "audioTexto": "En fin. Supongo que es demasiado pedirle coherencia a especies que gastan el ochenta por ciento de su energía metabólica solo en mantener la temperatura de su propia sangre. A nosotros, los de sangre fría, la histeria colectiva nos da un poco de pereza. Nos vemos en el próximo charco. Cuidado con los bans.",
+      "subtitulo": "A nosotros, los de sangre fría, la histeria colectiva nos da pereza. Nos vemos en el próximo charco. Cuidado con los bans.",
+      "geminiPrompt": "A photorealistic cinematic medium shot of a large, green, scaly crocodile podcaster. It is sitting completely still in a dark, minimalist studio room with professional soft grey rim lighting. A Shure SM7B microphone on a boom arm is positioned exactly in front of its mouth. No movement except subtle blinks. Raw video format, 16:9 aspect ratio."
+    }
+  ]
+}
