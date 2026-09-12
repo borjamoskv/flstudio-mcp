@@ -332,8 +332,38 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertTrue(Path(res.get("flp_project_file")).exists())
         self.assertTrue(Path(res.get("json_manifest_file")).exists())
 
+    def test_39_verify_mixer_gain_staging(self):
+        """Verifies formal gain-staging and Linear Programming headroom optimization."""
+        res = mcp_server.fl_verify_mixer_gain_staging()
+        self.assertIn(res.get("status"), ("VERIFIED_SAFE", "HEADROOM_VIOLATION_REMEDIATED"))
+        self.assertIn("coherent_headroom_db", res)
+        self.assertIn("remediated_safe_faders", res)
+
+    def test_40_synthesize_granular_cloud(self):
+        """Verifies Curtis Roads stochastic granular cloud synthesis."""
+        res = mcp_server.fl_synthesize_granular_cloud(output_duration_sec=2.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_grains_rendered", 0), 10)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_41_convolve_acoustic_space(self):
+        """Verifies physical Sabine convolution reverb with physical RIR synthesis."""
+        res = mcp_server.fl_convolve_acoustic_space(room_profile="alhambra_flamenco_cave", wet_mix=0.20)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("sabine_rt60_sec"), 1.8)
+        self.assertTrue(Path(res.get("output_file")).exists())
+        self.assertTrue(Path(res.get("ir_file")).exists())
+
+    def test_42_master_audio_ebu_r128(self):
+        """Verifies EBU R128 mastering pass with true-peak limiting and mono sub-bass."""
+        res = mcp_server.fl_master_audio_ebu_r128(target_lufs=-14.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertAlmostEqual(res.get("target_integrated_lufs"), -14.0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
 
 

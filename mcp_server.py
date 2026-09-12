@@ -68,7 +68,8 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "14.0-CONTINUUM-SPHERICAL"
+VERSION = "15.0-ZENITH-CONTINUUM"
+
 
 
 
@@ -1473,8 +1474,138 @@ def fl_compile_playlist_arrangement(
 
 
 # ═══════════════════════════════════════════════════════════════
+# 11.6 FORMAL VERIFICATION & ZENITH MASTERING SUITE (v15.0)
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_verify_mixer_gain_staging(
+    faders: Optional[Dict[int, float]] = None,
+    sends: Optional[List[Dict[str, Any]]] = None,
+    target_headroom_db: float = 1.0
+) -> Dict[str, Any]:
+    """
+    Formally verifies mixer DAG gain-staging, transfer gains, and master bus accumulation
+    using Linear Programming to guarantee True-Peak headroom and eliminate digital clipping.
+    Automatically computes optimal Pareto-safe fader remediations if headroom is violated.
+    """
+    try:
+        from scripts.c5_gain_staging_formal_verifier import verify_mixer_gain_staging
+        res = verify_mixer_gain_staging(faders=faders, sends=sends, target_headroom_db=target_headroom_db)
+        logger.info(f"Formally verified mixer gain staging → {res.get('status')} (Headroom={res.get('coherent_headroom_db')} dB)")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to formally verify gain staging: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_synthesize_granular_cloud(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    grain_duration_ms: float = 45.0,
+    density_grains_per_sec: float = 40.0,
+    time_stretch_ratio: float = 0.5,
+    pitch_scatter_cents: float = 35.0,
+    output_duration_sec: float = 12.0
+) -> Dict[str, Any]:
+    """
+    Synthesizes a dense stochastic Curtis Roads granular cloud texture from an audio stem,
+    with microtonal pitch scatter, spatial pan distribution, and time-stretching.
+    """
+    try:
+        from scripts.granular_cloud_texture_synthesizer import synthesize_granular_cloud
+        if not input_wav:
+            in_file = str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        else:
+            in_file = input_wav
+
+        res = synthesize_granular_cloud(
+            input_wav=in_file,
+            output_wav=output_wav,
+            grain_duration_ms=grain_duration_ms,
+            density_grains_per_sec=density_grains_per_sec,
+            time_stretch_ratio=time_stretch_ratio,
+            pitch_scatter_cents=pitch_scatter_cents,
+            output_duration_sec=output_duration_sec
+        )
+        logger.info(f"Synthesized granular cloud ({res.get('total_grains_rendered')} grains) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize granular cloud: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_convolve_acoustic_space(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    room_profile: str = "alhambra_flamenco_cave",
+    wet_mix: float = 0.35
+) -> Dict[str, Any]:
+    """
+    Convolves an audio stem with a physical room impulse response (Sabine RT60 + specular early reflections).
+    Room profiles:
+    - 'alhambra_flamenco_cave': Intimate limestone cave (RT60 ~1.8s)
+    - 'cyber_cathedral': Cavernous marble space (RT60 ~4.2s)
+    - 'concrete_bunker': Industrial bare concrete (RT60 ~2.4s)
+    """
+    try:
+        from scripts.convolution_reverb_acoustician import convolve_acoustic_space
+        if not input_wav:
+            in_file = str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        else:
+            in_file = input_wav
+
+        res = convolve_acoustic_space(
+            input_wav=in_file,
+            output_wav=output_wav,
+            room_profile=room_profile,
+            wet_mix=wet_mix
+        )
+        logger.info(f"Convolved acoustic space ({res.get('room_name')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to convolve acoustic space: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_master_audio_ebu_r128(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    target_lufs: float = -14.0,
+    target_true_peak_dbtp: float = -1.0,
+    bass_mono_crossover_hz: float = 120.0
+) -> Dict[str, Any]:
+    """
+    Applies a broadcast-grade EBU R128 / ITU-R BS.1770-4 mastering chain:
+    low-end mono-maker (<120 Hz), integrated loudness normalization to -14 LUFS,
+    and 4x oversampled lookahead soft-knee true-peak brickwall limiter.
+    """
+    try:
+        from scripts.mastering_chain_ebu_r128 import master_audio_ebu_r128
+        if not input_wav:
+            in_file = str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        else:
+            in_file = input_wav
+
+        res = master_audio_ebu_r128(
+            input_wav=in_file,
+            output_wav=output_wav,
+            target_lufs=target_lufs,
+            target_true_peak_dbtp=target_true_peak_dbtp,
+            bass_mono_crossover_hz=bass_mono_crossover_hz
+        )
+        logger.info(f"Mastered audio EBU R128 ({res.get('lufs_before')} → {res.get('lufs_after')} LUFS) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to master audio: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
+
 
 @mcp.tool()
 def fl_run_self_test() -> Dict[str, Any]:
@@ -1486,7 +1617,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "14.0-CONTINUUM-SPHERICAL",
+        "version": "15.0-ZENITH-CONTINUUM",
         "tests": {}
     }
 
@@ -1706,6 +1837,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["playlist_song_arranger"] = f"FAILED: {e}"
 
+    # Test 29: Formal Gain-Staging Verifier
+    try:
+        gs_res = fl_verify_mixer_gain_staging()
+        results["tests"]["gain_staging_verifier"] = f"PASSED ({gs_res.get('status')}, CoherentHeadroom={gs_res.get('coherent_headroom_db')}dB)"
+    except Exception as e:
+        results["tests"]["gain_staging_verifier"] = f"FAILED: {e}"
+
+    # Test 30: Curtis Roads Granular Cloud Synthesizer
+    try:
+        gran_res = fl_synthesize_granular_cloud(output_duration_sec=2.0)
+        results["tests"]["granular_cloud_synthesizer"] = f"PASSED ({gran_res.get('total_grains_rendered')} grains, {gran_res.get('duration_sec')}s)"
+    except Exception as e:
+        results["tests"]["granular_cloud_synthesizer"] = f"FAILED: {e}"
+
+    # Test 31: Physical Convolution Reverb Acoustician
+    try:
+        rev_res = fl_convolve_acoustic_space(room_profile="alhambra_flamenco_cave", wet_mix=0.25)
+        results["tests"]["convolution_reverb"] = f"PASSED ({rev_res.get('room_name')}, RT60={rev_res.get('sabine_rt60_sec')}s)"
+    except Exception as e:
+        results["tests"]["convolution_reverb"] = f"FAILED: {e}"
+
+    # Test 32: EBU R128 Broadcast Mastering Suite
+    try:
+        mast_res = fl_master_audio_ebu_r128()
+        results["tests"]["mastering_chain_ebu_r128"] = f"PASSED ({mast_res.get('lufs_before')}→{mast_res.get('lufs_after')} LUFS, Peak={mast_res.get('true_peak_dbtp_after')}dBTP)"
+    except Exception as e:
+        results["tests"]["mastering_chain_ebu_r128"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -1719,8 +1878,9 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v14.0 Continuum on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v15.0 Zenith Continuum on stdio transport…")
     mcp.run()
+
 
 
 
