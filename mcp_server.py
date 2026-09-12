@@ -68,6 +68,8 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
+VERSION = "13.0-OMEGA-GENESIS"
+
 
 # Global MIDI Port Connection
 _outport = None
@@ -1261,6 +1263,86 @@ def fl_calculate_microtonal_retuning(
 
 
 # ═══════════════════════════════════════════════════════════════
+# 11.4 AUTOPOIETIC SYNTHESIS & OMEGA BINARY COMPILER (v13.0)
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_compile_flp_project(output_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Compiles a complete, native FL Studio Project (.flp) binary file from pure Python
+    without requiring FL Studio to be open. Sets up channels, notes, BPM (112),
+    and title. Defaults to ~/Music/FL Studio Bounces/Projects/Dark_Cyber_Flamenco_Master_v13.flp.
+    """
+    try:
+        from scripts.fl_flp_project_builder import compile_dark_cyber_flamenco_flp
+        res = compile_dark_cyber_flamenco_flp(output_file=output_path)
+        logger.info(f"Compiled native FL Studio project (.flp) → {res.get('project_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to compile FLP project: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_carve_psychoacoustic_masking(
+    stem_a_path: Optional[str] = None,
+    stem_b_path: Optional[str] = None,
+    name_a: str = "Kick",
+    name_b: str = "Bass"
+) -> Dict[str, Any]:
+    """
+    Analyzes mutual auditory spectral masking across the 24 Bark critical bands (Zwicker model)
+    between two conflicting audio stems, calculating SMR (Signal-to-Mask Ratio) and
+    generating dynamic parametric EQ carving recommendations (notch frequencies, Q, and dB cuts).
+    Defaults to comparing Kick vs Bass stems.
+    """
+    try:
+        from scripts.psychoacoustic_masking_carver import analyze_spectral_masking
+        if not stem_a_path:
+            file_a = str(MUSIC_BOUNCES_DIR / "Stems" / "Dark_Cyber_Flamenco_Stems_16Bars" / "01_Kick_4onTheFloor.wav")
+        else:
+            file_a = stem_a_path
+
+        if not stem_b_path:
+            file_b = str(MUSIC_BOUNCES_DIR / "Stems" / "Dark_Cyber_Flamenco_Stems_16Bars" / "03_Rolling_Cyber_Bass.wav")
+        else:
+            file_b = stem_b_path
+
+        res = analyze_spectral_masking(file_a, file_b, name_a=name_a, name_b=name_b)
+        logger.info(f"Psychoacoustic masking analysis: {res.get('total_critical_clashes')} clashes found")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to analyze psychoacoustic masking: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_synthesize_neuroacoustic_entrainment(
+    wave_type: str = "gamma_40hz",
+    duration_sec: float = 34.29,
+    carrier_freq_hz: float = 146.83
+) -> Dict[str, Any]:
+    """
+    Synthesizes phase-coherent neuroacoustic brainwave entrainment stems:
+    - 'gamma_40hz': 40 Hz Gamma binaural beat (focus, analytical binding)
+    - 'theta_6hz': 6 Hz Theta binaural beat (deep trance, meditative flow)
+    - 'isochronic_gamma': 40 Hz Isochronic pulse with Hann amplitude modulation
+    Tuned to the musical root harmonic (D3 = 146.83 Hz).
+    """
+    try:
+        from scripts.neuroacoustic_brainwave_entrainment import synthesize_entrainment_stem
+        res = synthesize_entrainment_stem(
+            wave_type=wave_type,
+            duration_sec=duration_sec,
+            carrier_freq_hz=carrier_freq_hz
+        )
+        logger.info(f"Synthesized neuroacoustic entrainment ({wave_type}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize neuroacoustic entrainment: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
 @mcp.tool()
@@ -1269,11 +1351,11 @@ def fl_run_self_test() -> Dict[str, Any]:
     Executes a comprehensive system-wide self-test across all MCP capabilities:
     CoreMIDI port, AppleScript DAW query, binary parser, dissonance calculator,
     piano roll scripts, live telemetry, bounce asset verification, kernel watchdog,
-    and cognitive transcription/retuning engines.
+    cognitive transcription/retuning, and autopoietic FLP compilation.
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "12.0-DEMIURGE",
+        "version": "13.0-OMEGA-GENESIS",
         "tests": {}
     }
 
@@ -1444,6 +1526,27 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["microtonal_retuning"] = f"FAILED: {e}"
 
+    # Test 22: FLP Binary Project Compiler
+    try:
+        flp_res = fl_compile_flp_project()
+        results["tests"]["flp_project_compiler"] = f"PASSED ({flp_res.get('channels_count')} channels, {flp_res.get('file_size_bytes')} bytes)"
+    except Exception as e:
+        results["tests"]["flp_project_compiler"] = f"FAILED: {e}"
+
+    # Test 23: Psychoacoustic Masking Carver
+    try:
+        mask_res = fl_carve_psychoacoustic_masking()
+        results["tests"]["psychoacoustic_carver"] = f"PASSED ({len(mask_res.get('parametric_eq_carving_curve', []))} EQ notches, {mask_res.get('total_critical_clashes')} clashes)"
+    except Exception as e:
+        results["tests"]["psychoacoustic_carver"] = f"FAILED: {e}"
+
+    # Test 24: Neuroacoustic Brainwave Synthesizer
+    try:
+        neuro_res = fl_synthesize_neuroacoustic_entrainment(wave_type="gamma_40hz", duration_sec=2.0)
+        results["tests"]["neuroacoustic_entrainment"] = f"PASSED ({neuro_res.get('wave_type')}, Beat={neuro_res.get('entrainment_freq_hz')}Hz)"
+    except Exception as e:
+        results["tests"]["neuroacoustic_entrainment"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -1457,7 +1560,8 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v12.0 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v13.0 Omega Genesis on stdio transport…")
     mcp.run()
+
 
 

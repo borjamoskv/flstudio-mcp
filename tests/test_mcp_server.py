@@ -269,6 +269,37 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertEqual(len(res.get("matrix", [])), 12)
         self.assertTrue(Path(res.get("exported_json")).exists())
 
+    def test_32_compile_flp_project(self):
+        """Verifies pure Python binary FL Studio (.flp) project compiler."""
+        res = mcp_server.fl_compile_flp_project()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("channels_count"), 5)
+        self.assertEqual(res.get("bpm"), 112.0)
+        self.assertTrue(Path(res.get("project_file")).exists())
+        self.assertGreater(res.get("file_size_bytes", 0), 0)
+
+    def test_33_carve_psychoacoustic_masking(self):
+        """Verifies 24 Bark critical band psychoacoustic spectral masking analysis."""
+        res = mcp_server.fl_carve_psychoacoustic_masking()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("parametric_eq_carving_curve", res)
+        self.assertIn("overall_masking_verdict", res)
+        self.assertTrue(Path(res.get("report_file")).exists())
+
+    def test_34_synthesize_neuroacoustic_entrainment(self):
+        """Verifies 40 Hz Gamma and 6 Hz Theta neuroacoustic brainwave synthesizer."""
+        # Fast test with short duration (2.0 seconds) to ensure quick test execution
+        res = mcp_server.fl_synthesize_neuroacoustic_entrainment(
+            wave_type="gamma_40hz",
+            duration_sec=2.0,
+            carrier_freq_hz=146.83
+        )
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("entrainment_freq_hz"), 40.0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
