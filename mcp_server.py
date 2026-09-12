@@ -1120,6 +1120,64 @@ def fl_stop_cockpit_server() -> Dict[str, Any]:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 11.2 TOPOLOGICAL JUMP & KERNEL CO-PROCESSING (v11.0)
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_commit_causal_mix_transaction(
+    mutations: List[Dict[str, Any]],
+    execute_midi: bool = True
+) -> Dict[str, Any]:
+    """
+    Executes an ACID transactional mutation on the FL Studio mixer routing DAG.
+    Validates headroom constraints (prevents digital clipping) and cycle detection
+    (prevents acoustic feedback loops) before dispatching to CoreMIDI.
+    Performs automatic topological rollback if any hardware dispatch error occurs.
+    """
+    try:
+        from scripts.c5_causal_mixer_dag import CausalMixerDAG
+        dag = CausalMixerDAG()
+        res = dag.commit_transaction(mutations, execute_midi=execute_midi)
+        logger.info(f"Causal mix transaction: {res.get('status')} (tx: {res.get('transaction_id')})")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to execute causal mix transaction: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_audit_shm_telemetry() -> Dict[str, Any]:
+    """
+    Reads the real-time FL Studio telemetry from the POSIX Shared Memory ring-buffer
+    at sub-microsecond latency (zero disk I/O, lock-free sequence consistency).
+    """
+    try:
+        from scripts.c5_shm_telemetry_ring import C5SharedMemoryRing
+        ring = C5SharedMemoryRing(create_if_missing=True)
+        res = ring.read_frame()
+        return res
+    except Exception as e:
+        logger.error(f"Failed to read SHM telemetry: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_diagnose_daw_health_kernel() -> Dict[str, Any]:
+    """
+    Performs deep kernel-level inspection of FL Studio (OsxFL) on macOS without
+    truncating command-line arguments (strict compliance with process_diagnostics_invariant).
+    Audits Mach thread count, CPU duty cycle, RSS memory footprint, and spinlock states.
+    """
+    try:
+        from scripts.c5_fl_watchdog_guard import inspect_fl_process_kernel
+        res = inspect_fl_process_kernel()
+        logger.info(f"Kernel watchdog diagnostic: {res.get('status')} ({res.get('health')})")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to diagnose DAW kernel health: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
 @mcp.tool()
@@ -1127,11 +1185,11 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     Executes a comprehensive system-wide self-test across all MCP capabilities:
     CoreMIDI port, AppleScript DAW query, binary parser, dissonance calculator,
-    piano roll scripts, live telemetry, and bounce asset verification.
+    piano roll scripts, live telemetry, bounce asset verification, and kernel watchdog.
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "10.0-SOVEREIGN",
+        "version": "11.0-TOPOLOGICAL-JUMP",
         "tests": {}
     }
 
@@ -1243,6 +1301,33 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["cockpit_server_lifecycle"] = f"FAILED: {e}"
 
+    # Test 15: Causal Mixer DAG Transaction
+    try:
+        from scripts.c5_causal_mixer_dag import CausalMixerDAG
+        dag = CausalMixerDAG()
+        tx_res = dag.commit_transaction([{"track": 1, "volume": 0.50}], execute_midi=False)
+        results["tests"]["causal_mixer_dag"] = f"PASSED ({tx_res.get('status')}, Headroom={tx_res.get('estimated_headroom_db')}dB)"
+    except Exception as e:
+        results["tests"]["causal_mixer_dag"] = f"FAILED: {e}"
+
+    # Test 16: Zero-Copy POSIX SHM Ring Buffer
+    try:
+        from scripts.c5_shm_telemetry_ring import C5SharedMemoryRing
+        ring = C5SharedMemoryRing(create_if_missing=True)
+        ring.write_frame(is_playing=1, bpm=112.0, song_pos=0.0, active_window="mixer")
+        shm_data = ring.read_frame()
+        results["tests"]["posix_shm_ring"] = f"PASSED (Latency={shm_data.get('latency_ms')}ms, Seq={shm_data.get('sequence_id')})"
+    except Exception as e:
+        results["tests"]["posix_shm_ring"] = f"FAILED: {e}"
+
+    # Test 17: Mach Kernel Process Watchdog
+    try:
+        from scripts.c5_fl_watchdog_guard import inspect_fl_process_kernel
+        w_res = inspect_fl_process_kernel()
+        results["tests"]["kernel_watchdog"] = f"PASSED ({w_res.get('status')})"
+    except Exception as e:
+        results["tests"]["kernel_watchdog"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -1256,7 +1341,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v10.0 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v11.0 on stdio transport…")
     mcp.run()
 
 

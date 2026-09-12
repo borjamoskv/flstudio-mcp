@@ -213,6 +213,33 @@ class TestFLStudioMCPServer(unittest.TestCase):
         stop_res = mcp_server.fl_stop_cockpit_server()
         self.assertIn(stop_res.get("status"), ("STOPPED", "NOT_RUNNING"))
 
+    def test_25_causal_mix_transaction(self):
+        """Verifies ACID transactional mutation on mixer routing DAG."""
+        res = mcp_server.fl_commit_causal_mix_transaction(
+            mutations=[
+                {"track": 1, "volume": 0.60, "pan": 0.0},
+                {"track": 2, "volume": 0.35, "add_send": 1}
+            ],
+            execute_midi=False
+        )
+        self.assertEqual(res.get("status"), "COMMITTED")
+        self.assertEqual(res.get("mutations_applied"), 2)
+        self.assertIsNotNone(res.get("transaction_id"))
+
+    def test_26_shm_telemetry(self):
+        """Verifies zero-copy POSIX shared memory ring telemetry read."""
+        res = mcp_server.fl_audit_shm_telemetry()
+        self.assertIn(res.get("status"), ("SHM_ONLINE", "SHM_OFFLINE"))
+        if res.get("status") == "SHM_ONLINE":
+            self.assertTrue(res.get("is_consistent"))
+            self.assertGreater(res.get("monitored_tracks", 0), 0)
+
+    def test_27_diagnose_daw_health_kernel(self):
+        """Verifies Mach thread and kernel duty cycle diagnostics without -c flag."""
+        res = mcp_server.fl_diagnose_daw_health_kernel()
+        self.assertIn("status", res)
+        self.assertIn(res.get("status"), ("DAW_ONLINE_KERNEL_VALIDATED", "DAW_OFFLINE"))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
