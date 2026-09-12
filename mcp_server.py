@@ -93,7 +93,7 @@ def fl_health_check() -> str:
     Runtime diagnostics: verifies FL Studio app, CoreMIDI virtual port,
     hardware controller script, Piano Roll scripts, and Scala tunings.
     """
-    report_lines = ["═══ FL Studio MCP SOTA Health Check (v7.0) ═══"]
+    report_lines = ["═══ FL Studio MCP SOTA Health Check (v7.5) ═══"]
 
     # 1. CoreMIDI Port
     port = get_midi_port()
