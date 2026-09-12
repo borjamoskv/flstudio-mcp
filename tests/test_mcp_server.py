@@ -298,8 +298,42 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertEqual(res.get("entrainment_freq_hz"), 40.0)
         self.assertTrue(Path(res.get("output_file")).exists())
 
+    def test_35_encode_ambisonics_bformat(self):
+        """Verifies 1st-order Ambisonics B-format (ambiX ACN-SN3D) 4-channel encoding."""
+        res = mcp_server.fl_encode_ambisonics_bformat(azimuth_deg=45.0, elevation_deg=15.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("format"), "ambiX_ACN_SN3D_4CH")
+        self.assertEqual(len(res.get("channels", [])), 4)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_36_spatialize_binaural_3d(self):
+        """Verifies Woodworth spherical head model binaural 3D spatializer."""
+        res = mcp_server.fl_spatialize_binaural_3d(azimuth_deg=30.0, elevation_deg=10.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("itd_left_usec", res)
+        self.assertIn("iacc_inter_aural_correlation", res)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_37_separate_harmonic_percussive(self):
+        """Verifies FitzGerald 2D STFT median-filtering HPSS demixing."""
+        res = mcp_server.fl_separate_harmonic_percussive()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertTrue(Path(res.get("harmonic_stem")).exists())
+        self.assertTrue(Path(res.get("percussive_stem")).exists())
+        self.assertGreater(res.get("energy_ratio_harmonic", 0), 0)
+        self.assertGreater(res.get("energy_ratio_percussive", 0), 0)
+
+    def test_38_compile_playlist_arrangement(self):
+        """Verifies full 64-bar song arrangement compilation to native .flp binary."""
+        res = mcp_server.fl_compile_playlist_arrangement()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("total_bars"), 64)
+        self.assertGreater(res.get("total_notes", 0), 500)
+        self.assertTrue(Path(res.get("flp_project_file")).exists())
+        self.assertTrue(Path(res.get("json_manifest_file")).exists())
 
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
 

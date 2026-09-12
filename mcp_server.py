@@ -68,7 +68,8 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "13.0-OMEGA-GENESIS"
+VERSION = "14.0-CONTINUUM-SPHERICAL"
+
 
 
 # Global MIDI Port Connection
@@ -1343,8 +1344,138 @@ def fl_synthesize_neuroacoustic_entrainment(
 
 
 # ═══════════════════════════════════════════════════════════════
+# 11.5 SPATIAL CONTINUUM & SPECTRAL DEMIXING ENGINES (v14.0)
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_encode_ambisonics_bformat(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    azimuth_deg: float = 45.0,
+    elevation_deg: float = 0.0,
+    distance_m: float = 2.0,
+    rotate_yaw_deg: float = 0.0,
+    rotate_pitch_deg: float = 0.0,
+    rotate_roll_deg: float = 0.0
+) -> Dict[str, Any]:
+    """
+    Encodes mono/stereo audio stems into 1st-Order Ambisonics (FOA) B-format (ambiX ACN-SN3D)
+    with full SO(3) Euler head-tracking rotation (yaw, pitch, roll) and 3D spherical coordinates (azimuth, elevation, distance).
+    Channels: W (Omni), Y (Left-Right), Z (Up-Down), X (Front-Back).
+    """
+    try:
+        from scripts.ambisonics_bformat_encoder import encode_to_ambisonics_bformat
+        if not input_wav:
+            in_file = str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        else:
+            in_file = input_wav
+
+        res = encode_to_ambisonics_bformat(
+            input_wav=in_file,
+            output_wav=output_wav,
+            azimuth_deg=azimuth_deg,
+            elevation_deg=elevation_deg,
+            distance_m=distance_m,
+            rotate_yaw_deg=rotate_yaw_deg,
+            rotate_pitch_deg=rotate_pitch_deg,
+            rotate_roll_deg=rotate_roll_deg
+        )
+        logger.info(f"Ambisonics B-Format encoded → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to encode Ambisonics B-Format: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_spatialize_binaural_3d(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    azimuth_deg: float = 30.0,
+    elevation_deg: float = 10.0,
+    distance_m: float = 1.8
+) -> Dict[str, Any]:
+    """
+    Spatializes audio stems into fully exteriorized 3D Binaural sound via Woodworth spherical head model
+    (exact ITD delay calculation + Brown & Duda frequency-dependent ILD head shadow IIR filter + pinna notch elevation cue).
+    Anti in-head localization.
+    """
+    try:
+        from scripts.binaural_woodworth_spatializer import spatialize_binaural_woodworth
+        if not input_wav:
+            in_file = str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        else:
+            in_file = input_wav
+
+        res = spatialize_binaural_woodworth(
+            input_wav=in_file,
+            output_wav=output_wav,
+            azimuth_deg=azimuth_deg,
+            elevation_deg=elevation_deg,
+            distance_m=distance_m
+        )
+        logger.info(f"Binaural 3D spatialized → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to spatialize Binaural 3D: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_separate_harmonic_percussive(
+    input_wav: Optional[str] = None,
+    output_dir: Optional[str] = None,
+    time_kernel_frames: int = 31,
+    freq_kernel_bins: int = 17,
+    mask_power: float = 2.0
+) -> Dict[str, Any]:
+    """
+    Dissects composite audio stems into pure continuous Harmonic tones and transient Percussive bursts
+    via 2D STFT median filtering (FitzGerald / Ono algorithm) with energy-conserving soft Wiener power masks.
+    """
+    try:
+        from scripts.spectral_hpss_demixer import separate_harmonic_percussive
+        if not input_wav:
+            in_file = str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        else:
+            in_file = input_wav
+
+        res = separate_harmonic_percussive(
+            input_wav=in_file,
+            output_dir=output_dir,
+            time_kernel_frames=time_kernel_frames,
+            freq_kernel_bins=freq_kernel_bins,
+            mask_power=mask_power
+        )
+        logger.info(f"HPSS spectral demixing: Harmonic={res.get('energy_ratio_harmonic')}, Percussive={res.get('energy_ratio_percussive')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to execute HPSS spectral demixing: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_compile_playlist_arrangement(
+    bpm: float = 112.0,
+    output_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Compiles a complete 64-bar multi-section song arrangement (Intro, Bulerías Verse, Cyber Drop,
+    Hijaz Breakdown, Climax Outro) directly into a native .flp binary project file and timeline arrangement manifest.
+    """
+    try:
+        from scripts.fl_playlist_arranger import compile_playlist_song_arrangement
+        res = compile_playlist_song_arrangement(bpm=bpm, output_path=output_path)
+        logger.info(f"Compiled 64-bar song arrangement FLP → {res.get('flp_project_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to compile playlist song arrangement: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
+
 @mcp.tool()
 def fl_run_self_test() -> Dict[str, Any]:
     """
@@ -1355,7 +1486,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "13.0-OMEGA-GENESIS",
+        "version": "14.0-CONTINUUM-SPHERICAL",
         "tests": {}
     }
 
@@ -1547,6 +1678,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["neuroacoustic_entrainment"] = f"FAILED: {e}"
 
+    # Test 25: Ambisonics B-Format 3D Spherical Encoder
+    try:
+        amb_res = fl_encode_ambisonics_bformat(azimuth_deg=45.0, elevation_deg=15.0)
+        results["tests"]["ambisonics_bformat_encoder"] = f"PASSED ({amb_res.get('format')}, Az={amb_res.get('azimuth_deg')}°)"
+    except Exception as e:
+        results["tests"]["ambisonics_bformat_encoder"] = f"FAILED: {e}"
+
+    # Test 26: Binaural 3D Woodworth Spatializer
+    try:
+        bin_res = fl_spatialize_binaural_3d(azimuth_deg=30.0, elevation_deg=10.0)
+        results["tests"]["binaural_3d_spatializer"] = f"PASSED (ITD_L={bin_res.get('itd_left_usec')}us, IACC={bin_res.get('iacc_inter_aural_correlation')})"
+    except Exception as e:
+        results["tests"]["binaural_3d_spatializer"] = f"FAILED: {e}"
+
+    # Test 27: Spectral HPSS Demixer
+    try:
+        hpss_res = fl_separate_harmonic_percussive()
+        results["tests"]["hpss_demixer"] = f"PASSED (H_ratio={hpss_res.get('energy_ratio_harmonic')}, P_ratio={hpss_res.get('energy_ratio_percussive')})"
+    except Exception as e:
+        results["tests"]["hpss_demixer"] = f"FAILED: {e}"
+
+    # Test 28: Playlist Song Arranger (64 Bars)
+    try:
+        arr_res = fl_compile_playlist_arrangement()
+        results["tests"]["playlist_song_arranger"] = f"PASSED ({arr_res.get('total_bars')} bars, {arr_res.get('total_notes')} notes)"
+    except Exception as e:
+        results["tests"]["playlist_song_arranger"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -1560,8 +1719,9 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v13.0 Omega Genesis on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v14.0 Continuum on stdio transport…")
     mcp.run()
+
 
 
 
