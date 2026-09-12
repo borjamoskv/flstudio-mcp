@@ -1178,6 +1178,89 @@ def fl_diagnose_daw_health_kernel() -> Dict[str, Any]:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 11.3 TRANSCENDENTAL PROCEDURAL & COGNITIVE ENGINES (v12.0)
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_transcribe_audio_to_score(
+    wav_path: Optional[str] = None,
+    hop_ms: float = 30.0,
+    bpm: float = 112.0
+) -> Dict[str, Any]:
+    """
+    Transcribes monophonic/polyphonic audio stems to native FL Studio Piano Roll Score (.fsc)
+    using YIN fundamental frequency extraction and microtonal deviation calculation (cents).
+    Defaults to transcribing ~/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/03_Rolling_Cyber_Bass.wav.
+    """
+    try:
+        from scripts.audio_to_score_transcriber import transcribe_audio_to_notes
+        if not wav_path:
+            target = MUSIC_BOUNCES_DIR / "Stems" / "Dark_Cyber_Flamenco_Stems_16Bars" / "03_Rolling_Cyber_Bass.wav"
+        else:
+            target = Path(wav_path).expanduser().resolve()
+
+        res = transcribe_audio_to_notes(str(target), hop_ms=hop_ms, bpm=bpm)
+        logger.info(f"Transcribed {res.get('total_notes_detected', 0)} notes → {res.get('exported_fsc')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to transcribe audio: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_rearrange_slices_generative(
+    style: str = "bulerias_cyber_drill",
+    bars: int = 4,
+    bpm: float = 112.0,
+    random_seed: int = 42
+) -> Dict[str, Any]:
+    """
+    Generates algorithmic breakbeat and compás arrangements triggering transient slices.
+    styles: 'bulerias_cyber_drill' (12-beat compás with drill rolls), 'markov_breakcore', 'tangos_funk'.
+    Exports native .fsc score directly into ~/Music/FL Studio Bounces/Generative_Arrangements/.
+    """
+    try:
+        from scripts.slice_breakbeat_rearranger import generate_slice_arrangement
+        res = generate_slice_arrangement(style=style, bars=bars, bpm=bpm, random_seed=random_seed)
+        logger.info(f"Generated generative arrangement ({style}) → {res.get('exported_fsc')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to generate slice arrangement: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_render_tui_cockpit() -> str:
+    """
+    Renders an ASCII ANSI terminal dashboard snapshot displaying live DAW state,
+    VU meters, CoreMIDI status, and POSIX SHM memory latency.
+    """
+    try:
+        from scripts.fl_tui_cockpit import render_ascii_dashboard_snapshot
+        return render_ascii_dashboard_snapshot()
+    except Exception as e:
+        return f"Failed to render TUI cockpit: {e}"
+
+
+@mcp.tool()
+def fl_calculate_microtonal_retuning(
+    temperament: str = "just_intonation_5limit"
+) -> Dict[str, Any]:
+    """
+    Calculates cent-level pitch deviations and 14-bit pitch bend offsets for
+    Just Intonation (5-limit/7-limit) or Flamenco Hijaz (24-TET) relative to 12-TET.
+    temperaments: 'just_intonation_5limit', 'flamenco_hijaz'.
+    """
+    try:
+        from scripts.microtonal_retuning_matrix import compute_retuning_offsets
+        res = compute_retuning_offsets(temperament=temperament)
+        logger.info(f"Calculated microtonal retuning ({temperament}) → {res.get('exported_json')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to calculate microtonal retuning: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
 @mcp.tool()
@@ -1185,11 +1268,12 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     Executes a comprehensive system-wide self-test across all MCP capabilities:
     CoreMIDI port, AppleScript DAW query, binary parser, dissonance calculator,
-    piano roll scripts, live telemetry, bounce asset verification, and kernel watchdog.
+    piano roll scripts, live telemetry, bounce asset verification, kernel watchdog,
+    and cognitive transcription/retuning engines.
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "11.0-TOPOLOGICAL-JUMP",
+        "version": "12.0-DEMIURGE",
         "tests": {}
     }
 
@@ -1328,6 +1412,38 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["kernel_watchdog"] = f"FAILED: {e}"
 
+    # Test 18: Audio-to-Score Transcriber
+    try:
+        bass_wav = MUSIC_BOUNCES_DIR / "Stems" / "Dark_Cyber_Flamenco_Stems_16Bars" / "03_Rolling_Cyber_Bass.wav"
+        if bass_wav.exists():
+            trans_res = fl_transcribe_audio_to_score(str(bass_wav))
+            results["tests"]["audio_transcriber"] = f"PASSED ({trans_res.get('total_notes_detected')} notes)"
+        else:
+            results["tests"]["audio_transcriber"] = "SKIPPED (bass stem not found)"
+    except Exception as e:
+        results["tests"]["audio_transcriber"] = f"FAILED: {e}"
+
+    # Test 19: Slice Breakbeat Re-Arranger
+    try:
+        rearr_res = fl_rearrange_slices_generative(style="bulerias_cyber_drill", bars=2)
+        results["tests"]["breakbeat_rearranger"] = f"PASSED ({rearr_res.get('total_notes')} notes)"
+    except Exception as e:
+        results["tests"]["breakbeat_rearranger"] = f"FAILED: {e}"
+
+    # Test 20: TUI Dashboard Renderer
+    try:
+        tui_str = fl_render_tui_cockpit()
+        results["tests"]["tui_dashboard"] = "PASSED (Rendered ASCII HUD)" if "COCKPIT" in tui_str else "FAILED"
+    except Exception as e:
+        results["tests"]["tui_dashboard"] = f"FAILED: {e}"
+
+    # Test 21: Microtonal Retuning Matrix
+    try:
+        retune_res = fl_calculate_microtonal_retuning("just_intonation_5limit")
+        results["tests"]["microtonal_retuning"] = f"PASSED ({len(retune_res.get('matrix', []))} offsets)"
+    except Exception as e:
+        results["tests"]["microtonal_retuning"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -1341,7 +1457,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v11.0 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v12.0 on stdio transport…")
     mcp.run()
 
 

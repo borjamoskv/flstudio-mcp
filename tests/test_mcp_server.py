@@ -240,6 +240,35 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertIn("status", res)
         self.assertIn(res.get("status"), ("DAW_ONLINE_KERNEL_VALIDATED", "DAW_OFFLINE"))
 
+    def test_28_transcribe_audio_to_score(self):
+        """Verifies monophonic audio transcription via fast YIN algorithm into .fsc."""
+        bass_wav = mcp_server.MUSIC_BOUNCES_DIR / "Stems" / "Dark_Cyber_Flamenco_Stems_16Bars" / "03_Rolling_Cyber_Bass.wav"
+        if bass_wav.exists():
+            res = mcp_server.fl_transcribe_audio_to_score(str(bass_wav))
+            self.assertEqual(res.get("status"), "SUCCESS")
+            self.assertGreater(res.get("total_notes_detected", 0), 0)
+            self.assertTrue(Path(res.get("exported_fsc")).exists())
+
+    def test_29_rearrange_slices_generative(self):
+        """Verifies algorithmic slice breakbeat and compás rearrangement."""
+        res = mcp_server.fl_rearrange_slices_generative(style="bulerias_cyber_drill", bars=2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_notes", 0), 0)
+        self.assertTrue(Path(res.get("exported_fsc")).exists())
+
+    def test_30_render_tui_cockpit(self):
+        """Verifies rendering of ASCII ANSI terminal dashboard."""
+        hud_str = mcp_server.fl_render_tui_cockpit()
+        self.assertIn("ANTIGRAVITY FL STUDIO COCKPIT", hud_str)
+        self.assertIn("MIXER MATRIX METERS", hud_str)
+
+    def test_31_calculate_microtonal_retuning(self):
+        """Verifies cent-level retuning calculation for Just Intonation and Flamenco Hijaz."""
+        res = mcp_server.fl_calculate_microtonal_retuning("just_intonation_5limit")
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(len(res.get("matrix", [])), 12)
+        self.assertTrue(Path(res.get("exported_json")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
