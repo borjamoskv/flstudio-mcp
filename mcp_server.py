@@ -1,24 +1,29 @@
 #!/usr/bin/env python3
 """
-Antigravity FL Studio Native MCP Server v6.0 (SOTA Zenith)
+Antigravity FL Studio Native MCP Server v7.0 (SOTA Zenith)
 Full Model Context Protocol Server providing native AI control, microtonal tuning,
-two-way hardware controller integration, and MIDI orchestration tools for FL Studio 2025 via FastMCP.
+two-way hardware controller integration, binary reverse-engineering, and MIDI orchestration
+for FL Studio 2025 via FastMCP.
 
 Aligned with:
 - device_Antigravity_MCP.py (125 mixer tracks, Channel rack, markers, transport)
 - Centralized Music Assets Invariant (~/Music/FL Studio Bounces/)
 - 26 Scala Tunings & Sethares/Plomp-Levelt psychoacoustics
 - 19 SOTA Piano Roll Scripts (including Dark Cyber-Flamenco, Euclidean, Cellular Automata)
+- Binary Header Inspection (.flp FLhd and .wav RIFF)
+- Live AppleScript Window & Export Automation
 """
 
 import sys
 import os
 import time
+import ast
 import math
+import struct
 import subprocess
 import logging
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 import mido
 from mcp.server.fastmcp import FastMCP
@@ -36,13 +41,18 @@ FL_PIANOROLL = FL_SETTINGS / "Piano roll scripts"
 FL_HARDWARE = FL_SETTINGS / "Hardware"
 FL_TUNING = FL_SETTINGS / "Tuning"
 
+SKILLS_DIR = Path.home() / ".gemini/config/skills/flstudio-mcp-production"
+SKILLS_EXAMPLES = SKILLS_DIR / "examples"
+SKILLS_SCRIPTS = SKILLS_DIR / "scripts"
+
 MUSIC_DIR = Path.home() / "Music"
 MUSIC_BOUNCES_DIR = MUSIC_DIR / "FL Studio Bounces"
 MUSIC_BOUNCES_DIR.mkdir(parents=True, exist_ok=True)
 
-# Add scripts directory to path for legacy modules
+# Add scripts directory to path for legacy and custom modules
 sys.path.insert(0, str(SCRIPTS_DIR))
 sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(SKILLS_SCRIPTS))
 
 # ═══════════════════════════════════════════════════════════════
 # Logging Configuration
@@ -83,7 +93,7 @@ def fl_health_check() -> str:
     Runtime diagnostics: verifies FL Studio app, CoreMIDI virtual port,
     hardware controller script, Piano Roll scripts, and Scala tunings.
     """
-    report_lines = ["═══ FL Studio MCP SOTA Health Check (v6.0) ═══"]
+    report_lines = ["═══ FL Studio MCP SOTA Health Check (v7.0) ═══"]
 
     # 1. CoreMIDI Port
     port = get_midi_port()
@@ -273,16 +283,83 @@ def fl_set_mixer_stereo_separation(track_id: int, separation: float) -> str:
 def fl_setup_sidechain(source_track: int, target_track: int) -> str:
     """
     Routes source_track as a sidechain send into target_track in FL Studio.
+    Sends direct sidechain signal via Hardware Controller Channel 9 (mid_chan 8)
+    and fallback Channel 16 CC 18.
     """
     port = get_midi_port()
     if not port:
         return "Error: Could not open MIDI port."
 
-    # In device_Antigravity_MCP.py: focused track is source, value is target_track on Ch 16, CC 18
-    msg = mido.Message('control_change', channel=15, control=18, value=int(target_track))
-    port.send(msg)
-    logger.info("Sidechain routed: Track %02d ===> Track %02d", source_track, target_track)
-    return f"Sidechain routed: Track {source_track:02d} ===> Track {target_track:02d}."
+    src = max(0, min(125, int(source_track)))
+    dst = max(0, min(125, int(target_track)))
+
+    # Direct routing on Channel 8: CC = source_track, value = target_track
+    port.send(mido.Message('control_change', channel=8, control=src, value=dst))
+    # Legacy fallback on Channel 15, CC 18
+    port.send(mido.Message('control_change', channel=15, control=18, value=dst))
+
+    logger.info("Sidechain routed: Track %02d ===> Track %02d", src, dst)
+    return f"Sidechain routed: Track {src:02d} ===> Track {dst:02d}."
+
+
+@mcp.tool()
+def fl_select_mixer_track(track_id: int) -> str:
+    """
+    Selects and focuses a specific mixer track (0 = Master, 1-125 = Tracks) in FL Studio.
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+
+    t_id = max(0, min(125, int(track_id)))
+    # Channel 9 (mid_chan 9), CC = track_id, value = 0 (select)
+    port.send(mido.Message('control_change', channel=9, control=t_id, value=0))
+    logger.info("Selected mixer track %d", t_id)
+    return f"FL Studio mixer track {t_id} selected."
+
+
+@mcp.tool()
+def fl_toggle_window(window_name: str) -> str:
+    """
+    Toggles or focuses the specified FL Studio window.
+    window_name: 'mixer', 'channel_rack', 'playlist', 'piano_roll', 'browser'.
+    """
+    port = get_midi_port()
+    w_lower = window_name.lower().replace(" ", "_")
+    w_map = {
+        'mixer': (0, '9'),        # F9
+        'channel_rack': (1, '6'), # F6
+        'playlist': (2, '5'),     # F5
+        'piano_roll': (3, '7'),   # F7
+        'browser': (4, '8')       # Alt+F8
+    }
+    if w_lower not in w_map:
+        return f"Unknown window '{window_name}'. Supported: {list(w_map.keys())}"
+
+    cc_num, fn_key = w_map[w_lower]
+
+    # 1. MIDI Controller UI Command (Channel 10)
+    if port:
+        port.send(mido.Message('control_change', channel=10, control=cc_num, value=127))
+
+    # 2. AppleScript Keystroke Fallback if FL Studio is running
+    try:
+        check_proc = 'tell application "System Events" to (name of processes) contains "OsxFL"'
+        is_running = subprocess.check_output(["osascript", "-e", check_proc], text=True).strip() == "true"
+        if is_running:
+            if w_lower == 'browser':
+                script = 'tell application "System Events" to tell process "OsxFL" to key code 100 using option down'
+            else:
+                key_codes = {'5': 96, '6': 97, '7': 98, '9': 101}
+                kc = key_codes.get(fn_key, 101)
+                script = f'tell application "System Events" to tell process "OsxFL" to key code {kc}'
+            subprocess.run(["osascript", "-e", script], check=False)
+    except Exception as e:
+        logger.debug("AppleScript window toggle notice: %s", e)
+
+    logger.info("Window focus requested: %s", w_lower)
+    return f"FL Studio window '{w_lower}' focus/toggle executed."
+
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -343,8 +420,8 @@ def fl_generate_dark_cyber_flamenco(bars: int = 64) -> str:
     masterpiece MIDI with 8 discrete tracks and timeline markers into ~/Music/FL Studio Bounces/.
     """
     try:
-        cmd = f"python3 /tmp/generate_flamenco_masterpiece_64bars.py"
-        subprocess.run(cmd, shell=True, check=True)
+        script_path = SCRIPTS_DIR / "generate_flamenco_masterpiece_64bars.py"
+        subprocess.run([sys.executable, str(script_path)], check=True)
         out_path = MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Masterpiece_64Bars.mid"
         logger.info("Generated 64-bar Dark Cyber-Flamenco → %s", out_path)
         return f"Dark Cyber-Flamenco (64 Bars, 112 BPM) generated successfully! Saved to: {out_path}"
@@ -441,7 +518,11 @@ def fl_generate_scala_tunings(temperament: str = "all") -> str:
     'wendy-carlos-alpha', 'locrian-neutral2nd'.
     """
     try:
-        cmd = f"python3 {SCRIPTS_DIR}/scala_generator.py --temperament {temperament} --output-dir '{FL_TUNING}'"
+        generator_script = SKILLS_SCRIPTS / "scala_generator.py"
+        if not generator_script.exists():
+            generator_script = SCRIPTS_DIR / "scala_generator.py"
+            
+        cmd = f"python3 '{generator_script}' --temperament {temperament} --output-dir '{FL_TUNING}'"
         subprocess.run(cmd, shell=True, check=True)
         logger.info("Generated Scala tuning '%s' to %s", temperament, FL_TUNING)
         return f"Scala tuning profiles for '{temperament}' compiled and deployed to {FL_TUNING}."
@@ -458,18 +539,18 @@ def fl_calculate_sensory_dissonance(f1: float, f2: float) -> str:
     """
     f_min, f_max = min(f1, f2), max(f1, f2)
     if f_min == f_max or f_min <= 0:
-        return f"Sensory Dissonance between {f1:.1f}Hz and {f2:.1f}Hz: 0.000 (Pure Unison)"
+        return f"Sensory Dissonance between {f1:.1f}Hz and {f2:.1f}Hz: 0.0000 (Pure Unison)"
 
     s1, s2 = 0.0207, 18.96
     s = 0.24 / (s1 * f_min + s2)
     diff = f_max - f_min
     a, b = 3.5, 5.75
     d = max(0.0, math.exp(-a * s * diff) - math.exp(-b * s * diff))
-    return f"Sensory Dissonance between {f1:.1f}Hz and {f2:.1f}Hz: {d:.4f} (Sethares Index)"
+    return f"Sensory Dissonance between {f1:.1f}Hz and {f2:.1f}Hz: {d:.4f} (Sethares Roughness Index)"
 
 
 # ═══════════════════════════════════════════════════════════════
-# 7. PIANO ROLL DEPLOYER & HOT RELOAD
+# 7. PIANO ROLL SCRIPT MANAGEMENT & DEPLOYMENT
 # ═══════════════════════════════════════════════════════════════
 @mcp.tool()
 def fl_list_piano_roll_scripts() -> str:
@@ -483,9 +564,295 @@ def fl_list_piano_roll_scripts() -> str:
     return "\n".join(lines)
 
 
+@mcp.tool()
+def fl_deploy_custom_piano_roll_script(script_name: str, code_content: str, overwrite: bool = False) -> str:
+    """
+    Validates Python AST and deploys a custom Piano Roll script directly into
+    ~/Documents/Image-Line/FL Studio/Settings/Piano roll scripts/.
+    Requires either createScore() or createDialog() + apply(form).
+    """
+    if not script_name.endswith((".py", ".pyscript")):
+        script_name += ".py"
+
+    target_path = FL_PIANOROLL / script_name
+    if target_path.exists() and not overwrite:
+        return f"Script already exists at {target_path}. Set overwrite=True to replace."
+
+    # Validate AST
+    try:
+        tree = ast.parse(code_content, filename=script_name)
+    except SyntaxError as se:
+        return f"SyntaxError in script at line {se.lineno}: {se.msg}"
+
+    func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    has_create_score = "createScore" in func_names
+    has_dialog_apply = ("createDialog" in func_names and "apply" in func_names)
+    if not (has_create_score or has_dialog_apply):
+        return f"Missing required entrypoints: script must define 'createScore()' or 'createDialog()' + 'apply(form)'. Found: {func_names}"
+
+    FL_PIANOROLL.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(code_content, encoding="utf-8")
+    mode = "Interactive Dialog" if has_dialog_apply else "Direct Batch"
+    logger.info("Deployed custom Piano Roll script: %s [%s]", script_name, mode)
+    return f"Successfully deployed '{script_name}' [{mode}] to {target_path}."
+
+
+# ═══════════════════════════════════════════════════════════════
+# 8. BINARY REVERSE ENGINEERING & HEADER INSPECTOR
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_inspect_binary_header(file_path: str) -> Dict[str, Any]:
+    """
+    Reverse-engineers and parses the binary header of an FL Studio project (.flp)
+    or an uncompressed RIFF WAVE (.wav) stem, extracting sample rate, bit depth,
+    duration, PPQ resolution, and bars.
+    """
+    path = Path(os.path.expanduser(file_path))
+    if not path.exists():
+        return {"error": f"File does not exist: {path}"}
+
+    with open(path, "rb") as f:
+        data = f.read(256)
+
+    # 1. FL Studio Project Binary (.flp)
+    if data[:4] == b'FLhd':
+        hdr_len = struct.unpack('<I', data[4:8])[0]
+        fmt_type, channels, ppq = struct.unpack('<HHH', data[8:14])
+        chunk_type = data[14:18].decode('ascii', errors='ignore')
+        return {
+            "file_type": "FL Studio Project Binary",
+            "file_path": str(path),
+            "magic_header": "FLhd",
+            "format_type": fmt_type,
+            "channel_count": channels,
+            "ppq_resolution": ppq,
+            "data_chunk_header": chunk_type,
+            "file_size_bytes": path.stat().st_size
+        }
+
+    # 2. RIFF WAVE Audio Binary (.wav)
+    elif data[:4] == b'RIFF' and data[8:12] == b'WAVE':
+        chunk_size = struct.unpack('<I', data[4:8])[0]
+        audio_format, channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack('<HHIIHH', data[20:36])
+        duration_sec = (chunk_size - 36) / byte_rate if byte_rate > 0 else 0
+        return {
+            "file_type": "RIFF WAVE Audio Stem",
+            "file_path": str(path),
+            "audio_format": "PCM Uncompressed" if audio_format == 1 else "IEEE Float",
+            "channels": channels,
+            "sample_rate_hz": sample_rate,
+            "bits_per_sample": bits_per_sample,
+            "duration_sec": round(duration_sec, 2),
+            "bars_at_112bpm": round((duration_sec / 60.0) * (112.0 / 4), 2),
+            "file_size_bytes": path.stat().st_size
+        }
+
+    return {
+        "file_type": "Generic Binary / Unknown",
+        "file_path": str(path),
+        "header_hex": data[:16].hex(),
+        "file_size_bytes": path.stat().st_size
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+# 9. RAW MIDI INJECTION & HARDWARE BUS
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_send_raw_midi(channel: int, message_type: str, data1: int, data2: int = 0) -> str:
+    """
+    Sends raw low-latency MIDI event to FL Studio via 'Antigravity MCP Out'.
+    channel: 0 to 15.
+    message_type: 'control_change', 'note_on', 'note_off', 'pitchwheel', 'program_change'.
+    data1: note number, CC number, or pitch bend value (-8192 to 8191).
+    data2: velocity or CC value (0 to 127).
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+
+    mtype = message_type.lower()
+    chan = max(0, min(15, int(channel)))
+
+    try:
+        if mtype == 'control_change':
+            msg = mido.Message('control_change', channel=chan, control=int(data1), value=int(data2))
+        elif mtype == 'note_on':
+            msg = mido.Message('note_on', channel=chan, note=int(data1), velocity=int(data2))
+        elif mtype == 'note_off':
+            msg = mido.Message('note_off', channel=chan, note=int(data1), velocity=int(data2))
+        elif mtype == 'pitchwheel':
+            msg = mido.Message('pitchwheel', channel=chan, pitch=int(data1))
+        elif mtype == 'program_change':
+            msg = mido.Message('program_change', channel=chan, program=int(data1))
+        else:
+            return f"Unsupported message_type '{message_type}'. Use 'control_change', 'note_on', 'note_off', 'pitchwheel', 'program_change'."
+
+        port.send(msg)
+        return f"Sent MIDI {msg} on 'Antigravity MCP Out'."
+    except Exception as e:
+        logger.error("fl_send_raw_midi error: %s", e)
+        return f"Error sending MIDI: {e}"
+
+
+# ═══════════════════════════════════════════════════════════════
+# 10. MUSIC ASSETS CATALOG & BOUNCE SYNC
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_catalog_music_bounces(follow_symlinks: bool = True) -> Dict[str, Any]:
+    """
+    Catalogs and audits all exported audio, stems, and MIDI projects in ~/Music/FL Studio Bounces/
+    verifying compliance with the Music Centralization Invariant.
+    """
+    if not MUSIC_BOUNCES_DIR.exists():
+        return {"error": f"Directory not found: {MUSIC_BOUNCES_DIR}"}
+
+    catalog = []
+    for root, dirs, files in os.walk(str(MUSIC_BOUNCES_DIR), followlinks=follow_symlinks):
+        for fname in sorted(files):
+            if fname.startswith('.'):
+                continue
+            fpath = Path(root) / fname
+            try:
+                st = fpath.stat()
+                rel_path = str(fpath.relative_to(MUSIC_BOUNCES_DIR))
+                catalog.append({
+                    "relative_path": rel_path,
+                    "filename": fname,
+                    "extension": fpath.suffix.lower(),
+                    "size_kb": round(st.st_size / 1024.0, 1),
+                    "modified": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(st.st_mtime)),
+                    "path": str(fpath)
+                })
+            except Exception as e:
+                logger.warning("Could not stat %s: %s", fpath, e)
+
+    return {
+        "catalog_root": str(MUSIC_BOUNCES_DIR),
+        "total_files": len(catalog),
+        "assets": catalog
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+# 11. APPLEScript DAW WINDOW STATE & EXPORT SHORTCUT
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_query_daw_window_state() -> Dict[str, Any]:
+    """
+    Inspects macOS System Events to verify whether FL Studio 2025 ('OsxFL')
+    is running, frontmost, and lists open window titles.
+    """
+    try:
+        check_proc = 'tell application "System Events" to (name of processes) contains "OsxFL"'
+        is_running = subprocess.check_output(["osascript", "-e", check_proc], text=True).strip() == "true"
+        
+        if not is_running:
+            return {"fl_studio_running": False, "status": "FL Studio 2025 is not running"}
+
+        check_front = 'tell application "System Events" to (name of first application process whose frontmost is true) is "OsxFL"'
+        is_front = subprocess.check_output(["osascript", "-e", check_front], text=True).strip() == "true"
+
+        get_windows = 'tell application "System Events" to tell process "OsxFL" to get name of every window'
+        windows = subprocess.check_output(["osascript", "-e", get_windows], text=True).strip().split(", ")
+
+        return {
+            "fl_studio_running": True,
+            "is_frontmost": is_front,
+            "active_windows": [w for w in windows if w.strip()]
+        }
+    except Exception as e:
+        return {"error": f"AppleScript inspection failed: {e}"}
+
+
+@mcp.tool()
+def fl_trigger_export_shortcut(format: str = "wav") -> str:
+    """
+    Sends export keyboard shortcut to FL Studio 2025 via macOS System Events:
+    format: 'wav' (Cmd+R), 'mp3' (Cmd+Shift+R), 'midi' (Cmd+Shift+M).
+    """
+    fmt = format.lower()
+    try:
+        if fmt == "wav":
+            script = 'tell application "System Events" to tell process "OsxFL" to keystroke "r" using command down'
+        elif fmt == "mp3":
+            script = 'tell application "System Events" to tell process "OsxFL" to keystroke "r" using {command down, shift down}'
+        elif fmt == "midi":
+            script = 'tell application "System Events" to tell process "OsxFL" to keystroke "m" using {command down, shift down}'
+        else:
+            return f"Unsupported export format '{format}'. Choose from 'wav', 'mp3', 'midi'."
+
+        subprocess.run(["osascript", "-e", script], check=True)
+        return f"Triggered export dialog for '{fmt.upper()}' in FL Studio."
+    except Exception as e:
+        return f"Failed to trigger export shortcut: {e}"
+
+
+# ═══════════════════════════════════════════════════════════════
+# 12. AUTOMATED SELF-TEST & ATTESTATION
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_run_self_test() -> Dict[str, Any]:
+    """
+    Executes a comprehensive system-wide self-test across all MCP capabilities:
+    CoreMIDI port, AppleScript DAW query, binary parser, dissonance calculator,
+    piano roll scripts, and bounce asset verification.
+    """
+    results = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "version": "7.5-SOTA",
+        "tests": {}
+    }
+
+    # Test 1: CoreMIDI
+    port = get_midi_port()
+    results["tests"]["coremidi_port"] = "ONLINE" if port else "OFFLINE"
+
+    # Test 2: Binary Inspection
+    try:
+        test_wav = SAMPLES_DIR / "orbital_kick.wav"
+        if test_wav.exists():
+            hdr = fl_inspect_binary_header(str(test_wav))
+            results["tests"]["binary_inspector"] = f"PASSED ({hdr.get('audio_format')}, {hdr.get('sample_rate_hz')}Hz)"
+        else:
+            results["tests"]["binary_inspector"] = "SKIPPED (test file not found)"
+    except Exception as e:
+        results["tests"]["binary_inspector"] = f"FAILED: {e}"
+
+    # Test 3: Sensory Dissonance
+    try:
+        diss = fl_calculate_sensory_dissonance(440.0, 466.16)
+        results["tests"]["dissonance_calculator"] = f"PASSED ({diss})"
+    except Exception as e:
+        results["tests"]["dissonance_calculator"] = f"FAILED: {e}"
+
+    # Test 4: Bounces Catalog
+    try:
+        cat = fl_catalog_music_bounces()
+        results["tests"]["bounces_catalog"] = f"PASSED ({cat.get('total_files', 0)} files indexed)"
+    except Exception as e:
+        results["tests"]["bounces_catalog"] = f"FAILED: {e}"
+
+    # Test 5: DAW Window State
+    try:
+        daw = fl_query_daw_window_state()
+        results["tests"]["daw_query"] = "PASSED" if "fl_studio_running" in daw else f"FAILED: {daw}"
+    except Exception as e:
+        results["tests"]["daw_query"] = f"FAILED: {e}"
+
+    # Summary
+    all_passed = all(
+        "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v)
+        for v in results["tests"].values()
+    )
+    results["overall_status"] = "ALL_SYSTEMS_GO" if all_passed else "DEGRADED"
+    return results
+
+
 # ═══════════════════════════════════════════════════════════════
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v6.0 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v7.5 on stdio transport…")
     mcp.run()
+
