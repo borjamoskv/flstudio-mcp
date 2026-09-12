@@ -2,11 +2,14 @@
 # deviceNameMatches=Antigravity MCP Out, Antigravity*
 # url=https://github.com/borjamoskv/antigravity-mcp-flstudio
 #
-# Antigravity SOTA MCP Bi-Directional Controller for FL Studio 2025 (v7.5)
+# Antigravity SOTA MCP Bi-Directional Controller for FL Studio 2025 (v8.0)
 # Comprehensive Hardware & AI Telemetry Engine supporting 125 mixer tracks,
-# Direct Sidechain Routing, Track Focus & Arming, Window Navigation,
-# Channel Rack, Pattern & Marker Navigation, Transport, and Macro Modulation.
+# Real-Time Closed-Loop Telemetry Stream, Direct Sidechain Routing,
+# Track Focus & Arming, Window Navigation, Channel Rack, Transport, and Macro Modulation.
 
+import os
+import json
+import time
 import mixer
 import channels
 import patterns
@@ -17,31 +20,85 @@ import device
 import plugins
 import midi
 
-VERSION = "7.5-SOTA"
+VERSION = "8.0-SOTA"
+TELEMETRY_PATH = "/tmp/antigravity_fl_telemetry.json"
+_last_telemetry_time = 0.0
+
+
+def UpdateTelemetry(force=False):
+    """Writes real-time closed-loop DAW telemetry for the Antigravity MCP server."""
+    global _last_telemetry_time
+    now = time.time()
+    if not force and (now - _last_telemetry_time < 0.5):
+        return
+    _last_telemetry_time = now
+
+    try:
+        cur_bpm = None
+        if hasattr(general, "getBPM"):
+            cur_bpm = round(general.getBPM() / 1000.0, 2)
+
+        data = {
+            "version": VERSION,
+            "timestamp": now,
+            "iso_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now)),
+            "bpm": cur_bpm,
+            "is_playing": bool(transport.isPlaying()) if hasattr(transport, "isPlaying") else False,
+            "is_recording": bool(transport.isRecording()) if hasattr(transport, "isRecording") else False,
+            "loop_mode": bool(transport.getLoopMode()) if hasattr(transport, "getLoopMode") else False,
+            "song_pos": round(transport.getSongPos(), 4) if hasattr(transport, "getSongPos") else 0.0,
+            "focused_track": mixer.trackNumber() if hasattr(mixer, "trackNumber") else 0,
+            "master_volume": round(mixer.getTrackVolume(0), 3) if hasattr(mixer, "getTrackVolume") else 1.0,
+            "master_pan": round(mixer.getTrackPan(0), 3) if hasattr(mixer, "getTrackPan") else 0.0,
+            "channel_count": channels.channelCount() if hasattr(channels, "channelCount") else 0,
+            "selected_channel": channels.selectedChannel() if hasattr(channels, "selectedChannel") else 0,
+            "status": "LIVE_DAW_CONNECTED"
+        }
+        with open(TELEMETRY_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
 
 def OnInit():
     print("==================================================================")
     print(f"  ANTIGRAVITY SOTA MCP CONTROLLER INITIALIZED (v{VERSION})")
-    print("  Bidirectional Telemetry: Active | 125 Mixer Tracks | Direct Routing")
+    print("  Bidirectional Telemetry: Active | 125 Mixer Tracks | Closed-Loop")
     print("==================================================================")
     device.setHasMeters()
     ui.setHintMsg(f"Antigravity MCP {VERSION} Connected")
+    UpdateTelemetry(force=True)
+
 
 def OnDeInit():
     print(f"[Antigravity MCP] Controller Deinitialized (v{VERSION})")
     ui.setHintMsg("Antigravity MCP Disconnected")
+    try:
+        data = {
+            "version": VERSION,
+            "timestamp": time.time(),
+            "status": "DISCONNECTED"
+        }
+        with open(TELEMETRY_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
 
 def OnRefresh(flags):
     """Called by FL Studio when internal state changes (faders, mutes, tempo)."""
-    pass
+    UpdateTelemetry()
+
 
 def OnUpdateBeatIndicator(value):
     """Called on each beat/bar tick for visual tempo alignment."""
     pass
 
+
 def OnIdle():
     """Heartbeat callback invoked during FL Studio idle loop."""
-    pass
+    UpdateTelemetry()
+
 
 def OnMidiMsg(event):
     if event.handled:
@@ -237,3 +294,7 @@ def OnMidiMsg(event):
                 transport.globalTransport(midi.FPT_Save, 1)
                 ui.setHintMsg("Project Saved")
                 event.handled = True
+
+    # Immediate telemetry sync on handled event
+    if event.handled:
+        UpdateTelemetry(force=True)

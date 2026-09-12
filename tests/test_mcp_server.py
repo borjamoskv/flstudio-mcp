@@ -117,6 +117,28 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertIn("PASSED", test_summary["tests"]["dissonance_calculator"])
         self.assertIn("PASSED", test_summary["tests"]["bounces_catalog"])
 
+    def test_12_headless_audio_preview(self):
+        """Verifies pure Python headless audio preview synthesis."""
+        res = mcp_server.fl_render_headless_audio_preview()
+        self.assertIn("Rendered 16-bar Headless Audio Preview", res)
+        out_wav = mcp_server.MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        self.assertTrue(out_wav.exists())
+        self.assertGreater(out_wav.stat().st_size, 1024 * 1024)
+
+    def test_13_apply_exergic_mixer_matrix(self):
+        """Verifies injection of complete 7-track mixing matrix via MIDI."""
+        res = mcp_server.fl_apply_exergic_mixer_matrix()
+        self.assertIn("Successfully applied C5-REAL Exergic Mixer Matrix", res)
+        self.assertIn("Maceo Kick DSP", res)
+        self.assertIn("Minimoog Sub-Bass", res)
+
+    def test_14_live_telemetry(self):
+        """Verifies closed-loop telemetry retrieval or fallback."""
+        telem = mcp_server.fl_get_live_telemetry()
+        self.assertIn("status", telem)
+        self.assertIn("telemetry_source", telem)
+        self.assertIn("timestamp", telem)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

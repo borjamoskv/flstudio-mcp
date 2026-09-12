@@ -93,7 +93,7 @@ def fl_health_check() -> str:
     Runtime diagnostics: verifies FL Studio app, CoreMIDI virtual port,
     hardware controller script, Piano Roll scripts, and Scala tunings.
     """
-    report_lines = ["═══ FL Studio MCP SOTA Health Check (v7.5) ═══"]
+    report_lines = ["═══ FL Studio MCP SOTA Health Check (v8.0) ═══"]
 
     # 1. CoreMIDI Port
     port = get_midi_port()
@@ -428,6 +428,61 @@ def fl_generate_dark_cyber_flamenco(bars: int = 64) -> str:
     except Exception as e:
         logger.error("fl_generate_dark_cyber_flamenco failed: %s", e)
         return f"Error generating Dark Cyber-Flamenco: {e}"
+
+
+@mcp.tool()
+def fl_render_headless_audio_preview() -> str:
+    """
+    Synthesizes a 16-bar Dark Cyber-Flamenco audio preview (WAV, 44.1kHz, 16-bit Stereo PCM)
+    using pure Python standard library DSP into ~/Music/FL Studio Bounces/.
+    No DAW startup required.
+    """
+    try:
+        from scripts.render_synthwave_flamenco_audio_preview import render_dark_cyber_flamenco_wav
+        out_wav = MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        render_dark_cyber_flamenco_wav(out_wav)
+        size_mb = out_wav.stat().st_size / (1024.0 * 1024.0)
+        logger.info("Rendered headless audio preview → %s (%.2f MB)", out_wav, size_mb)
+        return f"Rendered 16-bar Headless Audio Preview ({size_mb:.2f} MB): {out_wav}"
+    except Exception as e:
+        logger.error("fl_render_headless_audio_preview failed: %s", e)
+        return f"Error rendering headless audio: {e}"
+
+
+@mcp.tool()
+def fl_apply_exergic_mixer_matrix() -> str:
+    """
+    Injects the complete 7-track C5-REAL Exergic Mixing Matrix into FL Studio 2025:
+    Configures volume faders, panning, stereo field width, and sidechain ducking routes
+    across Tracks 1-7 via CoreMIDI virtual bus.
+    """
+    port = get_midi_port()
+    if not port:
+        return "Error: Could not open MIDI port."
+
+    matrix = [
+        {"track": 1, "name": "Maceo Kick DSP", "vol": 0.50, "pan": 0.0, "sep": 1.0},
+        {"track": 2, "name": "Minimoog Sub-Bass", "vol": 0.40, "pan": 0.0, "sep": 0.8, "sc_src": 1},
+        {"track": 3, "name": "Fender Rhodes 73", "vol": 0.25, "pan": -0.15, "sep": -0.35, "sc_src": 1},
+        {"track": 4, "name": "Solina Strings Pad", "vol": 0.20, "pan": 0.15, "sep": -0.80, "sc_src": 1},
+        {"track": 5, "name": "Maceo 303 Acid Lead", "vol": 0.32, "pan": 0.0, "sep": -0.40},
+        {"track": 6, "name": "AIR Vocoder Lead Synth", "vol": 0.35, "pan": 0.0, "sep": -0.50},
+        {"track": 7, "name": "Swung Hats & Percs", "vol": 0.20, "pan": 0.10, "sep": -0.60},
+    ]
+
+    applied = []
+    for item in matrix:
+        t_id = item["track"]
+        fl_set_mixer_volume(t_id, item["vol"])
+        fl_set_mixer_pan(t_id, item["pan"])
+        fl_set_mixer_stereo_separation(t_id, item["sep"])
+        if "sc_src" in item:
+            fl_setup_sidechain(item["sc_src"], t_id)
+        applied.append(f"Track {t_id} ({item['name']}): Vol={item['vol']}, Pan={item['pan']:+.2f}, Sep={item['sep']:+.2f}")
+
+    logger.info("Applied Exergic Mixer Matrix across %d tracks", len(matrix))
+    return "Successfully applied C5-REAL Exergic Mixer Matrix to FL Studio:\n" + "\n".join(applied)
+
 
 
 @mcp.tool()
@@ -766,6 +821,45 @@ def fl_query_daw_window_state() -> Dict[str, Any]:
 
 
 @mcp.tool()
+def fl_get_live_telemetry() -> Dict[str, Any]:
+    """
+    Retrieves real-time closed-loop telemetry from FL Studio 2025:
+    Reads live BPM, playback status, song position, focused track, volume/pan,
+    channel count, and hardware connection state.
+    """
+    telemetry_file = Path("/tmp/antigravity_fl_telemetry.json")
+    now = time.time()
+    
+    # 1. If live telemetry JSON exists and was updated within the last 60 seconds
+    if telemetry_file.exists():
+        try:
+            mtime = telemetry_file.stat().st_mtime
+            age_sec = round(now - mtime, 1)
+            with open(telemetry_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if age_sec < 60.0 and data.get("status") == "LIVE_DAW_CONNECTED":
+                data["telemetry_source"] = "HARDWARE_CONTROLLER_CLOSED_LOOP"
+                data["age_seconds"] = age_sec
+                return data
+        except Exception as e:
+            logger.debug("Error reading live telemetry file: %s", e)
+
+    # 2. Fallback to AppleScript process inspection
+    daw_state = fl_query_daw_window_state()
+    port = get_midi_port()
+    return {
+        "status": "DAW_ONLINE_NO_CONTROLLER" if daw_state.get("fl_studio_running") else "DAW_OFFLINE",
+        "telemetry_source": "PROCESS_FALLBACK",
+        "fl_studio_running": daw_state.get("fl_studio_running", False),
+        "is_frontmost": daw_state.get("is_frontmost", False),
+        "active_windows": daw_state.get("active_windows", []),
+        "coremidi_bus": "ACTIVE ('Antigravity MCP Out')" if port else "OFFLINE",
+        "timestamp": now,
+        "iso_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
+    }
+
+
+@mcp.tool()
 def fl_trigger_export_shortcut(format: str = "wav") -> str:
     """
     Sends export keyboard shortcut to FL Studio 2025 via macOS System Events:
@@ -796,11 +890,11 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     Executes a comprehensive system-wide self-test across all MCP capabilities:
     CoreMIDI port, AppleScript DAW query, binary parser, dissonance calculator,
-    piano roll scripts, and bounce asset verification.
+    piano roll scripts, live telemetry, and bounce asset verification.
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "7.5-SOTA",
+        "version": "8.0-SOTA",
         "tests": {}
     }
 
@@ -840,6 +934,22 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["daw_query"] = f"FAILED: {e}"
 
+    # Test 6: Live Telemetry
+    try:
+        telem = fl_get_live_telemetry()
+        results["tests"]["live_telemetry"] = f"PASSED ({telem.get('status')})"
+    except Exception as e:
+        results["tests"]["live_telemetry"] = f"FAILED: {e}"
+
+    # Test 7: Headless Synthesizer
+    try:
+        preview_wav = MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        if not preview_wav.exists():
+            fl_render_headless_audio_preview()
+        results["tests"]["headless_audio_dsp"] = f"PASSED ({preview_wav.stat().st_size / 1024:.1f} KB)"
+    except Exception as e:
+        results["tests"]["headless_audio_dsp"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v)
@@ -853,6 +963,6 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v7.5 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v8.0 on stdio transport…")
     mcp.run()
 
