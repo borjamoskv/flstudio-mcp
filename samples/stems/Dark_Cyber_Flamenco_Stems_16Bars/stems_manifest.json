@@ -1,0 +1,45 @@
+{
+  "pack_name": "Dark Cyber-Flamenco Multitrack Stems (16 Bars)",
+  "version": "9.0-SOTA",
+  "bpm": 112.0,
+  "key": "D Phrygian Dominant",
+  "time_signature": "4/4",
+  "bars": 16,
+  "sample_rate_hz": 44100,
+  "bit_depth": 16,
+  "channels": 2,
+  "total_stems": 5,
+  "stems": [
+    {
+      "name": "01_Kick_4onTheFloor.wav",
+      "path": "/Users/borjafernandezangulo/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/01_Kick_4onTheFloor.wav",
+      "size_kb": 5906.3,
+      "duration_sec": 34.29
+    },
+    {
+      "name": "02_Snare_Clap_Flamenco.wav",
+      "path": "/Users/borjafernandezangulo/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/02_Snare_Clap_Flamenco.wav",
+      "size_kb": 5906.3,
+      "duration_sec": 34.29
+    },
+    {
+      "name": "03_Rolling_Cyber_Bass.wav",
+      "path": "/Users/borjafernandezangulo/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/03_Rolling_Cyber_Bass.wav",
+      "size_kb": 5906.3,
+      "duration_sec": 34.29
+    },
+    {
+      "name": "04_Flamenco_Arp_Chords.wav",
+      "path": "/Users/borjafernandezangulo/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/04_Flamenco_Arp_Chords.wav",
+      "size_kb": 5906.3,
+      "duration_sec": 34.29
+    },
+    {
+      "name": "05_Master_Mix.wav",
+      "path": "/Users/borjafernandezangulo/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/05_Master_Mix.wav",
+      "size_kb": 5906.3,
+      "duration_sec": 34.29
+    }
+  ],
+  "elapsed_render_sec": 6.31
+}

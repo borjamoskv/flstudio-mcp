@@ -139,6 +139,40 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertIn("telemetry_source", telem)
         self.assertIn("timestamp", telem)
 
+    def test_15_render_multitrack_stems_pack(self):
+        """Verifies discrete multitrack stems generation and manifest."""
+        manifest = mcp_server.fl_render_multitrack_stems_pack()
+        self.assertIn("stems", manifest)
+        self.assertEqual(manifest["total_stems"], 5)
+        self.assertGreater(len(manifest["stems"]), 0)
+
+    def test_16_analyze_audio_spectrum(self):
+        """Verifies ITU-R BS.1770 / EBU R128 spectral and exergy analysis."""
+        test_wav = mcp_server.MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        if test_wav.exists():
+            report = mcp_server.fl_analyze_audio_spectrum(str(test_wav))
+            self.assertIn("metrics", report)
+            self.assertIn("peak_dbfs", report["metrics"])
+            self.assertIn("crest_factor_db", report["metrics"])
+            self.assertIn("exergy_rating_21000", report)
+
+    def test_17_generate_euclidean_rhythm(self):
+        """Verifies Bjorklund Euclidean polyrhythm MIDI generation."""
+        res = mcp_server.fl_generate_euclidean_rhythm(pulses=5, steps=8, bars=4, bpm=112.0)
+        self.assertIn("Generated Euclidean MIDI E(5,8)", res)
+
+    def test_18_export_web_audio_hud(self):
+        """Verifies HTML5 Web Audio cockpit generation."""
+        res = mcp_server.fl_export_web_audio_hud()
+        self.assertIn("Exported standalone Cyber HUD", res)
+        hud_file = mcp_server.MUSIC_BOUNCES_DIR / "fl_studio_cyber_hud.html"
+        self.assertTrue(hud_file.exists())
+
+    def test_19_decompile_binary_preset(self):
+        """Verifies binary preset decompiler error handling on non-existent or invalid file."""
+        res = mcp_server.fl_decompile_binary_preset("/nonexistent/preset.fst")
+        self.assertIn("error", res)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

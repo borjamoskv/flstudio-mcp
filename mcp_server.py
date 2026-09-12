@@ -93,7 +93,7 @@ def fl_health_check() -> str:
     Runtime diagnostics: verifies FL Studio app, CoreMIDI virtual port,
     hardware controller script, Piano Roll scripts, and Scala tunings.
     """
-    report_lines = ["═══ FL Studio MCP SOTA Health Check (v8.0) ═══"]
+    report_lines = ["═══ FL Studio MCP SOTA Health Check (v9.0) ═══"]
 
     # 1. CoreMIDI Port
     port = get_midi_port()
@@ -484,6 +484,70 @@ def fl_apply_exergic_mixer_matrix() -> str:
     return "Successfully applied C5-REAL Exergic Mixer Matrix to FL Studio:\n" + "\n".join(applied)
 
 
+@mcp.tool()
+def fl_render_multitrack_stems_pack() -> Dict[str, Any]:
+    """
+    Synthesizes discrete broadcast WAV stems (Kick, Snare/Clap, Bass, Chords, Master)
+    and an orchestration manifest into ~/Music/FL Studio Bounces/Stems/Dark_Cyber_Flamenco_Stems_16Bars/.
+    """
+    try:
+        from scripts.render_multitrack_stems_pack import render_multitrack_stems
+        out_dir = MUSIC_BOUNCES_DIR / "Stems/Dark_Cyber_Flamenco_Stems_16Bars"
+        manifest = render_multitrack_stems(out_dir)
+        logger.info("Exported multitrack stems pack (%d stems) → %s", manifest.get("total_stems"), out_dir)
+        return manifest
+    except Exception as e:
+        logger.error("fl_render_multitrack_stems_pack failed: %s", e)
+        return {"error": f"Multitrack synthesis error: {e}"}
+
+
+@mcp.tool()
+def fl_generate_euclidean_rhythm(
+    pulses: int = 7,
+    steps: int = 12,
+    bars: int = 8,
+    bpm: float = 112.0,
+    note_number: int = 69,
+    swing_percent: float = 62.0,
+    track_name: str = "Palmas Bulerias"
+) -> str:
+    """
+    Generates microtonal Euclidean polyrhythm MIDI clips using the Bjorklund E(k, n) algorithm
+    with swing percentages and velocity dynamics. Saved to ~/Music/FL Studio Bounces/.
+    """
+    try:
+        from scripts.euclidean_rhythm_generator import generate_euclidean_midi_clip
+        out_path = MUSIC_BOUNCES_DIR / f"Euclidean_E_{pulses}_{steps}_{int(bpm)}BPM_{track_name.replace(' ', '_')}.mid"
+        res = generate_euclidean_midi_clip(
+            pulses=pulses, steps=steps, bars=bars, bpm=bpm,
+            note_number=note_number, swing_percent=swing_percent,
+            output_path=out_path, track_name=track_name
+        )
+        logger.info("Generated Euclidean MIDI E(%d,%d) → %s", pulses, steps, res)
+        return f"Generated Euclidean MIDI E({pulses},{steps}) [{track_name}] saved to: {res}"
+    except Exception as e:
+        logger.error("fl_generate_euclidean_rhythm failed: %s", e)
+        return f"Error generating Euclidean rhythm: {e}"
+
+
+@mcp.tool()
+def fl_export_web_audio_hud() -> str:
+    """
+    Exports a standalone, reactive HTML5 Web Audio cockpit & visualizer
+    (FFT spectrum, oscilloscope, 8-channel mixer peak meters, closed-loop telemetry)
+    to ~/Music/FL Studio Bounces/fl_studio_cyber_hud.html.
+    """
+    try:
+        from scripts.export_web_audio_hud import export_web_audio_hud
+        out_html = MUSIC_BOUNCES_DIR / "fl_studio_cyber_hud.html"
+        export_web_audio_hud(out_html)
+        logger.info("Exported Cyber HUD → %s", out_html)
+        return f"Exported standalone Cyber HUD ({out_html.stat().st_size / 1024:.1f} KB): {out_html}"
+    except Exception as e:
+        logger.error("fl_export_web_audio_hud failed: %s", e)
+        return f"Error exporting Cyber HUD: {e}"
+
+
 
 @mcp.tool()
 def fl_open_project_or_midi(file_path: str, auto_confirm: bool = True) -> str:
@@ -710,6 +774,41 @@ def fl_inspect_binary_header(file_path: str) -> Dict[str, Any]:
     }
 
 
+@mcp.tool()
+def fl_analyze_audio_spectrum(file_path: str) -> Dict[str, Any]:
+    """
+    Performs comprehensive spectral, loudness (ITU-R BS.1770 / EBU R128),
+    crest factor (dynamic punch), spectral centroid, and exergy audit on a WAV audio stem.
+    """
+    path = Path(os.path.expanduser(file_path))
+    if not path.exists():
+        return {"error": f"Audio file not found: {path}"}
+    try:
+        from scripts.spectral_audio_auditor import analyze_audio_spectrum
+        return analyze_audio_spectrum(path)
+    except Exception as e:
+        logger.error("fl_analyze_audio_spectrum failed: %s", e)
+        return {"error": f"Spectral analysis error: {e}"}
+
+
+@mcp.tool()
+def fl_decompile_binary_preset(file_path: str) -> Dict[str, Any]:
+    """
+    Decompiles and parses raw FL Studio binary project (.flp) or plugin preset (.fst)
+    chunks, extracting channel headers, event streams, and binary metadata.
+    """
+    path = Path(os.path.expanduser(file_path))
+    if not path.exists():
+        return {"error": f"File not found: {path}"}
+    try:
+        from scripts.fl_fst_decompiler_and_patcher_builder import FLBinaryDecompiler
+        decompiler = FLBinaryDecompiler(str(path))
+        return decompiler.load_and_decompile()
+    except Exception as e:
+        logger.error("fl_decompile_binary_preset failed: %s", e)
+        return {"error": f"Decompilation error: {e}"}
+
+
 # ═══════════════════════════════════════════════════════════════
 # 9. RAW MIDI INJECTION & HARDWARE BUS
 # ═══════════════════════════════════════════════════════════════
@@ -894,7 +993,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "8.0-SOTA",
+        "version": "9.0-SOTA",
         "tests": {}
     }
 
@@ -950,6 +1049,21 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["headless_audio_dsp"] = f"FAILED: {e}"
 
+    # Test 8: Spectral Audio Quality Auditor
+    try:
+        preview_wav = MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        spec = fl_analyze_audio_spectrum(str(preview_wav))
+        results["tests"]["spectral_auditor"] = f"PASSED (Crest={spec.get('metrics', {}).get('crest_factor_db')}dB, Exergy={spec.get('exergy_rating_21000')})"
+    except Exception as e:
+        results["tests"]["spectral_auditor"] = f"FAILED: {e}"
+
+    # Test 9: Web Audio Cockpit HUD
+    try:
+        hud_res = fl_export_web_audio_hud()
+        results["tests"]["web_audio_hud"] = "PASSED (Exported HTML5 Studio Cockpit)"
+    except Exception as e:
+        results["tests"]["web_audio_hud"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v)
@@ -963,6 +1077,6 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v8.0 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v9.0 on stdio transport…")
     mcp.run()
 

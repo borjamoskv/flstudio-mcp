@@ -3,3 +3,5 @@ __pycache__/
 *.db-wal
 *.db-shm
 .DS_Store
+samples/stems/Dark_Cyber_Flamenco_Stems_16Bars/*.wav
+
