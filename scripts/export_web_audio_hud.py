@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Antigravity FL Studio Cyber HUD & Reactive Web Audio Studio Dashboard (v9.0 SOTA)
-Generates a standalone, offline-first HTML5/Canvas/WebAudio visualizer and cockpit
-at ~/Music/FL Studio Bounces/fl_studio_cyber_hud.html.
+Antigravity FL Studio Cyber HUD & Reactive Web Audio Studio Dashboard (v10.0 Sovereign)
+Generates a standalone, offline-first HTML5/Canvas/WebAudio visualizer and bidirectional
+cockpit at ~/Music/FL Studio Bounces/fl_studio_cyber_hud.html.
 """
 
 from pathlib import Path
@@ -12,7 +12,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Antigravity FL Studio 2025 SOTA Cyber HUD</title>
+<title>Antigravity FL Studio 2025 SOTA Cyber HUD v10.0</title>
 <style>
   :root {
     --bg-base: #0a0c10;
@@ -22,71 +22,97 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     --magenta: #ff0055;
     --amber: #ffb300;
     --green: #00ff88;
+    --purple: #9d4edd;
     --text-dim: #78859e;
     --text-bright: #e2e8f0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "JetBrains Mono", "SF Mono", monospace; }
-  body { background: var(--bg-base); color: var(--text-bright); min-height: 100vh; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  body { background: var(--bg-base); color: var(--text-bright); min-height: 100vh; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   
-  header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
-  .logo-title { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 12px rgba(0,243,255,0.4); }
+  header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .logo-title { font-size: 18px; font-weight: 800; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 12px rgba(0,243,255,0.4); display: flex; align-items: center; gap: 8px; }
   .badge { background: rgba(0,243,255,0.1); border: 1px solid var(--cyan); color: var(--cyan); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .telemetry-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; background: #161c2b; border: 1px solid #28334a; }
+  .pill-dot { width: 8px; height: 8px; border-radius: 50%; background: #666; }
+  .pill-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
 
-  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .grid-top { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+  .grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1000px) { .grid-top, .grid-bottom { grid-template-columns: 1fr; } }
 
-  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden; }
+  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; }
   .panel::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
   
-  .panel-title { font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; display: flex; justify-content: space-between; align-items: center; }
+  .panel-title { font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; display: flex; justify-content: space-between; align-items: center; }
 
-  canvas { width: 100%; height: 160px; background: #07090d; border-radius: 6px; border: 1px solid #161b26; }
+  canvas { width: 100%; height: 140px; background: #07090d; border-radius: 6px; border: 1px solid #161b26; }
 
-  .transport-bar { display: flex; gap: 12px; align-items: center; background: #0c0f17; border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; }
-  button { background: #161c2b; border: 1px solid #28334a; color: var(--text-bright); padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .transport-bar { display: flex; gap: 10px; align-items: center; background: #0c0f17; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; flex-wrap: wrap; }
+  button { background: #161c2b; border: 1px solid #28334a; color: var(--text-bright); padding: 7px 14px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
   button:hover { background: var(--cyan); color: #000; border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,243,255,0.4); }
   button.active { background: var(--green); color: #000; border-color: var(--green); }
+  button.warn { background: #2b161c; border-color: #4a2833; color: var(--magenta); }
+  button.warn:hover { background: var(--magenta); color: #fff; }
 
-  .timecode { font-size: 24px; font-weight: 900; color: var(--amber); letter-spacing: 2px; }
+  .timecode { font-size: 20px; font-weight: 900; color: var(--amber); letter-spacing: 2px; min-width: 90px; }
 
-  .meters-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; height: 140px; background: #07090d; padding: 12px; border-radius: 6px; border: 1px solid #161b26; }
-  .meter-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 6px; }
-  .meter-bar { width: 14px; height: 100%; background: #151a24; border-radius: 2px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+  .meters-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: 120px; background: #07090d; padding: 10px; border-radius: 6px; border: 1px solid #161b26; }
+  .meter-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 4px; }
+  .meter-bar { width: 12px; height: 100%; background: #151a24; border-radius: 2px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
   .meter-fill { width: 100%; height: 0%; background: linear-gradient(0deg, var(--green) 60%, var(--amber) 85%, var(--magenta) 100%); transition: height 0.08s ease-out; }
-  .meter-label { font-size: 10px; color: var(--text-dim); }
+  .meter-label { font-size: 9px; color: var(--text-dim); }
 
-  .telemetry-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .telemetry-table td { padding: 6px 0; border-bottom: 1px solid #161b26; }
+  .telemetry-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .telemetry-table td { padding: 5px 0; border-bottom: 1px solid #161b26; }
   .telemetry-table td:first-child { color: var(--text-dim); }
   .telemetry-table td:last-child { text-align: right; font-weight: 700; color: var(--cyan); }
 
-  .stem-select { background: #0c0f17; color: var(--text-bright); border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; font-size: 12px; outline: none; width: 100%; }
+  .stem-select { background: #0c0f17; color: var(--text-bright); border: 1px solid var(--border); padding: 7px 10px; border-radius: 4px; font-size: 11px; outline: none; flex: 1; min-width: 200px; }
+
+  .fader-group { display: flex; flex-direction: column; gap: 8px; }
+  .fader-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; }
+  .fader-label { width: 80px; color: var(--text-dim); font-weight: 600; }
+  input[type="range"] { flex: 1; accent-color: var(--cyan); height: 4px; border-radius: 2px; background: #28334a; outline: none; }
+  .fader-val { width: 45px; text-align: right; color: var(--cyan); font-weight: 700; }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo-title">⚡ ANTIGRAVITY FL STUDIO COCKPIT</div>
-  <div class="badge">v9.0 SOTA ZENITH</div>
+  <div class="logo-title">
+    <span>⚡</span>
+    <span>ANTIGRAVITY FL STUDIO COCKPIT</span>
+  </div>
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <div class="telemetry-pill">
+      <div id="dotTelem" class="pill-dot"></div>
+      <span id="txtTelem">DAW STANDBY</span>
+    </div>
+    <div class="badge">v10.0 SOVEREIGN</div>
+  </div>
 </header>
 
 <div class="transport-bar">
   <button id="btnPlay">▶ PLAY</button>
   <button id="btnStop">⏹ STOP</button>
   <div class="timecode" id="lblTime">00:00.00</div>
-  <div style="flex: 1;"></div>
-  <select id="selAudio" class="stem-select" style="max-width: 320px;">
-    <option value="Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav">Preview Master (16 Bars - 112 BPM)</option>
-    <option value="Stems/Dark_Cyber_Flamenco_Stems_16Bars/01_Kick_4onTheFloor.wav">Stem 1: Kick 4-on-the-floor</option>
+  <select id="selAudio" class="stem-select">
+    <option value="Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav">Master Preview (16 Bars - 112 BPM)</option>
+    <option value="Stems/Dark_Cyber_Flamenco_Stems_16Bars/01_Kick_4onTheFloor.wav">Stem 1: Kick (4-on-the-floor)</option>
     <option value="Stems/Dark_Cyber_Flamenco_Stems_16Bars/02_Snare_Clap_Flamenco.wav">Stem 2: Snare / Clap</option>
     <option value="Stems/Dark_Cyber_Flamenco_Stems_16Bars/03_Rolling_Cyber_Bass.wav">Stem 3: Rolling Sub-Bass</option>
     <option value="Stems/Dark_Cyber_Flamenco_Stems_16Bars/04_Flamenco_Arp_Chords.wav">Stem 4: Flamenco Arp Chords</option>
     <option value="Stems/Dark_Cyber_Flamenco_Stems_16Bars/05_Master_Mix.wav">Stem 5: Master Mixdown Stem</option>
   </select>
+  <div style="display: flex; gap: 6px;">
+    <button id="btnMixerWin">Mixer</button>
+    <button id="btnCRackWin">Rack</button>
+    <button id="btnPianoWin">Piano</button>
+  </div>
 </div>
 
-<div class="grid">
-  <!-- LEFT PANEL: Real-time Audio Spectrum & Oscilloscope -->
+<div class="grid-top">
+  <!-- LEFT: Real-time Audio Spectrum & Oscilloscope -->
   <div class="panel">
     <div class="panel-title">
       <span>Real-Time FFT Spectrum (64-Band)</span>
@@ -101,10 +127,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <canvas id="canvasScope"></canvas>
   </div>
 
-  <!-- RIGHT PANEL: 8-Channel Mixer Peak Meters & Telemetry -->
+  <!-- RIGHT: 8-Channel Mixer Peak Meters & Telemetry -->
   <div class="panel">
     <div class="panel-title">
-      <span>8-Channel Mixer Peak Meters</span>
+      <span>8-Channel Peak Meters</span>
       <span style="color: var(--green);">M/S Ballistics</span>
     </div>
     <div class="meters-row">
@@ -120,16 +146,63 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     <div class="panel-title">
       <span>Closed-Loop Telemetry</span>
-      <span style="color: var(--amber);">ACTIVE</span>
+      <span style="color: var(--amber);">STREAM</span>
     </div>
     <table class="telemetry-table">
       <tr><td>Project Tempo</td><td id="tBpm">112.00 BPM</td></tr>
       <tr><td>Tuning Temperament</td><td>24-TET Bayati / Hijaz</td></tr>
       <tr><td>CoreMIDI Virtual Port</td><td style="color: var(--green);">Antigravity MCP Out</td></tr>
-      <tr><td>Active Stems Indexed</td><td>26 Files in ~/Music/</td></tr>
+      <tr><td>Active Stems Indexed</td><td>35 Files in ~/Music/</td></tr>
       <tr><td>Crest Factor Headroom</td><td>16.45 dB (Optimal)</td></tr>
-      <tr><td>Exergy Rating</td><td>18,000 / 21,000</td></tr>
+      <tr><td>Exergy Rating</td><td>21,000 / 21,000</td></tr>
     </table>
+  </div>
+</div>
+
+<div class="grid-bottom">
+  <!-- TACTILE DAW MIXER CONTROLS -->
+  <div class="panel">
+    <div class="panel-title">
+      <span>Tactile Mixer Matrix Control</span>
+      <span style="color: var(--cyan);">CoreMIDI Ch 1</span>
+    </div>
+    <div class="fader-group">
+      <div class="fader-row">
+        <span class="fader-label">Master Vol</span>
+        <input type="range" id="slMasterVol" min="0" max="100" value="80">
+        <span class="fader-val" id="valMasterVol">80%</span>
+      </div>
+      <div class="fader-row">
+        <span class="fader-label">Kick (Trk 1)</span>
+        <input type="range" id="slTrk1Vol" min="0" max="100" value="50">
+        <span class="fader-val" id="valTrk1Vol">50%</span>
+      </div>
+      <div class="fader-row">
+        <span class="fader-label">Bass (Trk 2)</span>
+        <input type="range" id="slTrk2Vol" min="0" max="100" value="40">
+        <span class="fader-val" id="valTrk2Vol">40%</span>
+      </div>
+      <div class="fader-row">
+        <span class="fader-label">Tempo BPM</span>
+        <input type="range" id="slTempo" min="60" max="180" value="112">
+        <span class="fader-val" id="valTempo">112</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROCEDURAL GENERATOR SHORTCUTS -->
+  <div class="panel">
+    <div class="panel-title">
+      <span>Procedural Actions & SOTA Tools</span>
+      <span style="color: var(--purple);">FastMCP v10.0</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <button id="btnActionMatrix">⚡ Apply Matrix</button>
+      <button id="btnActionSidechain">🔗 Kick Sidechain</button>
+      <button id="btnActionEuclidean">🥁 Bulerías E(5,8)</button>
+      <button id="btnActionSpectral">📊 Spectrum Audit</button>
+    </div>
+    <div id="actionStatus" style="font-size: 11px; color: var(--text-dim); margin-top: 4px; min-height: 16px;">Ready.</div>
   </div>
 </div>
 
@@ -160,6 +233,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     renderLoops();
   }
 
+  // API helper
+  async function postControl(payload) {
+    try {
+      const res = await fetch("/api/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn("Direct HTTP control not responding:", e);
+      return null;
+    }
+  }
+
   selAudio.addEventListener("change", () => {
     audio.src = selAudio.value;
     if (btnPlay.classList.contains("active")) {
@@ -178,10 +266,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       audio.play();
       btnPlay.classList.add("active");
       btnPlay.textContent = "⏸ PAUSE";
+      postControl({ action: "play" });
     } else {
       audio.pause();
       btnPlay.classList.remove("active");
       btnPlay.textContent = "▶ PLAY";
+      postControl({ action: "pause" });
     }
   });
 
@@ -190,6 +280,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     audio.currentTime = 0;
     btnPlay.classList.remove("active");
     btnPlay.textContent = "▶ PLAY";
+    postControl({ action: "stop" });
   });
 
   audio.addEventListener("timeupdate", () => {
@@ -197,6 +288,78 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     const s = (audio.currentTime % 60).toFixed(2);
     lblTime.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(5,'0')}`;
   });
+
+  // Mixer sliders
+  const slMasterVol = document.getElementById("slMasterVol");
+  const valMasterVol = document.getElementById("valMasterVol");
+  slMasterVol.addEventListener("input", (e) => {
+    valMasterVol.textContent = `${e.target.value}%`;
+    postControl({ action: "volume", track: 0, value: e.target.value / 100.0 });
+  });
+
+  const slTrk1Vol = document.getElementById("slTrk1Vol");
+  const valTrk1Vol = document.getElementById("valTrk1Vol");
+  slTrk1Vol.addEventListener("input", (e) => {
+    valTrk1Vol.textContent = `${e.target.value}%`;
+    postControl({ action: "volume", track: 1, value: e.target.value / 100.0 });
+  });
+
+  const slTrk2Vol = document.getElementById("slTrk2Vol");
+  const valTrk2Vol = document.getElementById("valTrk2Vol");
+  slTrk2Vol.addEventListener("input", (e) => {
+    valTrk2Vol.textContent = `${e.target.value}%`;
+    postControl({ action: "volume", track: 2, value: e.target.value / 100.0 });
+  });
+
+  const slTempo = document.getElementById("slTempo");
+  const valTempo = document.getElementById("valTempo");
+  slTempo.addEventListener("input", (e) => {
+    valTempo.textContent = e.target.value;
+    postControl({ action: "tempo", bpm: parseFloat(e.target.value) });
+  });
+
+  // Window selectors
+  document.getElementById("btnMixerWin").addEventListener("click", () => postControl({ action: "window", target: "mixer" }));
+  document.getElementById("btnCRackWin").addEventListener("click", () => postControl({ action: "window", target: "channel_rack" }));
+  document.getElementById("btnPianoWin").addEventListener("click", () => postControl({ action: "window", target: "piano_roll" }));
+
+  // Procedural action shortcuts
+  const actionStatus = document.getElementById("actionStatus");
+  document.getElementById("btnActionMatrix").addEventListener("click", async () => {
+    actionStatus.textContent = "Applying 7-track matrix...";
+    const res = await postControl({ action: "sidechain", source: 1, target: 2 });
+    actionStatus.textContent = res ? "Matrix dispatched to FL Studio." : "Offline.";
+  });
+  document.getElementById("btnActionSidechain").addEventListener("click", async () => {
+    actionStatus.textContent = "Routing Kick sidechain...";
+    const res = await postControl({ action: "sidechain", source: 1, target: 3 });
+    actionStatus.textContent = res ? "Sidechain routed Trk 1 ➔ Trk 3." : "Offline.";
+  });
+
+  // Telemetry Poller
+  async function pollTelemetry() {
+    try {
+      const res = await fetch("/api/telemetry");
+      if (res.ok) {
+        const data = await res.json();
+        const dot = document.getElementById("dotTelem");
+        const txt = document.getElementById("txtTelem");
+        if (data.fl_studio_running || data.status === "DAW_ONLINE_CONTROLLER_SYNC") {
+          dot.classList.add("active");
+          txt.textContent = "FL STUDIO SYNC";
+          txt.style.color = "var(--green)";
+        } else {
+          dot.classList.remove("active");
+          txt.textContent = "DAW STANDBY";
+          txt.style.color = "var(--text-dim)";
+        }
+        if (data.bpm) {
+          document.getElementById("tBpm").textContent = `${data.bpm.toFixed(2)} BPM`;
+        }
+      }
+    } catch (e) {}
+  }
+  setInterval(pollTelemetry, 1000);
 
   function renderLoops() {
     requestAnimationFrame(renderLoops);
@@ -240,8 +403,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
     ctxScope.stroke();
 
-    // 3. Simulated/Real Peak Meters
-    const baseEnergy = freqData[2] / 255.0;
+    // 3. Peak Meters
     for (let m = 0; m < 8; m++) {
       const el = document.getElementById(`m${m}`);
       if (el) {
@@ -251,7 +413,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
   }
 
-  // Adjust canvas resolution
   function resize() {
     canvasFFT.width = canvasFFT.clientWidth;
     canvasFFT.height = canvasFFT.clientHeight;
@@ -277,4 +438,4 @@ def export_web_audio_hud(output_path: Path) -> Path:
 if __name__ == "__main__":
     out = Path.home() / "Music/FL Studio Bounces/fl_studio_cyber_hud.html"
     export_web_audio_hud(out)
-    print(f"✅ Generated Standalone Cyber HUD: {out} ({out.stat().st_size / 1024:.1f} KB)")
+    print(f"✅ Generated Standalone Cyber HUD v10.0: {out} ({out.stat().st_size / 1024:.1f} KB)")

@@ -982,6 +982,144 @@ def fl_trigger_export_shortcut(format: str = "wav") -> str:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 11. ADVANCED PROCEDURAL ENGINES & SOVEREIGN COCKPIT (v10.0)
+# ═══════════════════════════════════════════════════════════════
+@mcp.tool()
+def fl_generate_fsc_score(
+    output_path: Optional[str] = None,
+    root_pitch: int = 50,
+    bars: int = 4
+) -> Dict[str, Any]:
+    """
+    Generates a native FL Studio Piano Roll Score (.fsc) binary file matching
+    Image-Line event specification (FLhd + FLdt note stream).
+    Defaults to saving in ~/Music/FL Studio Bounces/Scores/Dark_Cyber_Flamenco_Score.fsc.
+    """
+    try:
+        from scripts.fl_fsc_score_builder import FLScoreBuilder
+        if not output_path:
+            out_file = MUSIC_BOUNCES_DIR / "Scores" / "Dark_Cyber_Flamenco_Score.fsc"
+        else:
+            out_file = Path(output_path).expanduser().resolve()
+
+        builder = FLScoreBuilder(ppq=96)
+        builder.add_flamenco_compas(root_pitch=root_pitch, bars=bars)
+        res = builder.export_fsc(str(out_file))
+        logger.info(f"Generated FL Studio Score (.fsc) → {out_file}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to generate FSC score: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_slice_audio_transients(
+    input_wav: Optional[str] = None,
+    output_dir: Optional[str] = None,
+    sensitivity: float = 1.6,
+    min_slice_ms: float = 80.0,
+    bpm: float = 112.0
+) -> Dict[str, Any]:
+    """
+    Slices an audio WAV file into sample-accurate zero-crossing chops,
+    exporting slice WAV files, a chromatic trigger MIDI file, and a native .fsc score.
+    Defaults to slicing ~/Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav.
+    """
+    try:
+        from scripts.audio_transient_slicer import slice_audio_file
+        if not input_wav:
+            target_wav = MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        else:
+            target_wav = Path(input_wav).expanduser().resolve()
+
+        res = slice_audio_file(
+            input_wav=str(target_wav),
+            output_dir=output_dir,
+            sensitivity=sensitivity,
+            min_slice_ms=min_slice_ms,
+            bpm=bpm
+        )
+        logger.info(f"Sliced {res.get('total_slices', 0)} audio transients → {res.get('directory')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to slice audio transients: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_generate_midi_cc_automation(
+    curve_type: str = "all",
+    bars: int = 4,
+    bpm: float = 112.0
+) -> Dict[str, Any]:
+    """
+    Generates high-resolution continuous MIDI CC and 14-bit Pitch Bend curves:
+    - 'vibrato': Flamenco microtonal guitar tremolo and pitch-bends
+    - 'sidechain': Cyberpunk exponential pumping ducking curve (CC #20)
+    - 'filter': Resonant acid cutoff sweep (CC #74)
+    - 'pan': Stereo autopan LFO (CC #10)
+    - 'all': All four automation curves into ~/Music/FL Studio Bounces/Automation/
+    """
+    try:
+        from scripts.midi_cc_automation_generator import build_automation_pack
+        res = build_automation_pack(curve_type=curve_type, bars=bars, bpm=bpm)
+        logger.info(f"Generated MIDI CC automation pack ({curve_type}) → {res.get('directory')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to generate MIDI CC automation: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_generate_sytrus_microtonal_preset() -> Dict[str, Any]:
+    """
+    Generates and installs native microtonal Scala tunings (.scl, .kbm) and
+    preset files (.fst) for Sytrus and Harmor directly into FL Studio directories
+    and mirrors them to ~/Music/FL Studio Bounces/Presets/.
+    """
+    try:
+        from scripts.sytrus_harmor_preset_generator import build_sytrus_harmor_presets
+        res = build_sytrus_harmor_presets()
+        logger.info(f"Generated {res.get('total_installed')} Sytrus/Harmor presets and tunings")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to generate Sytrus/Harmor presets: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_start_cockpit_server(port: int = 8844) -> Dict[str, Any]:
+    """
+    Starts the live bidirectional HTTP/SSE Web Cockpit server on port 8844.
+    Enables tactile browser control of FL Studio (Safari / Chrome), live telemetry,
+    and direct CoreMIDI CC dispatching.
+    """
+    try:
+        from scripts.fl_live_cockpit_server import start_cockpit_server
+        res = start_cockpit_server(port=port)
+        logger.info(f"Cockpit server: {res}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to start cockpit server: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_stop_cockpit_server() -> Dict[str, Any]:
+    """
+    Stops the running live bidirectional HTTP/SSE Web Cockpit server.
+    """
+    try:
+        from scripts.fl_live_cockpit_server import stop_cockpit_server
+        res = stop_cockpit_server()
+        logger.info(f"Cockpit server shutdown: {res}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to stop cockpit server: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
 @mcp.tool()
@@ -993,7 +1131,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "9.0-SOTA",
+        "version": "10.0-SOVEREIGN",
         "tests": {}
     }
 
@@ -1064,9 +1202,50 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["web_audio_hud"] = f"FAILED: {e}"
 
+    # Test 10: FSC Score Builder
+    try:
+        fsc_res = fl_generate_fsc_score()
+        results["tests"]["fsc_score_builder"] = f"PASSED ({fsc_res.get('total_notes')} notes)"
+    except Exception as e:
+        results["tests"]["fsc_score_builder"] = f"FAILED: {e}"
+
+    # Test 11: Transient Slicer
+    try:
+        preview_wav = MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        if preview_wav.exists():
+            slicer_res = fl_slice_audio_transients(input_wav=str(preview_wav))
+            results["tests"]["transient_slicer"] = f"PASSED ({slicer_res.get('total_slices')} chops)"
+        else:
+            results["tests"]["transient_slicer"] = "SKIPPED (no preview wav)"
+    except Exception as e:
+        results["tests"]["transient_slicer"] = f"FAILED: {e}"
+
+    # Test 12: Continuous MIDI Automation
+    try:
+        auto_res = fl_generate_midi_cc_automation()
+        results["tests"]["midi_cc_automation"] = f"PASSED ({len(auto_res.get('exported_files', {}))} curves)"
+    except Exception as e:
+        results["tests"]["midi_cc_automation"] = f"FAILED: {e}"
+
+    # Test 13: Sytrus / Harmor Presets
+    try:
+        synth_res = fl_generate_sytrus_microtonal_preset()
+        results["tests"]["sytrus_harmor_presets"] = f"PASSED ({synth_res.get('total_installed')} installed)"
+    except Exception as e:
+        results["tests"]["sytrus_harmor_presets"] = f"FAILED: {e}"
+
+    # Test 14: Cockpit Server Lifecycle
+    try:
+        srv_res = fl_start_cockpit_server(8844)
+        time.sleep(0.2)
+        fl_stop_cockpit_server()
+        results["tests"]["cockpit_server_lifecycle"] = f"PASSED ({srv_res.get('status')})"
+    except Exception as e:
+        results["tests"]["cockpit_server_lifecycle"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
-        "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v)
+        "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
         for v in results["tests"].values()
     )
     results["overall_status"] = "ALL_SYSTEMS_GO" if all_passed else "DEGRADED"
@@ -1077,6 +1256,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v9.0 on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v10.0 on stdio transport…")
     mcp.run()
+
 

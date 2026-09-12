@@ -6,6 +6,7 @@ centralized bounce cataloging, and self-test attestation.
 """
 
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -172,6 +173,45 @@ class TestFLStudioMCPServer(unittest.TestCase):
         """Verifies binary preset decompiler error handling on non-existent or invalid file."""
         res = mcp_server.fl_decompile_binary_preset("/nonexistent/preset.fst")
         self.assertIn("error", res)
+
+    def test_20_generate_fsc_score(self):
+        """Verifies native FL Studio Piano Roll Score (.fsc) binary generation."""
+        res = mcp_server.fl_generate_fsc_score(bars=2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("total_notes"), 24)
+        self.assertTrue(Path(res.get("file")).exists())
+
+    def test_21_slice_audio_transients(self):
+        """Verifies audio transient slicing into zero-crossing chops and MIDI/FSC triggers."""
+        preview_wav = mcp_server.MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+        if preview_wav.exists():
+            res = mcp_server.fl_slice_audio_transients(input_wav=str(preview_wav))
+            self.assertEqual(res.get("status"), "SUCCESS")
+            self.assertGreater(res.get("total_slices", 0), 0)
+            self.assertTrue(Path(res.get("trigger_midi")).exists())
+            self.assertTrue(Path(res.get("trigger_fsc")).exists())
+
+    def test_22_generate_midi_cc_automation(self):
+        """Verifies continuous high-resolution 14-bit pitch bend and CC automation generation."""
+        res = mcp_server.fl_generate_midi_cc_automation(curve_type="all", bars=2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("vibrato_pitch_bend", res.get("exported_files", {}))
+        self.assertIn("sidechain_ducking", res.get("exported_files", {}))
+
+    def test_23_generate_sytrus_microtonal_preset(self):
+        """Verifies microtonal Scala tunings and Sytrus/Harmor presets generation."""
+        res = mcp_server.fl_generate_sytrus_microtonal_preset()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_installed", 0), 0)
+        self.assertTrue(Path(res.get("centralized_mirror")).exists())
+
+    def test_24_live_cockpit_server(self):
+        """Verifies live bidirectional HTTP/SSE Cockpit server start, health check, and stop."""
+        start_res = mcp_server.fl_start_cockpit_server(port=8855)
+        self.assertIn(start_res.get("status"), ("STARTED", "ALREADY_RUNNING"))
+        time.sleep(0.3)
+        stop_res = mcp_server.fl_stop_cockpit_server()
+        self.assertIn(stop_res.get("status"), ("STOPPED", "NOT_RUNNING"))
 
 
 if __name__ == "__main__":

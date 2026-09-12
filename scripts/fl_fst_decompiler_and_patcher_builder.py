@@ -61,30 +61,37 @@ class FLBinaryDecompiler:
                     evt_id = self.data[pos]
                     pos += 1
 
-                    if evt_id < 64: # Byte event
+                    if evt_id < 64:  # Byte event (1 byte)
                         val = self.data[pos]
                         pos += 1
-                        events.append({"evt_id": evt_id, "type": "Byte", "val": val})
-                    elif evt_id < 128: # Short event
+                        events.append({"evt_id": hex(evt_id), "type": "Byte", "val": val})
+                    elif evt_id < 128:  # Word event (2 bytes)
                         val = struct.unpack('<H', self.data[pos:pos+2])[0]
                         pos += 2
-                        events.append({"evt_id": evt_id, "type": "Short", "val": val})
-                    elif evt_id < 192: # VarInt Text event
+                        events.append({"evt_id": hex(evt_id), "type": "Word", "val": val})
+                    elif evt_id < 192:  # DWord event (4 bytes)
+                        val = struct.unpack('<I', self.data[pos:pos+4])[0]
+                        pos += 4
+                        events.append({"evt_id": hex(evt_id), "type": "DWord", "val": val})
+                    else:  # VarLen Data / Text / Array event (>= 192)
                         length = 0
                         shift = 0
-                        while True:
+                        while pos < end_pos:
                             b = self.data[pos]
                             pos += 1
                             length |= (b & 0x7F) << shift
                             if (b & 0x80) == 0:
                                 break
                             shift += 7
-                        text_val = self.data[pos:pos+length].decode('utf-8', errors='ignore')
+                        payload = self.data[pos:pos+length]
                         pos += length
-                        events.append({"evt_id": evt_id, "type": "Text", "val": text_val})
-                    else: # Raw Data Block
-                        pos += 4
-                        events.append({"evt_id": evt_id, "type": "DataBlock"})
+                        # Try decoding as utf-8 / ascii string
+                        try:
+                            clean_str = payload.decode('utf-8').rstrip('\x00')
+                            val = clean_str if clean_str.isprintable() else f"<Binary {length} bytes>"
+                        except Exception:
+                            val = f"<Binary {length} bytes>"
+                        events.append({"evt_id": hex(evt_id), "type": "VarLen", "length": length, "val": val})
             else:
                 pos += 1
 
