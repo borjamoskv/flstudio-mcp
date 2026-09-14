@@ -418,6 +418,36 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertEqual(res.get("drive_db"), 6.0)
         self.assertTrue(Path(res.get("output_file")).exists())
 
+    def test_51_synthesize_spectral_freeze_drone(self):
+        """Verifies STFT spectral frame freeze & stochastic phase diffusion drone synthesis."""
+        res = mcp_server.fl_synthesize_spectral_freeze_drone(freeze_time_sec=1.5, output_duration_sec=2.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("output_duration_sec"), 2.0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_52_shape_multiband_transients(self):
+        """Verifies 3-band Linkwitz-Riley crossover multiband transient and sustain shaper."""
+        res = mcp_server.fl_shape_multiband_transients(high_transient_db=2.0, low_sustain_db=1.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("gains_applied_db", res)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_53_compile_multitrack_stems_flp(self):
+        """Verifies autopoietic native binary .flp compilation with audio clip samplers and mixer routing."""
+        res = mcp_server.fl_compile_multitrack_stems_flp()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_stem_channels", 0), 0)
+        self.assertTrue(Path(res.get("flp_file")).exists())
+        self.assertTrue(Path(res.get("manifest_file")).exists())
+
+    def test_54_simulate_binaural_room_acoustics(self):
+        """Verifies Image-Source Method (ISM) 3D binaural room impulse response simulation & convolution."""
+        res = mcp_server.fl_simulate_binaural_room_acoustics(reflection_order=1)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_virtual_image_sources", 0), 0)
+        self.assertTrue(Path(res.get("brir_impulse_file")).exists())
+        self.assertTrue(Path(res.get("output_file")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -23,7 +23,7 @@ import struct
 import subprocess
 import logging
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 
 import mido
 from mcp.server.fastmcp import FastMCP
@@ -68,7 +68,7 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "17.0-HYPER-DIMENSIONAL-OMNI"
+VERSION = "18.0-DEMIURGIC-NEXUS"
 
 
 
@@ -1837,6 +1837,133 @@ def fl_saturate_audio_wdf_analog(
         return {"status": "ERROR", "error": str(e)}
 
 
+@mcp.tool()
+def fl_synthesize_spectral_freeze_drone(
+    input_wav: Optional[str] = None,
+    freeze_time_sec: float = 2.5,
+    output_duration_sec: float = 6.0,
+    output_wav: Optional[str] = None,
+    shimmer_depth: float = 0.35,
+    phase_diffusion: float = 0.20
+) -> Dict[str, Any]:
+    """
+    Captures an instantaneous spectral frame from an audio mix and re-synthesizes an evolving,
+    organic ambient drone pad with stochastic phase diffusion and shimmer modulation.
+    """
+    try:
+        from scripts.spectral_freeze_drone_synthesizer import synthesize_spectral_freeze_drone
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = synthesize_spectral_freeze_drone(
+            input_wav=in_file,
+            freeze_time_sec=freeze_time_sec,
+            output_duration_sec=output_duration_sec,
+            output_wav=output_wav,
+            shimmer_depth=shimmer_depth,
+            phase_diffusion=phase_diffusion
+        )
+        logger.info(f"Spectral freeze drone synthesized ({res.get('output_duration_sec')}s) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize spectral freeze drone: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_shape_multiband_transients(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    low_transient_db: float = 0.0,
+    low_sustain_db: float = 2.0,
+    mid_transient_db: float = 1.5,
+    mid_sustain_db: float = 0.0,
+    high_transient_db: float = 3.0,
+    high_sustain_db: float = -1.0
+) -> Dict[str, Any]:
+    """
+    Applies surgical 3-band Linkwitz-Riley (LR4) transient vs. sustain envelope shaping
+    for independent dynamic punch, sub-bass weight, and high-frequency presence.
+    """
+    try:
+        from scripts.multiband_transient_shaper import shape_multiband_transients
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = shape_multiband_transients(
+            input_wav=in_file,
+            output_wav=output_wav,
+            low_transient_db=low_transient_db,
+            low_sustain_db=low_sustain_db,
+            mid_transient_db=mid_transient_db,
+            mid_sustain_db=mid_sustain_db,
+            high_transient_db=high_transient_db,
+            high_sustain_db=high_sustain_db
+        )
+        logger.info(f"Multiband transient shaping completed → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to shape multiband transients: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_compile_multitrack_stems_flp(
+    stems_dir: Optional[str] = None,
+    project_title: str = "Dark Cyber Flamenco Multitrack Session",
+    bpm: float = 112.0,
+    output_flp: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Compiles an autopoietic native binary FL Studio Project (.flp) directly linking WAV stems
+    into audio clip sampler channels with discrete mixer track routing (1..N) and timeline trigger notes.
+    """
+    try:
+        from scripts.flp_multitrack_stem_compiler import compile_multitrack_stems_flp
+        res = compile_multitrack_stems_flp(
+            stems_dir=stems_dir,
+            project_title=project_title,
+            bpm=bpm,
+            output_flp=output_flp
+        )
+        logger.info(f"Multitrack stems FLP compiled ({res.get('total_stem_channels')} channels) → {res.get('flp_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to compile multitrack stems FLP: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_simulate_binaural_room_acoustics(
+    input_wav: Optional[str] = None,
+    room_dims: Tuple[float, float, float] = (8.0, 6.0, 3.5),
+    source_pos: Tuple[float, float, float] = (2.0, 2.5, 1.5),
+    listener_pos: Tuple[float, float, float] = (4.5, 3.5, 1.7),
+    reflection_order: int = 3,
+    wall_reflectivity: float = 0.82,
+    wet_mix: float = 0.35,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Simulates physical 3D binaural room acoustics via Allen & Berkley Image-Source Method (ISM)
+    and convolves dry audio with the synthesized stereo Binaural Room Impulse Response (BRIR).
+    """
+    try:
+        from scripts.image_source_binaural_room_simulator import simulate_binaural_room_acoustics
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = simulate_binaural_room_acoustics(
+            input_wav=in_file,
+            room_dims=room_dims,
+            source_pos=source_pos,
+            listener_pos=listener_pos,
+            reflection_order=reflection_order,
+            wall_reflectivity=wall_reflectivity,
+            wet_mix=wet_mix,
+            output_wav=output_wav
+        )
+        logger.info(f"ISM Binaural room acoustics simulated ({res.get('total_virtual_image_sources')} rays) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to simulate binaural room acoustics: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
 # ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
@@ -1852,7 +1979,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "17.0-HYPER-DIMENSIONAL-OMNI",
+        "version": "18.0-DEMIURGIC-NEXUS",
         "tests": {}
     }
 
@@ -2156,6 +2283,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["wdf_analog_saturator"] = f"FAILED: {e}"
 
+    # Test 41: Spectral Freeze Drone
+    try:
+        freeze_res = fl_synthesize_spectral_freeze_drone(freeze_time_sec=1.5, output_duration_sec=2.0)
+        results["tests"]["spectral_freeze_drone"] = f"PASSED ({freeze_res.get('status')}, {freeze_res.get('output_duration_sec')}s)"
+    except Exception as e:
+        results["tests"]["spectral_freeze_drone"] = f"FAILED: {e}"
+
+    # Test 42: Multiband Transient Shaper
+    try:
+        shaper_res = fl_shape_multiband_transients(high_transient_db=2.0, low_sustain_db=1.0)
+        results["tests"]["multiband_transient_shaper"] = f"PASSED ({shaper_res.get('status')}, HighTrans=+2dB)"
+    except Exception as e:
+        results["tests"]["multiband_transient_shaper"] = f"FAILED: {e}"
+
+    # Test 43: Multitrack Stems FLP Compiler
+    try:
+        flp_stems_res = fl_compile_multitrack_stems_flp()
+        results["tests"]["flp_multitrack_stem_compiler"] = f"PASSED ({flp_stems_res.get('total_stem_channels')} channels, {flp_stems_res.get('file_size_bytes')}B)"
+    except Exception as e:
+        results["tests"]["flp_multitrack_stem_compiler"] = f"FAILED: {e}"
+
+    # Test 44: ISM 3D BRIR Simulator
+    try:
+        brir_res = fl_simulate_binaural_room_acoustics(reflection_order=1)
+        results["tests"]["ism_brir_simulator"] = f"PASSED ({brir_res.get('total_virtual_image_sources')} rays, wet={brir_res.get('wet_mix')})"
+    except Exception as e:
+        results["tests"]["ism_brir_simulator"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -2169,7 +2324,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v17.0 Hyper-Dimensional Omni on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v18.0 Demiurgic Nexus on stdio transport…")
     mcp.run()
 
 
