@@ -359,6 +359,32 @@ class TestFLStudioMCPServer(unittest.TestCase):
         res = mcp_server.fl_master_audio_ebu_r128(target_lufs=-14.0)
         self.assertEqual(res.get("status"), "SUCCESS")
         self.assertAlmostEqual(res.get("target_integrated_lufs"), -14.0)
+    def test_43_morph_spectral_cross_synthesis(self):
+        """Verifies STFT non-stationary spectral morphing and cross-synthesis vocoder."""
+        res = mcp_server.fl_morph_spectral_cross_synthesis(morph_factor=0.45)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("morph_factor"), 0.45)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_44_decorrelate_spatial_ambisonics(self):
+        """Verifies multi-channel orthogonal Schroeder all-pass lattice spatial decorrelator."""
+        res = mcp_server.fl_decorrelate_spatial_ambisonics(diffuse_amount=0.35)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("diffuse_amount"), 0.35)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_45_humanize_groove_causal(self):
+        """Verifies Bulerías 12-beat compás micro-timing and Voss-Clarke 1/f pink noise drift humanization."""
+        res = mcp_server.fl_humanize_groove_causal(style="bulerias_flamenco", groove_depth=0.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_notes_humanized", 0), 0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_46_calibrate_spectral_match_eq(self):
+        """Verifies LTAS Welch PSD spectral matching EQ calibrator against 1/f pink noise."""
+        res = mcp_server.fl_calibrate_spectral_match_eq(target_curve="pink_noise_1overf")
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("spectral_error_after_db", res)
         self.assertTrue(Path(res.get("output_file")).exists())
 
 

@@ -68,7 +68,7 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "15.0-ZENITH-CONTINUUM"
+VERSION = "16.0-SOVEREIGN-APEX"
 
 
 
@@ -1601,6 +1601,121 @@ def fl_master_audio_ebu_r128(
         logger.error(f"Failed to master audio: {e}")
         return {"status": "ERROR", "error": str(e)}
 
+@mcp.tool()
+def fl_morph_spectral_cross_synthesis(
+    carrier_wav: Optional[str] = None,
+    modulator_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    morph_factor: float = 0.5,
+    formant_preservation: bool = True
+) -> Dict[str, Any]:
+    """
+    Executes continuous non-stationary STFT spectral morphing between two audio streams,
+    interpolating between carrier harmonics and modulator formant structures with phase coherence.
+    """
+    try:
+        from scripts.spectral_morphing_cross_synthesizer import morph_spectral_cross_synthesis
+        c_file = carrier_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        m_file = modulator_wav or str(MUSIC_BOUNCES_DIR / "Neuroacoustics" / "Neuroacoustic_gamma_40hz_146Hz_Carrier.wav")
+        res = morph_spectral_cross_synthesis(
+            carrier_wav=c_file,
+            modulator_wav=m_file,
+            output_wav=output_wav,
+            morph_factor=morph_factor,
+            formant_preservation=formant_preservation
+        )
+        logger.info(f"Spectral morph cross-synthesis completed (alpha={res.get('morph_factor')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to execute spectral morph: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_decorrelate_spatial_ambisonics(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    diffuse_amount: float = 0.40,
+    cascaded_stages: int = 2
+) -> Dict[str, Any]:
+    """
+    Applies multi-channel orthogonal Schroeder all-pass delay lattice decorrelation to an Ambisonics
+    or stereo audio stream for heightened spatial envelopment (LEV/ASW) with zero comb filtering.
+    """
+    try:
+        from scripts.ambisonics_diffuse_decorrelator import decorrelate_spatial_ambisonics
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Ambisonics" / "Dark_Cyber_Flamenco_Audio_Preview_16Bars_Ambisonics_BFormat_ACN.wav")
+        res = decorrelate_spatial_ambisonics(
+            input_wav=in_file,
+            output_wav=output_wav,
+            diffuse_amount=diffuse_amount,
+            cascaded_stages=cascaded_stages
+        )
+        logger.info(f"Spatial Ambisonics decorrelation completed (diffuse={res.get('diffuse_amount')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to decorrelate spatial audio: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_humanize_groove_causal(
+    input_fsc: Optional[str] = None,
+    output_fsc: Optional[str] = None,
+    style: str = "bulerias_flamenco",
+    groove_depth: float = 0.65,
+    drift_amount: float = 0.40,
+    random_seed: int = 42
+) -> Dict[str, Any]:
+    """
+    Humanizes score note events using 12-beat Bulerías compás metric micro-timing and Voss-Clarke 1/f
+    fractal pink noise metabolic drift for organic groove feel.
+    """
+    try:
+        from scripts.causal_groove_humanizer import humanize_groove_causal
+        res = humanize_groove_causal(
+            input_fsc=input_fsc,
+            output_fsc=output_fsc,
+            style=style,
+            groove_depth=groove_depth,
+            drift_amount=drift_amount,
+            random_seed=random_seed
+        )
+        logger.info(f"Groove humanization applied ({res.get('style')}, {res.get('total_notes_humanized')} notes) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to humanize groove: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_calibrate_spectral_match_eq(
+    input_wav: Optional[str] = None,
+    reference_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    target_curve: str = "pink_noise_1overf",
+    max_boost_cut_db: float = 5.0
+) -> Dict[str, Any]:
+    """
+    Calibrates mix audio against a target spectral profile (1/f Pink Noise or reference track)
+    using Long-Term Average Spectrum (LTAS) analysis and minimum-phase FIR filtering.
+    """
+    try:
+        from scripts.spectral_match_eq_calibrator import calibrate_spectral_match_eq
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = calibrate_spectral_match_eq(
+            input_wav=in_file,
+            reference_wav=reference_wav,
+            output_wav=output_wav,
+            target_curve=target_curve,
+            max_boost_cut_db=max_boost_cut_db
+        )
+        logger.info(f"Spectral match EQ calibration completed ({res.get('target_curve')}, Error {res.get('spectral_error_before_db')}→{res.get('spectral_error_after_db')} dB) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to calibrate spectral match EQ: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
 
 # ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
@@ -1617,7 +1732,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "15.0-ZENITH-CONTINUUM",
+        "version": "16.0-SOVEREIGN-APEX",
         "tests": {}
     }
 
@@ -1865,6 +1980,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["mastering_chain_ebu_r128"] = f"FAILED: {e}"
 
+    # Test 33: Spectral Morphing Vocoder
+    try:
+        morph_res = fl_morph_spectral_cross_synthesis(morph_factor=0.5)
+        results["tests"]["spectral_morph_vocoder"] = f"PASSED ({morph_res.get('status')}, alpha={morph_res.get('morph_factor')})"
+    except Exception as e:
+        results["tests"]["spectral_morph_vocoder"] = f"FAILED: {e}"
+
+    # Test 34: Spatial Ambisonics Decorrelator
+    try:
+        dec_res = fl_decorrelate_spatial_ambisonics(diffuse_amount=0.35)
+        results["tests"]["spatial_ambisonics_decorrelator"] = f"PASSED ({dec_res.get('status')}, diffuse={dec_res.get('diffuse_amount')})"
+    except Exception as e:
+        results["tests"]["spatial_ambisonics_decorrelator"] = f"FAILED: {e}"
+
+    # Test 35: Causal Groove Humanizer
+    try:
+        groove_res = fl_humanize_groove_causal(style="bulerias_flamenco", groove_depth=0.5)
+        results["tests"]["causal_groove_humanizer"] = f"PASSED ({groove_res.get('status')}, {groove_res.get('total_notes_humanized')} notes)"
+    except Exception as e:
+        results["tests"]["causal_groove_humanizer"] = f"FAILED: {e}"
+
+    # Test 36: Spectral Match EQ Calibrator
+    try:
+        match_res = fl_calibrate_spectral_match_eq(target_curve="pink_noise_1overf")
+        results["tests"]["spectral_match_eq"] = f"PASSED ({match_res.get('status')}, Error={match_res.get('spectral_error_after_db')}dB)"
+    except Exception as e:
+        results["tests"]["spectral_match_eq"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -1878,7 +2021,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v15.0 Zenith Continuum on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v16.0 Sovereign Apex on stdio transport…")
     mcp.run()
 
 
