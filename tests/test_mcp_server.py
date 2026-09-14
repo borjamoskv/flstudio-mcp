@@ -483,6 +483,38 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertTrue(Path(res.get("fsc_score_file")).exists())
         self.assertTrue(Path(res.get("midi_file")).exists())
 
+    def test_59_apply_psychoacoustic_noise_shaping_dither(self):
+        """Verifies Lipshitz-Vanderkooy psychoacoustically noise-shaped TPDF dithering and noise floor shaping."""
+        res = mcp_server.fl_apply_psychoacoustic_noise_shaping_dither(target_bit_depth=16, noise_shaping=True, max_duration_sec=1.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("target_bit_depth"), 16)
+        self.assertTrue(res.get("noise_shaping_enabled"))
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_60_synthesize_modal_plate_resonator(self):
+        """Verifies 2D Kirchhoff-Love thin plate physical modeling and Chladni modal synthesis."""
+        res = mcp_server.fl_synthesize_modal_plate_resonator(material="bronze", duration_sec=1.5, max_modes=24)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("material"), "bronze")
+        self.assertGreater(res.get("total_modes_synthesized", 0), 0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_61_deconvolve_homomorphic_cepstrum(self):
+        """Verifies Oppenheim homomorphic real cepstrum deconvolution and formant envelope shaping."""
+        res = mcp_server.fl_deconvolve_homomorphic_cepstrum(quefrency_cutoff_ms=2.8, max_duration_sec=1.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("quefrency_cutoff_ms"), 2.8)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_62_align_multitrack_stems_phase(self):
+        """Verifies sub-sample cross-correlation lag estimation and fractional delay phase alignment."""
+        res = mcp_server.fl_align_multitrack_stems_phase(max_duration_sec=1.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("delay_offset_ms", res)
+        self.assertIn("aligned_phase_correlation", res)
+        self.assertTrue(Path(res.get("output_sum_mix_file")).exists())
+        self.assertTrue(Path(res.get("aligned_secondary_file")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
