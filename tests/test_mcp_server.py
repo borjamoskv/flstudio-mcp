@@ -448,6 +448,41 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertTrue(Path(res.get("brir_impulse_file")).exists())
         self.assertTrue(Path(res.get("output_file")).exists())
 
+    def test_55_synthesize_shepard_risset_glissando(self):
+        """Verifies Shepard-Risset infinite glissando and 3D barberpole binaural spatialization."""
+        res = mcp_server.fl_synthesize_shepard_risset_glissando(duration_sec=2.0, direction="ascending")
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("direction"), "ascending")
+        self.assertEqual(res.get("duration_sec"), 2.0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_56_extract_harmonic_perceptual_features(self):
+        """Verifies psychoacoustic MIR Chroma, K-S 24-key detection, and spectral flux BPM estimation."""
+        res = mcp_server.fl_extract_harmonic_perceptual_features()
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertIn("detected_key", res)
+        self.assertIn("estimated_bpm", res)
+        self.assertIn("chroma_pitch_class_profile", res)
+        self.assertTrue(Path(res.get("report_file")).exists())
+
+    def test_57_synthesize_formant_vocal_tract(self):
+        """Verifies Chiba-Kajiyama acoustic vocal tract physical modeling with Liljencrants-Fant glottal pulse."""
+        res = mcp_server.fl_synthesize_formant_vocal_tract(vowel="A", duration_sec=1.5, pitch_midi=57.0)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("vowel"), "A")
+        self.assertEqual(res.get("pitch_midi"), 57.0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_58_compose_algorithmic_modal_counterpoint(self):
+        """Verifies Johann Joseph Fux First-Species modal counterpoint and dual-voice .fsc & .mid export."""
+        res = mcp_server.fl_compose_algorithmic_modal_counterpoint(cantus_firmus_mode="dorian", bars=12)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("mode"), "Dorian")
+        self.assertEqual(res.get("total_bars"), 12)
+        self.assertEqual(res.get("total_notes"), 24)
+        self.assertTrue(Path(res.get("fsc_score_file")).exists())
+        self.assertTrue(Path(res.get("midi_file")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

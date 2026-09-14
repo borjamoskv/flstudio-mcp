@@ -68,7 +68,7 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "18.0-DEMIURGIC-NEXUS"
+VERSION = "19.0-SINGULARITY-MATRIX"
 
 
 
@@ -1964,6 +1964,128 @@ def fl_simulate_binaural_room_acoustics(
         return {"status": "ERROR", "error": str(e)}
 
 
+@mcp.tool()
+def fl_synthesize_shepard_risset_glissando(
+    duration_sec: float = 8.0,
+    glissando_rate_oct_per_sec: float = 0.25,
+    direction: str = "ascending",
+    barberpole_spin_hz: float = 0.35,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Synthesizes the continuous psychoacoustic auditory illusion of infinite ascending or descending pitch
+    (Jean-Claude Risset glissando) coupled with 3D barberpole binaural spatial rotation.
+    Exports 16-bit 44.1kHz stereo audio to ~/Music/FL Studio Bounces/Shepard_Risset/.
+    """
+    try:
+        from scripts.shepard_risset_glissando_synthesizer import synthesize_shepard_risset_glissando
+        res = synthesize_shepard_risset_glissando(
+            duration_sec=duration_sec,
+            glissando_rate_oct_per_sec=glissando_rate_oct_per_sec,
+            direction=direction,
+            barberpole_spin_hz=barberpole_spin_hz,
+            output_wav=output_wav
+        )
+        logger.info(f"Shepard-Risset glissando synthesized ({res.get('direction')}, {res.get('duration_sec')}s) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize Shepard-Risset glissando: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_extract_harmonic_perceptual_features(
+    input_wav: Optional[str] = None,
+    top_candidates: int = 3,
+    output_json: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Performs psychoacoustic Music Information Retrieval (MIR) feature extraction:
+    computes 12-D CQT Chroma profile, determines tonal key center via Krumhansl-Schmuckler (K-S)
+    24-key correlation, estimates pulse tempo (BPM) via spectral flux autocorrelation, and extracts
+    spectral timbre descriptors (centroid, 85% rolloff, Wiener flatness).
+    Exports telemetry to ~/Music/FL Studio Bounces/MIR_Analysis/.
+    """
+    try:
+        from scripts.psychoacoustic_mir_extractor import extract_harmonic_perceptual_features
+        res = extract_harmonic_perceptual_features(
+            input_wav=input_wav,
+            top_candidates=top_candidates,
+            output_json=output_json
+        )
+        logger.info(f"MIR features extracted (Key={res.get('detected_key')}, BPM={res.get('estimated_bpm')}) → {res.get('report_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to extract MIR features: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_synthesize_formant_vocal_tract(
+    vowel: str = "A",
+    duration_sec: float = 3.0,
+    pitch_midi: float = 57.0,
+    vibrato_rate_hz: float = 5.5,
+    vibrato_depth_semitones: float = 0.5,
+    aspiration_noise_ratio: float = 0.04,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Acoustic vocal tract physical modeler based on Chiba-Kajiyama acoustic measurements:
+    generates Liljencrants-Fant (LF) glottal velocity pulse flow derivative with organic pitch jitter,
+    filters through a 4-formant resonator filter bank for vowels (A, E, I, O, U), applies mouth lip
+    radiation impedance differentiation, and Haas binaural stereo widening.
+    Exports to ~/Music/FL Studio Bounces/Vocal_Tract/.
+    """
+    try:
+        from scripts.vocal_tract_physical_modeler import synthesize_formant_vocal_tract
+        res = synthesize_formant_vocal_tract(
+            vowel=vowel,
+            duration_sec=duration_sec,
+            pitch_midi=pitch_midi,
+            vibrato_rate_hz=vibrato_rate_hz,
+            vibrato_depth_semitones=vibrato_depth_semitones,
+            aspiration_noise_ratio=aspiration_noise_ratio,
+            output_wav=output_wav
+        )
+        logger.info(f"Vocal tract formants synthesized (Vowel {res.get('vowel')}, MIDI {res.get('pitch_midi')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize vocal tract formants: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_compose_algorithmic_modal_counterpoint(
+    cantus_firmus_mode: str = "dorian",
+    bars: int = 12,
+    counterpoint_position: str = "above",
+    output_fsc: Optional[str] = None,
+    output_midi: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Composes strict First-Species modal counterpoint based on Johann Joseph Fux's *Gradus ad Parnassum* (1725).
+    Generates a Gregorian Cantus Firmus in church modes (Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Ionian),
+    solves for valid 1:1 counterpoint (no parallel 5ths/8ths, no direct 5ths/8ths, clausula vera cadence),
+    and compiles dual-voice native FL Studio Piano Roll Score (.fsc v3.0.0) and standard MIDI (.mid).
+    Exports to ~/Music/FL Studio Bounces/Scores/.
+    """
+    try:
+        from scripts.fuxian_modal_counterpoint_builder import compose_algorithmic_modal_counterpoint
+        res = compose_algorithmic_modal_counterpoint(
+            cantus_firmus_mode=cantus_firmus_mode,
+            bars=bars,
+            counterpoint_position=counterpoint_position,
+            output_fsc=output_fsc,
+            output_midi=output_midi
+        )
+        logger.info(f"Fuxian modal counterpoint composed ({res.get('mode')}, {res.get('total_bars')} bars) → {res.get('fsc_score_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to compose modal counterpoint: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
 # ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
@@ -1979,7 +2101,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "18.0-DEMIURGIC-NEXUS",
+        "version": "19.0-SINGULARITY-MATRIX",
         "tests": {}
     }
 
@@ -2311,6 +2433,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["ism_brir_simulator"] = f"FAILED: {e}"
 
+    # Test 45: Shepard-Risset Glissando Synthesizer
+    try:
+        shep_res = fl_synthesize_shepard_risset_glissando(duration_sec=2.0)
+        results["tests"]["shepard_risset_glissando"] = f"PASSED ({shep_res.get('status')}, {shep_res.get('direction')}, {shep_res.get('duration_sec')}s)"
+    except Exception as e:
+        results["tests"]["shepard_risset_glissando"] = f"FAILED: {e}"
+
+    # Test 46: Psychoacoustic MIR Feature Extractor
+    try:
+        mir_res = fl_extract_harmonic_perceptual_features()
+        results["tests"]["psychoacoustic_mir"] = f"PASSED ({mir_res.get('status')}, Key={mir_res.get('detected_key')}, BPM={mir_res.get('estimated_bpm')})"
+    except Exception as e:
+        results["tests"]["psychoacoustic_mir"] = f"FAILED: {e}"
+
+    # Test 47: Vocal Tract Formant Modeler
+    try:
+        vocal_res = fl_synthesize_formant_vocal_tract(vowel="A", duration_sec=1.0)
+        results["tests"]["vocal_tract_modeler"] = f"PASSED ({vocal_res.get('status')}, Vowel {vocal_res.get('vowel')}, MIDI {vocal_res.get('pitch_midi')})"
+    except Exception as e:
+        results["tests"]["vocal_tract_modeler"] = f"FAILED: {e}"
+
+    # Test 48: Fuxian Modal Counterpoint Builder
+    try:
+        fux_res = fl_compose_algorithmic_modal_counterpoint(cantus_firmus_mode="dorian", bars=12)
+        results["tests"]["fuxian_modal_counterpoint"] = f"PASSED ({fux_res.get('status')}, {fux_res.get('mode')}, {fux_res.get('total_bars')} bars, {fux_res.get('total_notes')} notes)"
+    except Exception as e:
+        results["tests"]["fuxian_modal_counterpoint"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -2324,7 +2474,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v18.0 Demiurgic Nexus on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v19.0 Singularity Matrix on stdio transport…")
     mcp.run()
 
 
