@@ -68,7 +68,7 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "16.0-SOVEREIGN-APEX"
+VERSION = "17.0-HYPER-DIMENSIONAL-OMNI"
 
 
 
@@ -1717,6 +1717,126 @@ def fl_calibrate_spectral_match_eq(
         return {"status": "ERROR", "error": str(e)}
 
 
+@mcp.tool()
+def fl_synthesize_waveguide_flute(
+    pitch_midi: int = 62,
+    duration_sec: float = 2.5,
+    breath_pressure: float = 0.85,
+    vibrato_rate_hz: float = 5.2,
+    vibrato_depth_cents: float = 25.0,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Synthesizes an acoustic instrument stem using Julius O. Smith digital waveguide physical modeling
+    with Thiran all-pass fractional delay lines and non-linear cubic jet scattering.
+    """
+    try:
+        from scripts.digital_waveguide_physical_modeler import synthesize_waveguide_flute
+        res = synthesize_waveguide_flute(
+            pitch_midi=pitch_midi,
+            duration_sec=duration_sec,
+            breath_pressure=breath_pressure,
+            vibrato_rate_hz=vibrato_rate_hz,
+            vibrato_depth_cents=vibrato_depth_cents,
+            output_wav=output_wav
+        )
+        logger.info(f"Waveguide physical flute synthesized (MIDI {res.get('pitch_midi')}, {res.get('base_freq_hz')} Hz) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize waveguide flute: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_demix_multitrack_nmf_blind(
+    input_wav: Optional[str] = None,
+    output_dir: Optional[str] = None,
+    num_components: int = 6,
+    nmf_iterations: int = 25
+) -> Dict[str, Any]:
+    """
+    Decomposes a full audio mix into 4 discrete perceptual production stems (Drums, Bass, Tonal Harmonics, Air)
+    via Non-Negative Matrix Factorization (NMF) and generalized soft Wiener ratio masking.
+    """
+    try:
+        from scripts.nmf_blind_stem_demixer import demix_multitrack_nmf_blind
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = demix_multitrack_nmf_blind(
+            input_wav=in_file,
+            output_dir=output_dir,
+            num_components=num_components,
+            nmf_iterations=nmf_iterations
+        )
+        logger.info(f"Blind NMF stem demixing completed ({len(res.get('separated_stems', {}))} stems) → {res.get('output_directory')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to execute NMF blind demixing: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_optimize_tonnetz_voice_leading(
+    base_progression: Optional[List[str]] = None,
+    target_mode: str = "phrygian_dominant",
+    transformation_cycle: str = "PLR_hexatonic",
+    bars: int = 4,
+    output_fsc: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Generates and optimizes a harmonic progression on the Neo-Riemannian Tonnetz torus (P, L, R, S, N, H operators)
+    with minimum-distance parsimonious voice-leading, exporting a native binary .fsc score.
+    """
+    try:
+        from scripts.tonnetz_neo_riemannian_optimizer import optimize_neo_riemannian_progression
+        res = optimize_neo_riemannian_progression(
+            base_progression=base_progression,
+            target_mode=target_mode,
+            transformation_cycle=transformation_cycle,
+            bars=bars,
+            output_fsc=output_fsc
+        )
+        logger.info(f"Tonnetz voice-leading optimized ({res.get('target_mode')}, {res.get('total_chords')} chords, Cost={res.get('parsimonious_voice_leading_cost')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to optimize Tonnetz voice leading: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_saturate_audio_wdf_analog(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    drive_db: float = 6.0,
+    tube_bias: float = 0.20,
+    tone_bass: float = 0.55,
+    tone_mid: float = 0.45,
+    tone_treble: float = 0.60,
+    mix_wet: float = 0.65
+) -> Dict[str, Any]:
+    """
+    Applies Alfred Fettweis Wave Digital Filter (WDF) analog tube/diode saturation with 4x anti-aliasing
+    oversampling and passive 3-band RC tone stack modeling.
+    """
+    try:
+        from scripts.wave_digital_filter_analog_saturator import saturate_audio_wdf_analog
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = saturate_audio_wdf_analog(
+            input_wav=in_file,
+            output_wav=output_wav,
+            drive_db=drive_db,
+            tube_bias=tube_bias,
+            tone_bass=tone_bass,
+            tone_mid=tone_mid,
+            tone_treble=tone_treble,
+            mix_wet=mix_wet
+        )
+        logger.info(f"WDF analog saturation applied (+{res.get('drive_db')} dB, bias={res.get('tube_bias')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to apply WDF analog saturation: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
 # ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
@@ -1732,7 +1852,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "16.0-SOVEREIGN-APEX",
+        "version": "17.0-HYPER-DIMENSIONAL-OMNI",
         "tests": {}
     }
 
@@ -2008,6 +2128,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["spectral_match_eq"] = f"FAILED: {e}"
 
+    # Test 37: Waveguide Flute Physical Modeler
+    try:
+        wg_res = fl_synthesize_waveguide_flute(pitch_midi=62, duration_sec=1.0)
+        results["tests"]["waveguide_flute"] = f"PASSED ({wg_res.get('status')}, {wg_res.get('base_freq_hz')}Hz)"
+    except Exception as e:
+        results["tests"]["waveguide_flute"] = f"FAILED: {e}"
+
+    # Test 38: NMF Blind Stem Demixer
+    try:
+        nmf_res = fl_demix_multitrack_nmf_blind(num_components=4, nmf_iterations=10)
+        results["tests"]["nmf_blind_demixer"] = f"PASSED ({nmf_res.get('status')}, {len(nmf_res.get('separated_stems', {}))} stems)"
+    except Exception as e:
+        results["tests"]["nmf_blind_demixer"] = f"FAILED: {e}"
+
+    # Test 39: Tonnetz Voice-Leading Optimizer
+    try:
+        tonnetz_res = fl_optimize_tonnetz_voice_leading(bars=2)
+        results["tests"]["tonnetz_voice_leading"] = f"PASSED ({tonnetz_res.get('status')}, {tonnetz_res.get('total_chords')} chords, Cost={tonnetz_res.get('parsimonious_voice_leading_cost')})"
+    except Exception as e:
+        results["tests"]["tonnetz_voice_leading"] = f"FAILED: {e}"
+
+    # Test 40: WDF Analog Saturator
+    try:
+        wdf_res = fl_saturate_audio_wdf_analog(drive_db=6.0, tube_bias=0.20)
+        results["tests"]["wdf_analog_saturator"] = f"PASSED ({wdf_res.get('status')}, +{wdf_res.get('drive_db')}dB)"
+    except Exception as e:
+        results["tests"]["wdf_analog_saturator"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -2021,7 +2169,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v16.0 Sovereign Apex on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v17.0 Hyper-Dimensional Omni on stdio transport…")
     mcp.run()
 
 

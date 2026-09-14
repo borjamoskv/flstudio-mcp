@@ -387,6 +387,37 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertIn("spectral_error_after_db", res)
         self.assertTrue(Path(res.get("output_file")).exists())
 
+    def test_47_synthesize_waveguide_flute(self):
+        """Verifies Julius O. Smith digital waveguide physical modeling acoustic Ney/flute synthesis."""
+        res = mcp_server.fl_synthesize_waveguide_flute(pitch_midi=62, duration_sec=1.2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("pitch_midi"), 62)
+        self.assertAlmostEqual(res.get("base_freq_hz"), 293.66, places=1)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_48_demix_multitrack_nmf_blind(self):
+        """Verifies unsupervised NMF & Wiener ratio masking blind audio source separation into 4 stems."""
+        res = mcp_server.fl_demix_multitrack_nmf_blind(num_components=4, nmf_iterations=10)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(len(res.get("separated_stems", {})), 4)
+        for stem_name, stem_path in res.get("separated_stems", {}).items():
+            self.assertTrue(Path(stem_path).exists(), f"Stem {stem_name} does not exist")
+
+    def test_49_optimize_tonnetz_voice_leading(self):
+        """Verifies Neo-Riemannian Tonnetz torus progression & parsimonious voice-leading minimization."""
+        res = mcp_server.fl_optimize_tonnetz_voice_leading(bars=2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_chords", 0), 0)
+        self.assertIn("parsimonious_voice_leading_cost", res)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_50_saturate_audio_wdf_analog(self):
+        """Verifies Wave Digital Filter (WDF) analog diode/triode saturation and 3-band RC tone stack."""
+        res = mcp_server.fl_saturate_audio_wdf_analog(drive_db=6.0, tube_bias=0.20)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("drive_db"), 6.0)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
