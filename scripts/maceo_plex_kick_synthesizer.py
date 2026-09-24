@@ -81,6 +81,81 @@ def generate_maceo_plex_kick(
     return output_path
 
 
+def generate_maceo_plex_kick_pattern(
+    output_path: str,
+    fundamental_hz: float = 43.65,
+    bpm: float = 124.0,
+    length_bars: int = 4,
+    sample_rate: int = 44100
+) -> str:
+    """
+    Generates a full multi-bar Maceo Plex Melodic Techno kick drum + sub-rumble pattern.
+    """
+    beat_sec = 60.0 / bpm
+    bar_sec = beat_sec * 4.0
+    total_sec = bar_sec * length_bars
+    total_samples = int(total_sec * sample_rate)
+
+    # 1. Synthesize single single kick sample
+    temp_kick_path = "/tmp/maceo_temp_kick.wav"
+    generate_maceo_plex_kick(
+        output_path=temp_kick_path,
+        sub_freq_hz=fundamental_hz,
+        pitch_start_hz=3800.0,
+        pitch_decay_ms=9.0,
+        body_decay_ms=220.0,
+        saturation_drive=2.6,
+        sample_rate=sample_rate
+    )
+    
+    with wave.open(temp_kick_path, 'r') as wf:
+        kick_frames = wf.readframes(wf.getnframes())
+        kick_data = list(struct.unpack(f"<{len(kick_frames)//2}h", kick_frames))
+
+    out_buffer = [0.0] * total_samples
+
+    # Place 4-on-the-floor kicks + sub rumble on 16ths
+    for bar in range(length_bars):
+        bar_start_s = bar * bar_sec
+        for beat in range(4):
+            t_hit = bar_start_s + beat * beat_sec
+            start_idx = int(t_hit * sample_rate)
+            for j, val in enumerate(kick_data):
+                if start_idx + j < total_samples:
+                    out_buffer[start_idx + j] += (val / 32768.0) * 0.95
+
+            # Sub-rumble offbeat on 16th (step 2 and 3 of beat)
+            for step_sub in [2, 3]:
+                t_sub = t_hit + step_sub * (beat_sec / 4.0)
+                sub_idx = int(t_sub * sample_rate)
+                # rumble is low-pass filtered delayed tail
+                for j in range(int(0.12 * sample_rate)):
+                    if sub_idx + j < total_samples:
+                        t_r = j / sample_rate
+                        sub_wave = math.sin(2.0 * math.pi * fundamental_hz * t_r) * math.exp(-t_r * 18.0) * 0.28
+                        out_buffer[sub_idx + j] += sub_wave
+
+    # Soft clip master pattern
+    samples = []
+    for s in out_buffer:
+        driven = math.tanh(s * 1.5) / math.tanh(1.5)
+        pcm = int(max(-32767, min(32767, driven * 32000.0)))
+        samples.append(pcm)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with wave.open(output_path, 'w') as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        packed_data = bytearray()
+        for sample in samples:
+            packed_data.extend(struct.pack('<h', sample))
+        wav_file.writeframes(packed_data)
+
+    print(f"[Maceo Plex Kick Synth] Generated Pattern WAV -> {output_path}")
+    return output_path
+
+
 def generate_maceo_plex_kick_pack() -> List[str]:
     """Generates a complete 3-sample Maceo Plex signature kick pack."""
     target_dir = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/samples/maceo_plex")
@@ -116,3 +191,4 @@ def generate_maceo_plex_kick_pack() -> List[str]:
 
 if __name__ == "__main__":
     generate_maceo_plex_kick_pack()
+

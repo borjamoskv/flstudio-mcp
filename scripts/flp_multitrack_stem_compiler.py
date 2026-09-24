@@ -48,7 +48,9 @@ def compile_multitrack_stems_flp(
     stems_dir: Optional[str] = None,
     project_title: str = "Dark Cyber Flamenco Multitrack Session",
     bpm: float = 112.0,
-    output_flp: Optional[str] = None
+    output_flp: Optional[str] = None,
+    total_bars: int = 64,
+    channel_staging: Optional[Dict[str, Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
     Compiles an autopoietic .flp project linking discrete WAV stems into channels with mixer routing.
@@ -96,7 +98,7 @@ def compile_multitrack_stems_flp(
 
     channels_meta = []
     notes_bytes = bytearray()
-    ticks_16_bars = 16 * 4 * DEFAULT_PPQ  # 6144 ticks
+    ticks_arrangement = total_bars * 4 * DEFAULT_PPQ
 
     for ch_idx, stem_file in enumerate(wav_files):
         mixer_track = ch_idx + 1  # Mixer 1, 2, 3...
@@ -118,39 +120,50 @@ def compile_multitrack_stems_flp(
         dt_stream += encode_varlen(len(sample_path_b))
         dt_stream += sample_path_b
 
+        vol = 100
+        pan = 64
+        if channel_staging:
+            for k in [stem_file.name, stem_file.stem, stem_name]:
+                if k in channel_staging:
+                    vol = channel_staging[k].get("volume", vol)
+                    pan = channel_staging[k].get("pan", pan)
+                    if "mixer_track" in channel_staging[k]:
+                        mixer_track = channel_staging[k]["mixer_track"]
+                    break
+
         # Event 0x45: Mixer Track Routing (Word)
         dt_stream.append(0x45)
         dt_stream += struct.pack("<H", mixer_track)
 
-        # Event 0x01: Volume (100 out of 127)
+        # Event 0x01: Volume (0 to 127)
         dt_stream.append(0x01)
-        dt_stream.append(100)
+        dt_stream.append(int(vol))
 
         # Event 0x02: Pan (64 = center)
         dt_stream.append(0x02)
-        dt_stream.append(64)
+        dt_stream.append(int(pan))
 
         channels_meta.append({
             "channel_index": ch_idx,
             "channel_name": stem_name,
             "sample_file": str(stem_file),
             "mixer_track": mixer_track,
-            "volume": 100,
-            "pan": 64
+            "volume": int(vol),
+            "pan": int(pan)
         })
 
         # Add trigger note at Bar 0 (pitch C5 = 60)
         flags = int(0x00400000 | (ch_idx & 0xFF))
         notes_bytes += struct.pack(
             "<IIIIBBBB",
-            0,              # pos = 0
-            flags,          # flags
-            ticks_16_bars,  # duration 16 bars
-            60,             # pitch C5
-            64,             # pan center
-            100,            # velocity
-            128,            # release
-            80              # mod
+            0,                  # pos = 0
+            flags,              # flags
+            ticks_arrangement,  # duration arrangement
+            60,                 # pitch C5
+            int(pan),           # pan
+            int(vol),           # velocity
+            128,                # release
+            80                  # mod
         )
 
     # Event 0xE0: Note Array
@@ -188,6 +201,7 @@ def compile_multitrack_stems_flp(
         "project_title": project_title,
         "bpm": bpm,
         "ppq": DEFAULT_PPQ,
+        "total_bars": total_bars,
         "flp_file": str(out_flp_path),
         "file_size_bytes": len(flp_binary),
         "total_channels": num_ch,
@@ -209,5 +223,34 @@ def compile_multitrack_stems_flp(
 
 
 if __name__ == "__main__":
-    res = compile_multitrack_stems_flp()
-    print("Multitrack Stem FLP Compiler Output:", res)
+    import argparse
+    parser = argparse.ArgumentParser(description="Autopoietic FLP Multitrack Stem Compiler")
+    parser.add_argument("--stems-dir", type=str, default=None, help="Directory containing WAV stems")
+    parser.add_argument("--title", type=str, default="Dark Cyber Flamenco Multitrack Session", help="Project title")
+    parser.add_argument("--bpm", type=float, default=112.0, help="Tempo BPM")
+    parser.add_argument("--output", type=str, default=None, help="Target .flp path")
+    parser.add_argument("--bars", type=int, default=64, help="Total bars")
+    parser.add_argument("--staging", type=str, default=None, help="JSON staging file or dict")
+    args = parser.parse_args()
+
+    staging_dict = None
+    if args.staging:
+        staging_path = Path(args.staging)
+        if staging_path.exists():
+            with open(staging_path) as sf:
+                staging_dict = json.load(sf)
+        else:
+            try:
+                staging_dict = json.loads(args.staging)
+            except Exception:
+                staging_dict = None
+
+    res = compile_multitrack_stems_flp(
+        stems_dir=args.stems_dir,
+        project_title=args.title,
+        bpm=args.bpm,
+        output_flp=args.output,
+        total_bars=args.bars,
+        channel_staging=staging_dict
+    )
+    print("Multitrack Stem FLP Compiler Output:", json.dumps(res, indent=2))

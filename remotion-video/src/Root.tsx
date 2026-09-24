@@ -9,9 +9,21 @@ import narrativeData from "../public/narrative_20min.json";
 import cocodriloData from "../public/cocodrilo_estructura.json";
 import ucvhData from "../public/ucvh_odio.json";
 
+import { VideoclipBacalaDeTroya } from "./VideoclipBacalaDeTroya";
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* Composición Principal: Videoclip Bacala de Troya (Mitxu) Chicago Soul Electro */}
+      <Composition
+        id="VideoclipBacalaDeTroya"
+        component={VideoclipBacalaDeTroya}
+        durationInFrames={1828}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
       {/* Composición 1: Cyber-Epistemology Industrial Noir (20 Min) */}
       <Composition
         id="CyberEpistemology20Min"

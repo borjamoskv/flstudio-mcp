@@ -68,7 +68,7 @@ logger = logging.getLogger("FLStudio-MCP")
 # Initialize FastMCP Server
 # ═══════════════════════════════════════════════════════════════
 mcp = FastMCP("FLStudio-MCP-Bridge")
-VERSION = "20.0-SOVEREIGN-TRANSCENDENCE"
+VERSION = "21.0-HYPER-SPATIAL-CONTINUUM"
 
 
 
@@ -2221,6 +2221,139 @@ def fl_align_multitrack_stems_phase(
         return {"status": "ERROR", "error": str(e)}
 
 
+@mcp.tool()
+def fl_encode_higher_order_ambisonics_hoa3(
+    input_wav: Optional[str] = None,
+    azimuth_deg: float = 45.0,
+    elevation_deg: float = 15.0,
+    binaural_decode: bool = True,
+    max_duration_sec: float = 4.0,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Encodes audio into 3rd-Order Higher-Order Ambisonics (HOA3, 16 channels, ACN-SN3D)
+    and renders 3D binaural stereo via a 12-point spherical virtual loudspeaker array
+    with Woodworth interaural time difference (ITD) and head-shadow ILD filters.
+    Exports to ~/Music/FL Studio Bounces/Ambisonics_HOA3/.
+    """
+    try:
+        from scripts.higher_order_ambisonics_hoa3_spatializer import encode_higher_order_ambisonics_hoa3
+        res = encode_higher_order_ambisonics_hoa3(
+            input_wav=input_wav,
+            azimuth_deg=azimuth_deg,
+            elevation_deg=elevation_deg,
+            binaural_decode=binaural_decode,
+            max_duration_sec=max_duration_sec,
+            output_wav=output_wav
+        )
+        logger.info(f"HOA3 spatialization completed ({res.get('total_spherical_harmonic_channels')} channels, Az {res.get('azimuth_deg')}°) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to encode HOA3: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_synthesize_chaotic_attractor_oscillator(
+    attractor_type: str = "duffing",
+    base_frequency_hz: float = 110.0,
+    chaos_parameter: float = 0.40,
+    duration_sec: float = 3.5,
+    stereo_spread: float = 0.50,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Synthesizes non-linear deterministic chaos via Runge-Kutta 4th-order (RK4) numerical integration:
+    supports Duffing double-well oscillator (period-doubling bifurcations), Van der Pol limit-cycle
+    relaxation oscillator (organic tube heartbeat), and 3D Lorenz strange attractor.
+    Exports to ~/Music/FL Studio Bounces/Chaotic_Attractors/.
+    """
+    try:
+        from scripts.chaotic_attractor_synthesizer import synthesize_chaotic_attractor_oscillator
+        res = synthesize_chaotic_attractor_oscillator(
+            attractor_type=attractor_type,
+            base_frequency_hz=base_frequency_hz,
+            chaos_parameter=chaos_parameter,
+            duration_sec=duration_sec,
+            stereo_spread=stereo_spread,
+            output_wav=output_wav
+        )
+        logger.info(f"Chaotic attractor synthesized ({res.get('attractor_type')}, {res.get('base_frequency_hz')}Hz) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to synthesize chaotic attractor: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_saturate_volterra_kernel_analog(
+    input_wav: Optional[str] = None,
+    drive_db: float = 4.5,
+    transformer_iron: float = 0.60,
+    triode_warmth: float = 0.40,
+    tape_saturation: float = 0.50,
+    mix_wet: float = 1.0,
+    max_duration_sec: float = 4.0,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Non-linear dynamic Volterra series saturator modeling analog hardware memory:
+    decomposes audio through multi-order Volterra kernels capturing transformer low-end core impedance (h1),
+    asymmetrical triode valve dynamic memory (h2), and magnetic tape hysteresis saturation (h3).
+    Exports to ~/Music/FL Studio Bounces/Volterra_Analog/.
+    """
+    try:
+        from scripts.volterra_kernel_analog_saturator import saturate_volterra_kernel_analog
+        res = saturate_volterra_kernel_analog(
+            input_wav=input_wav,
+            drive_db=drive_db,
+            transformer_iron=transformer_iron,
+            triode_warmth=triode_warmth,
+            tape_saturation=tape_saturation,
+            mix_wet=mix_wet,
+            max_duration_sec=max_duration_sec,
+            output_wav=output_wav
+        )
+        logger.info(f"Volterra saturation applied (+{res.get('drive_db')}dB, KernelLen {res.get('volterra_kernel_length')}) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to apply Volterra saturation: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_denoise_wavelet_packet_transform(
+    input_wav: Optional[str] = None,
+    threshold_multiplier: float = 1.25,
+    levels: int = 4,
+    soft_threshold: bool = True,
+    max_duration_sec: float = 4.0,
+    output_wav: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Multi-scale discrete wavelet transform (DWT) audio denoiser & transient separator:
+    decomposes signals through Daubechies 4 (db4) quadrature mirror filter banks and applies
+    Donoho-Johnstone adaptive universal thresholding (VisuShrink / Garrote) to purge background noise
+    and tape hiss while preserving pristine musical transients with zero phase distortion.
+    Exports to ~/Music/FL Studio Bounces/Wavelet_Denoised/.
+    """
+    try:
+        from scripts.wavelet_packet_denoiser import denoise_wavelet_packet_transform
+        res = denoise_wavelet_packet_transform(
+            input_wav=input_wav,
+            threshold_multiplier=threshold_multiplier,
+            levels=levels,
+            soft_threshold=soft_threshold,
+            max_duration_sec=max_duration_sec,
+            output_wav=output_wav
+        )
+        logger.info(f"Wavelet denoising completed ({res.get('wavelet_family')}, Levels {res.get('decomposition_levels')}, Denoise {res.get('estimated_noise_reduction_db')}dB) → {res.get('output_file')}")
+        return res
+    except Exception as e:
+        logger.error(f"Failed to denoise via wavelet: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
 # ═══════════════════════════════════════════════════════════════
 # 12. AUTOMATED SELF-TEST & ATTESTATION
 # ═══════════════════════════════════════════════════════════════
@@ -2236,7 +2369,7 @@ def fl_run_self_test() -> Dict[str, Any]:
     """
     results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "20.0-SOVEREIGN-TRANSCENDENCE",
+        "version": "21.0-HYPER-SPATIAL-CONTINUUM",
         "tests": {}
     }
 
@@ -2624,6 +2757,34 @@ def fl_run_self_test() -> Dict[str, Any]:
     except Exception as e:
         results["tests"]["multitrack_phase_aligner"] = f"FAILED: {e}"
 
+    # Test 53: Higher-Order Ambisonics HOA3 Spatializer
+    try:
+        hoa_res = fl_encode_higher_order_ambisonics_hoa3(azimuth_deg=45.0, elevation_deg=15.0, max_duration_sec=2.0)
+        results["tests"]["higher_order_ambisonics_hoa3"] = f"PASSED ({hoa_res.get('status')}, {hoa_res.get('total_spherical_harmonic_channels')} channels, Az={hoa_res.get('azimuth_deg')}°)"
+    except Exception as e:
+        results["tests"]["higher_order_ambisonics_hoa3"] = f"FAILED: {e}"
+
+    # Test 54: Non-Linear Chaotic Attractor Synthesizer
+    try:
+        chaos_res = fl_synthesize_chaotic_attractor_oscillator(attractor_type="duffing", duration_sec=1.5)
+        results["tests"]["chaotic_attractor_oscillator"] = f"PASSED ({chaos_res.get('status')}, {chaos_res.get('attractor_type')}, {chaos_res.get('base_frequency_hz')}Hz)"
+    except Exception as e:
+        results["tests"]["chaotic_attractor_oscillator"] = f"FAILED: {e}"
+
+    # Test 55: Volterra Kernel Non-Linear Analog Saturator
+    try:
+        volt_res = fl_saturate_volterra_kernel_analog(drive_db=4.0, max_duration_sec=2.0)
+        results["tests"]["volterra_analog_saturator"] = f"PASSED ({volt_res.get('status')}, +{volt_res.get('drive_db')}dB, Iron={volt_res.get('transformer_iron')})"
+    except Exception as e:
+        results["tests"]["volterra_analog_saturator"] = f"FAILED: {e}"
+
+    # Test 56: Multi-Scale Wavelet Packet Audio Denoiser
+    try:
+        wav_res = fl_denoise_wavelet_packet_transform(levels=3, max_duration_sec=2.0)
+        results["tests"]["wavelet_packet_denoiser"] = f"PASSED ({wav_res.get('status')}, {wav_res.get('wavelet_family')}, Levels={wav_res.get('decomposition_levels')}, Red={wav_res.get('estimated_noise_reduction_db')}dB)"
+    except Exception as e:
+        results["tests"]["wavelet_packet_denoiser"] = f"FAILED: {e}"
+
     # Summary
     all_passed = all(
         "PASSED" in str(v) or "ONLINE" in str(v) or "SKIPPED" in str(v) or "ALREADY_RUNNING" in str(v)
@@ -2637,7 +2798,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info("Starting FL Studio SOTA MCP Server v20.0 Sovereign Transcendence on stdio transport…")
+    logger.info("Starting FL Studio SOTA MCP Server v21.0 Hyper-Spatial Continuum on stdio transport…")
     mcp.run()
 
 

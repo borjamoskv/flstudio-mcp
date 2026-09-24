@@ -515,6 +515,36 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertTrue(Path(res.get("output_sum_mix_file")).exists())
         self.assertTrue(Path(res.get("aligned_secondary_file")).exists())
 
+    def test_63_encode_higher_order_ambisonics_hoa3(self):
+        """Verifies 3rd-Order 16-channel Higher-Order Ambisonics encoding and 3D binaural decoding."""
+        res = mcp_server.fl_encode_higher_order_ambisonics_hoa3(azimuth_deg=45.0, elevation_deg=15.0, max_duration_sec=1.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("ambisonics_order"), 3)
+        self.assertEqual(res.get("total_spherical_harmonic_channels"), 16)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_64_synthesize_chaotic_attractor_oscillator(self):
+        """Verifies Duffing / Van der Pol / Lorenz non-linear chaotic attractor synthesis via RK4."""
+        res = mcp_server.fl_synthesize_chaotic_attractor_oscillator(attractor_type="duffing", duration_sec=1.2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("attractor_type"), "duffing")
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_65_saturate_volterra_kernel_analog(self):
+        """Verifies multi-order discrete Volterra series non-linear analog transformer and tape saturation."""
+        res = mcp_server.fl_saturate_volterra_kernel_analog(drive_db=4.0, max_duration_sec=1.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("volterra_kernel_length"), 32)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
+    def test_66_denoise_wavelet_packet_transform(self):
+        """Verifies Daubechies 4 multi-scale discrete wavelet transform denoising and transient preservation."""
+        res = mcp_server.fl_denoise_wavelet_packet_transform(levels=3, max_duration_sec=1.5)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("wavelet_family"), "Daubechies 4 (db4)")
+        self.assertEqual(res.get("decomposition_levels"), 3)
+        self.assertTrue(Path(res.get("output_file")).exists())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
