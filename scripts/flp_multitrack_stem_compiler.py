@@ -108,8 +108,12 @@ def compile_multitrack_stems_flp(
         dt_stream.append(0x40)
         dt_stream += struct.pack("<H", ch_idx)
 
-        # Event 0xC0: Channel Name
-        ch_name_b = stem_name.encode("utf-8") + b"\x00"
+        # Event 0xCB: Channel Name (UTF-16-LE native) and 0xC0 fallback
+        ch_name_b = stem_name.encode("utf-16-le") + b"\x00\x00"
+        dt_stream.append(0xCB)
+        dt_stream += encode_varlen(len(ch_name_b))
+        dt_stream += ch_name_b
+
         dt_stream.append(0xC0)
         dt_stream += encode_varlen(len(ch_name_b))
         dt_stream += ch_name_b

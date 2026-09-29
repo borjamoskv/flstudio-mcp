@@ -98,8 +98,8 @@ class FLPProjectBuilder:
         tempo_int = int(self.bpm * 1000)
         dt_stream += struct.pack("<I", tempo_int)
 
-        # 3. Project Title Event 0xCA
-        title_bytes = self.title.encode("utf-8") + b"\x00"
+        # 3. Project Title Event 0xCA (UTF-16-LE)
+        title_bytes = self.title.encode("utf-16-le") + b"\x00\x00"
         dt_stream.append(0xCA)
         dt_stream += encode_varlen(len(title_bytes))
         dt_stream += title_bytes
@@ -110,8 +110,12 @@ class FLPProjectBuilder:
             dt_stream.append(0x40)
             dt_stream += struct.pack("<H", ch["index"])
 
-            # Channel name event 0xC0
-            ch_name_bytes = ch["name"].encode("utf-8") + b"\x00"
+            # Channel name event 0xCB (UTF-16-LE native) and 0xC0 fallback
+            ch_name_bytes = ch["name"].encode("utf-16-le") + b"\x00\x00"
+            dt_stream.append(0xCB)
+            dt_stream += encode_varlen(len(ch_name_bytes))
+            dt_stream += ch_name_bytes
+
             dt_stream.append(0xC0)
             dt_stream += encode_varlen(len(ch_name_bytes))
             dt_stream += ch_name_bytes
