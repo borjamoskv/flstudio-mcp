@@ -3,6 +3,16 @@ __pycache__/
 *.db-wal
 *.db-shm
 .DS_Store
-samples/stems/**/*.wav
+.audit/
+bounces/
+samples/**/*.wav
+samples/**/*.mp3
+samples/**/*.flac
 remotion-video/public/*.wav
 remotion-video/public/*.mp3
+remotion-video/out/
+
+# Local environment; retain a shareable template
+.env
+.env.*
+!.env.example

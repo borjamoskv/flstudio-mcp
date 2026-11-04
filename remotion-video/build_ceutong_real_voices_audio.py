@@ -11,7 +11,6 @@ Assembles 100% REAL AUDIO RECORDINGS for Videoclip Ceutong:
 - Drop @ 100 BPM with Mitxu Festival
 """
 
-import os
 import json
 import numpy as np
 import scipy.signal as signal
@@ -253,7 +252,7 @@ subprocess.run(["ffmpeg", "-y", "-i", str(OUT_AUDIO_WAV), "-c:a", "libmp3lame", 
 print(f"Master audio guardado en {OUT_AUDIO_MP3} y {OUT_AUDIO_WAV}")
 
 # Also copy to canonical ~/Music
-import shutil
+import shutil  # noqa: E402
 shutil.copy2(OUT_AUDIO_WAV, "/Users/borjafernandezangulo/Music/CEUTONG_Audio_Master.wav")
 shutil.copy2(OUT_AUDIO_MP3, "/Users/borjafernandezangulo/Music/CEUTONG_Audio_Master.mp3")
 

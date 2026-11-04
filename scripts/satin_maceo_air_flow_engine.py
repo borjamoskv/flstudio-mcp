@@ -15,7 +15,6 @@ import wave
 import os
 import random
 import mido
-from typing import List, Dict, Any
 
 # Ensure target directories
 WORKSPACE_DIR = os.path.expanduser("~/10_PROJECTS/flstudio-mcp")

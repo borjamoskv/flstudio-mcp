@@ -18,8 +18,6 @@ Generates a complete, high-fidelity Organic / Afro-Melodic Microtonal Deep House
 """
 
 import math
-import os
-import struct
 import wave
 import subprocess
 import numpy as np
@@ -52,7 +50,7 @@ NUM_BARS = 64
 TOTAL_DURATION = BAR_DUR * NUM_BARS
 TOTAL_SAMPLES = int(SAMPLE_RATE * TOTAL_DURATION)
 
-print(f"=== Synthesizing Microtonal House Masterpiece (10 Stems + Alain Eructo + Mitxu Minu) ===")
+print("=== Synthesizing Microtonal House Masterpiece (10 Stems + Alain Eructo + Mitxu Minu) ===")
 print(f"Duration: {TOTAL_DURATION:.2f}s ({NUM_BARS} bars @ {BPM} BPM)")
 print(f"Total Samples: {TOTAL_SAMPLES} @ {SAMPLE_RATE} Hz")
 

@@ -47,8 +47,8 @@ asyncio.run(synth_edge_voices())
 
 # 2. Synthesize Otegui lines with F5-TTS
 print("🎙️ Sintetizando líneas de OTE con F5-TTS...")
-import torch
-from f5_tts.api import F5TTS
+import torch  # noqa: E402
+from f5_tts.api import F5TTS  # noqa: E402
 
 if torch.backends.mps.is_available():
     torch.mps.empty_cache()
@@ -188,7 +188,7 @@ master_right = np.zeros(TOTAL_SAMPLES)
 def place_audio(clip, time_sec, vol=1.0, pan=0.0):
     start = int(time_sec * SR)
     end = start + len(clip)
-    if start >= TOTAL_SAMPLES: return
+    if start >= TOTAL_SAMPLES: return  # noqa: E701
     if end > TOTAL_SAMPLES:
         clip = clip[:TOTAL_SAMPLES - start]
         end = TOTAL_SAMPLES
@@ -280,4 +280,3 @@ print("🎯 Master Audio compilado con éxito:")
 print(f"   -> {out_master_wav}")
 print(f"   -> {out_master_mp3}")
 print(f"   -> {music_master}")
-EOF

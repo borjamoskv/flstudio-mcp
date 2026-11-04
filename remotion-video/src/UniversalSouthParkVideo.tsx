@@ -187,8 +187,8 @@ const CHARACTERS: Record<string, CharConfig> = {
     color: "#94a3b8",
   },
   patxi: {
-    top: "faces/lander_southpark_head_top.png",
-    jaw: "faces/lander_southpark_head_jaw.png",
+    top: "faces/patxi_top.png",
+    jaw: "faces/patxi_jaw.png",
     body: "sp_hawaiian_body.png",
     name: "PATXI URIBARRI",
     color: "#0284c7",
@@ -228,6 +228,13 @@ const CHARACTERS: Record<string, CharConfig> = {
     name: "TOSSO (ATHLETIC)",
     color: "#dc2626",
   },
+  unai: {
+    top: "faces/unai_top.png",
+    jaw: "faces/unai_jaw.png",
+    body: "sp_hawaiian_body.png",
+    name: "UNAI (UNAI LYNCH)",
+    color: "#a855f7",
+  },
 };
 
 const SouthParkCharacter: React.FC<{
@@ -241,7 +248,17 @@ const SouthParkCharacter: React.FC<{
   const cfg = CHARACTERS[charKey] || CHARACTERS.borja;
 
   const mouthOpen = isTalking && flapGap > 1.5;
-  const effectiveGap = isTalking ? Math.min(26, flapGap * 1.8) : 0;
+  const effectiveGap = isTalking ? Math.min(28, flapGap * 1.85) : 0;
+
+  // Kinematics: Squash & Stretch anticipation
+  const squashX = 1 - Math.min(0.07, effectiveGap * 0.0032);
+  const stretchY = 1 + Math.min(0.14, effectiveGap * 0.006);
+
+  // Dynamic body bounce & tilt
+  const bodyBounceY = isTalking
+    ? Math.abs(Math.sin(wobble * 1.8)) * -9 * Math.min(1.0, rms * 18)
+    : 0;
+  const bodyScaleX = 1 + Math.sin(wobble * 2.4) * 0.018;
 
   return (
     <div
@@ -255,9 +272,9 @@ const SouthParkCharacter: React.FC<{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        transform: `rotate(${wobble}deg) scale(${isTalking ? 1.02 : 1.0})`,
+        transform: `rotate(${wobble}deg) scale(${isTalking ? 1.03 : 1.0})`,
         transformOrigin: "bottom center",
-        transition: "transform 0.05s ease-out",
+        transition: "transform 0.04s cubic-bezier(0.2, 0.8, 0.2, 1)",
       }}
     >
       {/* Head Assembly */}
@@ -323,7 +340,7 @@ const SouthParkCharacter: React.FC<{
           />
         </div>
 
-        {/* Upper Head (Flaps up on speech RMS) */}
+        {/* Upper Head (Flaps up on speech RMS with Squash & Stretch) */}
         <div
           style={{
             position: "absolute",
@@ -334,9 +351,9 @@ const SouthParkCharacter: React.FC<{
             zIndex: 6,
             transformOrigin: isLeft ? "bottom right" : "bottom left",
             transform: `translateY(${-effectiveGap}px) rotate(${
-              isLeft ? -effectiveGap * 0.4 : effectiveGap * 0.4
-            }deg)`,
-            transition: "transform 0.04s ease-out",
+              isLeft ? -effectiveGap * 0.42 : effectiveGap * 0.42
+            }deg) scale(${squashX}, ${stretchY})`,
+            transition: "transform 0.04s cubic-bezier(0.18, 0.89, 0.32, 1.28)",
           }}
         >
           <Img
@@ -350,7 +367,7 @@ const SouthParkCharacter: React.FC<{
         </div>
       </div>
 
-      {/* Torso / Body */}
+      {/* Torso / Body (Kinetic Rhythm Bounce) */}
       <div
         style={{
           position: "relative",
@@ -359,6 +376,9 @@ const SouthParkCharacter: React.FC<{
           marginTop: -60,
           display: "flex",
           justifyContent: "center",
+          transform: `translateY(${bodyBounceY}px) scaleX(${bodyScaleX})`,
+          transformOrigin: "bottom center",
+          transition: "transform 0.04s ease-out",
         }}
       >
         <Img
@@ -433,6 +453,18 @@ export const UniversalSouthParkVideo: React.FC = () => {
     ? Math.sin(frame * 0.8) * 3.2
     : Math.cos(frame * 0.22) * 1.0;
 
+  // --- CINEMÁTICA Y DINÁMICA SOTA (C5-REAL) ---
+  // 1. Dynamic Camera Punch Zoom & Framing (Follows speaker)
+  const targetZoom = isTalking ? 1.075 : 1.0;
+  const targetPanX = leftTalking ? 42 : rightTalking ? -42 : 0;
+  const targetPanY = isTalking ? 12 : 0;
+
+  // 2. Acoustic Transient Camera Shake (Bass & speech peaks)
+  const isHighEnergy = rms > 0.052 || (frameData.b && frameData.b[0] > 0.42);
+  const shakeX = isHighEnergy ? Math.sin(frame * 2.8) * rms * 24 : 0;
+  const shakeY = isHighEnergy ? Math.cos(frame * 3.6) * rms * 18 : 0;
+  const shakeRot = isHighEnergy ? Math.sin(frame * 1.9) * rms * 1.5 : 0;
+
   const title = telemetry.metadata.title || "JARANA CAST // SOUTH PARK";
   const subtitle =
     telemetry.metadata.subtitle || "BILBAO SOTA // 3 A 4 MINUTOS DE DELIRIO";
@@ -450,16 +482,31 @@ export const UniversalSouthParkVideo: React.FC = () => {
       {/* 1. MASTER AUDIO TRACK */}
       <Audio src={staticFile(audioFile)} />
 
-      {/* 2. BACKGROUND: SOUTH PARK SNOWY STUDIO */}
-      <AbsoluteFill>
-        <Img
-          src={staticFile("sp_studio_bg.png")}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
+      {/* 2. DYNAMIC CAMERA & CINEMATIC STAGE */}
+      <div
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          transform: `translate(${targetPanX + shakeX}px, ${targetPanY + shakeY}px) scale(${targetZoom}) rotate(${shakeRot}deg)`,
+          transformOrigin: leftTalking
+            ? "28% 68%"
+            : rightTalking
+            ? "72% 68%"
+            : "50% 50%",
+          transition: "transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1)",
+        }}
+      >
+        {/* BACKGROUND: SOUTH PARK SNOWY STUDIO */}
+        <AbsoluteFill>
+          <Img
+            src={staticFile("sp_studio_bg.png")}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
 
         {/* Top Studio Sign Banner */}
         <div
@@ -742,8 +789,9 @@ export const UniversalSouthParkVideo: React.FC = () => {
           {rightTalking ? `🗣️ ${rightCfg.name}` : rightCfg.name}
         </div>
       </div>
+      </div>
 
-      {/* 5. SOUTH PARK SUBTITLES BOX */}
+      {/* 5. SOUTH PARK SUBTITLES BOX (STABILIZED FOREGROUND HUD) */}
       <div
         style={{
           position: "absolute",

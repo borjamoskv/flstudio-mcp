@@ -17,13 +17,10 @@ Key SOTA Innovations & Elevating Features:
 5. Structural Perfection: 144 Bars (4m 52s at 118 BPM) with 8 distinct movement sections.
 """
 
-import math
-import struct
-import wave
 import os
 import random
 import mido
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict
 
 WORKSPACE_DIR = os.path.expanduser("~/10_PROJECTS/flstudio-mcp")
 SAMPLES_DIR = os.path.join(WORKSPACE_DIR, "samples", "hybrid_flow")

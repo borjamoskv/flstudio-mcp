@@ -7,9 +7,7 @@ Vocal Mutex Collision Prevention, and Psychoacoustic Transition Prescription
 
 import os
 import glob
-import math
 import numpy as np
-import soundfile as sf
 from typing import List, Dict, Any, Tuple
 
 # Krumhansl-Schmuckler Key Profiles (Chroma correlation)
@@ -33,7 +31,7 @@ CAMELOT_MAP = {
     ('E', 'major'): '12B', ('C#', 'minor'): '12A',
 }
 
-import subprocess
+import subprocess  # noqa: E402
 
 class TrackFeatureExtractor:
     """Extracts fundamental acoustic, rhythmic, harmonic, and vocal telemetry."""

@@ -16,11 +16,10 @@ Architecture:
 - Centralized WAV bounces to ~/Music/FL Studio Bounces/Demixed/
 """
 
-import math
 import wave
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from scipy import signal
 
@@ -117,11 +116,11 @@ def demix_multitrack_nmf_blind(
     # STFT parameters
     nperseg = 2048
     noverlap = 1536
-    hop_length = nperseg - noverlap
+    nperseg - noverlap
 
     freqs, times, Zxx = signal.stft(audio, fs=sr, window="hann", nperseg=nperseg, noverlap=noverlap)
     mag = np.abs(Zxx)
-    phase = np.angle(Zxx)
+    np.angle(Zxx)
 
     # Run NMF decomposition
     W, H = run_nmf_multiplicative(mag, K=num_components, max_iter=nmf_iterations)

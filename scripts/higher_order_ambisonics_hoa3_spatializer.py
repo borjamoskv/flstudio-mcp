@@ -22,7 +22,7 @@ import math
 import wave
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
 logger = logging.getLogger("FLStudio-HOA3")

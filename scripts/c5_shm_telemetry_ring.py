@@ -57,7 +57,7 @@ class C5SharedMemoryRing:
                     self.is_owner = True
                     self._detach_tracker()
                     self._init_memory()
-                except Exception as e:
+                except Exception:
                     self.shm = None
             else:
                 self.shm = None

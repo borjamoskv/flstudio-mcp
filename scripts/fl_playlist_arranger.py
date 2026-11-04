@@ -111,7 +111,7 @@ def compile_playlist_song_arrangement(
     # Populate Notes across Timeline based on Active Channels
     for sec in sections:
         start_tick = (sec["bars_start"] - 1) * ticks_per_bar
-        end_tick = sec["bars_end"] * ticks_per_bar
+        sec["bars_end"] * ticks_per_bar
         sec_bars = sec["duration_bars"]
         active = sec["active_channels"]
 

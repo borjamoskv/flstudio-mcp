@@ -8,7 +8,6 @@ Aplica las firmas sonoras de BICEP (Glue / Atlas / Water):
 3. Shimmer Reverb Swell en la transición del breakdown (01:40 - 02:00).
 """
 
-import os
 import numpy as np
 import soundfile as sf
 from scipy import signal

@@ -6,10 +6,9 @@ and specialized microtonal house sub-genre MIDI generation.
 """
 
 import math
-import os
 import random
 import mido
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict
 
 # Plomp-Levelt Sensory Dissonance Constants
 PL_X_STAR = 0.24

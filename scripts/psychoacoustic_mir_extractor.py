@@ -10,11 +10,10 @@ Extracts perceptual and physical musical descriptors from audio files:
 """
 
 import json
-import math
 import wave
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
 logger = logging.getLogger("FLStudio-MIR")

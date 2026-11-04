@@ -13,7 +13,6 @@ import mmap
 import os
 import struct
 import time
-import numpy as np
 
 # Constantes de Memoria Compartida
 SHM_NAME = "/swarm1000_telemetry_bus"
@@ -37,7 +36,8 @@ SLOT_STRUCT = struct.Struct("<IIIfffIfQ24s")
 class ShmSeqlockBus:
     """Bus Lock-Free en Memoria Compartida con Seqlock atómico."""
 
-    def __init__(self, is_master=False):
+    def __init__(self, is_master=False, *, path=None):
+        self.path = path
         self.is_master = is_master
         self.shm_fd = None
         self.mm = None
@@ -45,7 +45,7 @@ class ShmSeqlockBus:
 
     def _init_memory(self):
         # En macOS usamos un archivo temporal mmaped o shm anónimo
-        shm_path = f"/tmp{SHM_NAME}.raw"
+        shm_path = self.path if self.path is not None else f"/tmp{SHM_NAME}.raw"
         if self.is_master or not os.path.exists(shm_path):
             with open(shm_path, "wb") as f:
                 f.write(b"\x00" * SHM_SIZE)

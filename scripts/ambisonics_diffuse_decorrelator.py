@@ -15,7 +15,7 @@ import math
 import wave
 import logging
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 

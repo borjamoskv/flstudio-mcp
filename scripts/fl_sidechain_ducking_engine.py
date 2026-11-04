@@ -6,8 +6,8 @@ at 116-126 BPM.
 """
 
 import math
+from typing import List
 import os
-import struct
 
 def generate_logarithmic_ducking_curve(
     num_points: int = 64,

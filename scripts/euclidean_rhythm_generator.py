@@ -5,9 +5,8 @@ Implements the Bjorklund E(k, n) algorithm with humanized velocity dynamics,
 MPC groove swing, and flam accents for percussion and rhythmic synth lines.
 """
 
-import math
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List
 import mido
 
 

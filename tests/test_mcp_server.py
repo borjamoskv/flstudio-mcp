@@ -14,7 +14,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import mcp_server
+import mcp_server  # noqa: E402
 
 
 class TestFLStudioMCPServer(unittest.TestCase):
@@ -98,10 +98,19 @@ class TestFLStudioMCPServer(unittest.TestCase):
 
     def test_09_music_bounces_catalog(self):
         """Verifies cataloging of ~/Music/FL Studio Bounces/."""
-        catalog = mcp_server.fl_catalog_music_bounces(follow_symlinks=True)
-        self.assertIn("catalog_root", catalog)
-        self.assertIn("assets", catalog)
-        self.assertGreaterEqual(catalog["total_files"], 1)
+        fixture_created = False
+        dummy_file = mcp_server.MUSIC_BOUNCES_DIR / "test_probe_bounce.wav"
+        if not any(f.is_file() and not f.name.startswith(".") for f in mcp_server.MUSIC_BOUNCES_DIR.glob("*")):
+            dummy_file.write_bytes(b"RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00")
+            fixture_created = True
+        try:
+            catalog = mcp_server.fl_catalog_music_bounces(follow_symlinks=True)
+            self.assertIn("catalog_root", catalog)
+            self.assertIn("assets", catalog)
+            self.assertGreaterEqual(catalog["total_files"], 1)
+        finally:
+            if fixture_created and dummy_file.exists():
+                dummy_file.unlink()
 
     def test_10_piano_roll_script_ast_validation(self):
         """Verifies AST safety checks reject syntactically invalid scripts."""
@@ -545,9 +554,118 @@ class TestFLStudioMCPServer(unittest.TestCase):
         self.assertEqual(res.get("decomposition_levels"), 3)
         self.assertTrue(Path(res.get("output_file")).exists())
 
+    def test_67_rae_reverse_engineer_all_plugins(self):
+        """Catalog counts are documentation, not proof of DSP equivalence."""
+        audit = mcp_server.fl_rae_audit_all_plugins(write_artifacts=False, simulation=True)
+        self.assertEqual(audit.get("total_generators"), 51)
+        self.assertEqual(audit.get("total_effects"), 89)
+        self.assertEqual(audit.get("total_vst3"), 7)
+        self.assertEqual(audit.get("total_plugins_documented"), 147)
+        self.assertEqual(audit.get("total_core_subsystems"), 8)
+        self.assertIsNone(audit.get("coverage_percent"))
+        self.assertFalse(audit["verified"])
+        self.assertEqual(audit["algorithms_verified"], 0)
+        self.assertEqual(len(audit.get("missing_generators", [])), 0)
+        self.assertEqual(len(audit.get("missing_effects", [])), 0)
+        self.assertEqual(audit["mode"], "simulation")
+        self.assertEqual(audit["detected_plugins"], 0)
+
+    def test_68_rae_lexicon_search_and_inspection(self):
+        """Verifies individual RAE plugin inspection and Spanish/English acoustic lexicon search."""
+        sytrus = mcp_server.fl_rae_reverse_engineer_plugin("Sytrus")
+        self.assertEqual(sytrus.get("status"), "FOUND")
+        self.assertIn("ecuacion_transferencia", sytrus.get("rae_specification", {}))
+        self.assertIn("termino_rae", sytrus.get("rae_specification", {}))
+
+        maximus = mcp_server.fl_rae_reverse_engineer_plugin("Maximus")
+        self.assertEqual(maximus.get("status"), "FOUND")
+        self.assertEqual(maximus.get("category"), "Native Effect")
+
+        lex = mcp_server.fl_rae_search_lexicon("tangencial")
+        self.assertEqual(lex.get("status"), "SUCCESS")
+        self.assertGreaterEqual(lex.get("lexicon_matches_count", 0), 1)
+        self.assertGreaterEqual(lex.get("plugin_matches_count", 0), 1)
+
+    def test_69_rae_human_kick_and_multiband_sidechain(self):
+        """Verifies phase-locked human Kick synthesis, 140Hz multiband sidechain, and Rubin acoustic audit."""
+        res = mcp_server.fl_rae_sculpt_human_kick_and_sidechain(bpm=122.0, bars=2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertTrue(Path(res.get("kick_wav_file")).exists())
+        self.assertTrue(Path(res.get("human_mix_wav_file")).exists())
+        rubin = res.get("telemetry", {}).get("rubin_audit", {})
+        self.assertTrue(rubin.get("is_pure_bone"))
+        self.assertGreaterEqual(rubin.get("crest_factor_db", 0.0), 8.0)
+        self.assertGreaterEqual(rubin.get("low_end_phase_coherence", 0.0), 0.90)
+
+    def test_70_rae_human_flex_and_plugin_performance(self):
+        """Verifies humanized FLEX 8-Macro automation curves and chord-strummed .fsc score generation."""
+        res = mcp_server.fl_rae_automate_flex_and_plugins_human(bars=4, send_live_midi=False)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertGreater(res.get("total_notes_humanized", 0), 20)
+        self.assertEqual(len(res.get("automation_curves_16th_steps", {}).get("flex_macros", {})), 8)
+        self.assertTrue(Path(res.get("exported_fsc_score")).exists())
+        self.assertTrue(Path(res.get("exported_automation_json")).exists())
+
+    def test_71_rae_complex_arrangement_and_long_buildup(self):
+        """Verifies 88-bar 6-Act FLP macro-arrangement, long build-up + Pre-Drop Vacuum + Drop WAV, and Rubin gate."""
+        res = mcp_server.fl_rae_render_complex_arrangement_and_buildup(bpm=124.0, buildup_bars=4, drop_bars=2)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("macro_structure_total_bars"), 88)
+        self.assertEqual(len(res.get("macro_acts", [])), 6)
+        self.assertTrue(Path(res.get("rendered_buildup_drop_wav")).exists())
+        self.assertTrue(Path(res.get("compiled_88bar_flp_project")).exists())
+        rubin = res.get("telemetry", {}).get("rubin_audit", {})
+        self.assertTrue(rubin.get("is_pure_bone"))
+
+    def test_72_rae_produce_human_masterpiece(self):
+        """Verifies the 7 RAE Human Producer Laws (ghost notes, clap flams, reverse swell, 8-bar fill, Rubin gate)."""
+        res = mcp_server.fl_rae_produce_human_masterpiece(bpm=122.0, bars=8)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertTrue(Path(res.get("masterpiece_wav_file")).exists())
+        laws = res.get("seven_human_producer_laws_verified", {})
+        self.assertGreater(laws["law_1_differential_pocket_and_ghost_notes"]["ghost_snares_count"], 0)
+        self.assertGreater(laws["law_1_differential_pocket_and_ghost_notes"]["clap_pre_snap_flams_count"], 0)
+        self.assertGreater(laws["law_5_ear_candy_and_4_8_bar_mutations"]["reverse_reverb_swells_count"], 0)
+        self.assertGreater(laws["law_5_ear_candy_and_4_8_bar_mutations"]["turnaround_tom_fill_hits"], 0)
+        rubin = res.get("telemetry", {}).get("rubin_audit", {})
+        self.assertTrue(rubin.get("is_pure_bone"))
+
+    def test_73_rae_deep_studio_laws_8_to_14(self):
+        """Verifies Deep Studio Human Producer Laws 8-14 (off-grid foley, Pultec trick, NY parallel crush, delayed vibrato pedal, 2kHz spectral pocket)."""
+        res = mcp_server.fl_rae_produce_deep_studio_laws_8_to_14(bpm=122.0, bars=4)
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertTrue(Path(res.get("deep_studio_wav_file")).exists())
+        laws = res.get("deep_studio_laws_8_to_14_verified", {})
+        self.assertGreater(laws["law_8_offgrid_foley_micro_percussion"]["foley_events_rendered"], 0)
+        self.assertEqual(laws["law_11_new_york_parallel_drum_crush"]["dry_transient_ratio"], 0.82)
+        self.assertEqual(laws["law_14_spectral_formant_sidechain_pocket"]["flex_presence_carve_db_when_lead_sings"], -2.8)
+        rubin = res.get("telemetry", {}).get("rubin_audit", {})
+        self.assertTrue(rubin.get("is_pure_bone"))
+
+    def test_74_rae_andras_lindstrom_128step_balearic_opener(self):
+        """Verifies 'Borja Moskv - Yolando Moon' Satin Jackets x Maceo Plex x AIR 122 BPM hybrid matrix (.wav, .flp, .fsc) and Rubin gate."""
+        res = mcp_server.fl_rae_produce_andras_lindstrom_balearic_opener(
+            track_title="Borja Moskv - Yolando Moon", bpm=122.0, key_root_hz=49.0
+        )
+        self.assertEqual(res.get("status"), "SUCCESS")
+        self.assertEqual(res.get("track_title"), "Borja Moskv - Yolando Moon")
+        self.assertEqual(res.get("sequencer_steps"), 128)
+        inv = res.get("anti_edm_invariants", {})
+        self.assertFalse(inv.get("pop_hook"))
+        self.assertFalse(inv.get("edm_drop"))
+        self.assertEqual(inv.get("sudden_kick_entry_step"), 64)
+        self.assertGreater(inv.get("punchy_kick_hits_after_bridge", 0), 0)
+        self.assertTrue(Path(res.get("exported_wav")).exists())
+        self.assertTrue(Path(res.get("exported_flp_project")).exists())
+        self.assertTrue(Path(res.get("exported_128step_fsc")).exists())
+        rubin = res.get("telemetry", {}).get("rubin_audit", {})
+        self.assertTrue(rubin.get("is_pure_bone"))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
 
 
 

@@ -10,7 +10,6 @@ Implements Chiba-Kajiyama 10-section acoustic vocal tract modeling:
 6. Centralized WAV export to ~/Music/FL Studio Bounces/Vocal_Tract/
 """
 
-import math
 import wave
 import logging
 from pathlib import Path

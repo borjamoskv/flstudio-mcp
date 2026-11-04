@@ -13,7 +13,6 @@ Implementa la física de mezcla SOTA derivada de DJ.Studio y FL Studio MCP:
 
 import math
 import numpy as np
-import scipy.signal as signal
 from scipy.signal import butter, sosfilt
 
 SR = 48000
@@ -26,7 +25,7 @@ def to_ms(audio_lr):
 
 def to_lr(audio_ms):
     """Convierte Mid/Side a L/R estéreo."""
-    l = (audio_ms[:, 0] + audio_ms[:, 1]) / math.sqrt(2.0)
+    l = (audio_ms[:, 0] + audio_ms[:, 1]) / math.sqrt(2.0)  # noqa: E741
     r = (audio_ms[:, 0] - audio_ms[:, 1]) / math.sqrt(2.0)
     return np.column_stack([l, r])
 

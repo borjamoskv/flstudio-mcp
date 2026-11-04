@@ -6,6 +6,7 @@ cockpit at ~/Music/FL Studio Bounces/fl_studio_cyber_hud.html.
 """
 
 from pathlib import Path
+from typing import Optional
 
 HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="es">
@@ -428,11 +429,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 """
 
 
-def export_web_audio_hud(output_path: Path) -> Path:
+def export_web_audio_hud(output_path: Optional[Path] = None) -> Path:
+    if output_path is None:
+        output_path = Path.home() / "Music/FL Studio Bounces/fl_studio_cyber_hud.html"
+    output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(HTML_CONTENT)
     return output_path
+
+
+# Canonical alias for backwards compatibility
+export_cyber_hud = export_web_audio_hud
 
 
 if __name__ == "__main__":

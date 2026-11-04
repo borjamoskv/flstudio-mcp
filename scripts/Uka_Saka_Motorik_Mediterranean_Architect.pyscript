@@ -1,0 +1,317 @@
+# name = UKA SAKA: Avant-Garde Motorik Mediterranean Architect (v1.0)
+# author = Borja Moskv (C5-REAL)
+# description = Arquitectura completa en Re menor (122 BPM): Bajo Motorik agridulce (tónica en antepenúltima), Ruptura en Compás 12 (Beat 3), Falso Drop, Puente 24-TET y Coro en Armonía Negativa (eje F/F#).
+
+try:
+    import flpianoroll as flp
+    HAS_FLPIANOROLL = True
+except ImportError:
+    import utils
+    HAS_FLPIANOROLL = False
+
+
+def reflect_negative_harmony_d(midi_pitch: int, anchor_octave_d: int = 62) -> int:
+    """
+    Refleja una nota MIDI sobre el eje de Armonía Negativa de Re (D - A),
+    cuyo centro de simetría es F/F# (3.5 semitonos por encima de D).
+    Fórmula en clases de altura relativas a D: p' = 7 - p.
+    En espacio MIDI continuo alrededor de D4 (62):
+        axis = anchor_octave_d + 3.5 = 65.5 (entre F4=65 y F#4=66)
+        reflected = int(round(2 * axis - midi_pitch)) = 2 * anchor_octave_d + 7 - midi_pitch
+    Verifica:
+        D4 (62) <-> A4 (69)
+        E4 (64) <-> G4 (67)
+        F4 (65) <-> F#4 (66)
+        Bb4 (70) <-> C#4 (61)
+        C5 (72) <-> B3 (59)
+    """
+    return (2 * anchor_octave_d + 7) - midi_pitch
+
+
+def add_note(score_obj, number, time, length, velocity=0.80, pan=0.0, color=0, pitchoffset=0, slide=False):
+    n = flp.Note() if HAS_FLPIANOROLL else utils.Note()
+    n.number = max(0, min(127, int(number)))
+    n.time = max(0, int(time))
+    n.length = max(1, int(length))
+    n.velocity = max(0.05, min(1.0, float(velocity)))
+    if hasattr(n, "pan"):
+        n.pan = max(-1.0, min(1.0, float(pan)))
+    if hasattr(n, "color"):
+        n.color = int(color) % 16
+    if hasattr(n, "pitchoffset"):
+        n.pitchoffset = int(pitchoffset)
+    if hasattr(n, "slide"):
+        n.slide = bool(slide)
+    score_obj.addNote(n)
+
+
+def add_marker(score_obj, name: str, time_ticks: int):
+    if HAS_FLPIANOROLL and hasattr(flp, "Marker"):
+        try:
+            m = flp.Marker()
+            m.name = name
+            m.time = int(time_ticks)
+            score_obj.addMarker(m)
+        except Exception:
+            pass
+
+
+def createDialog():
+    if not HAS_FLPIANOROLL:
+        return None
+    form = flp.ScriptDialog(
+        "UKA SAKA: Motorik Mediterranean Architect",
+        "C5-REAL: Bajo Motorik (Tónica en Antepenúltima), Sorpresa Compás 12 (Beat 3), Falso Drop, 24-TET y Coro Armonía Negativa."
+    )
+    form.AddInputCombo(
+        "Capa / Canal a Generar",
+        "0. Todas las Capas (Multicanal Color 1-8),1. Bajo Motorik Agridulce (Tónica en Antepenúltima),2. Batería Analógica + Castañuela + Timbal (Sorpresa Compás 12),3. Tuba en Re Menor + Guitarra 1 Cuerda (Delay Drone),4. Trompeta Desafinada 24-TET + Quejío Microtonal,5. Coro UKA SAKA UKA (Positivo + Espejo Armonía Negativa)",
+        0,
+    )
+    form.AddInputCombo(
+        "Modo Escala Puente",
+        "24-TET Makam Bayati (E half-flat -50c),24-TET Hijaz Microtonal,Armonía Negativa Pura (Eje F/F#)",
+        0,
+    )
+    form.AddInputCheckbox("Activar Ruptura Compás 12 (Beat 3 Silence)", True)
+    form.AddInputCheckbox("Tónica Estricta en Antepenúltima Nota (N-2)", True)
+    return form
+
+
+def generate_uka_saka_architecture(
+    score_obj,
+    layer_mode=0,
+    bridge_mode=0,
+    bar12_rupture=True,
+    tonic_antepenultimate=True,
+):
+    score_obj.clear()
+    ppq = getattr(score_obj, "PPQ", 480) if HAS_FLPIANOROLL else 480
+    beat = ppq
+    sixteenth = ppq // 4
+    bar_ticks = ppq * 4
+
+    # Mapa de Colores MIDI (Canales internos en FL Studio Piano Roll):
+    # Color 0 (Ch 1): Drums (Kick D1=38, Snare E1=40, Hat F#1=42, Castanet Eb2=51, Timbal G2=55)
+    # Color 1 (Ch 2): Bajo Motorik Persistente (Alegre Dórico / Triste Eolio, Tónica en nota 6/8 = antepenúltima)
+    # Color 2 (Ch 3): Tuba en Re Menor (D1=38 / D2=50)
+    # Color 3 (Ch 4): Guitarra Monocorde (D3=62 con slides para Tape Delay infinito)
+    # Color 4 (Ch 5): Trompeta Desafinada 24-TET + Xilófono percusivo
+    # Color 5 (Ch 6): Coro Positivo "U-KA SA-KA U-KA" (Tónica D4 en sílaba 4 = antepenúltima real)
+    # Color 6 (Ch 7): Coro Espejo en Armonía Negativa (Eje F4/F#4)
+
+    # Estructura compacta de estudio (32 compases representativos con todas las secciones clave):
+    # Bars 1-4 (0..3): Intro (Monochord Guitar Drone + Tuba D + Kick suave)
+    # Bars 5-16 (4..15): Verse Motorik Groove -> COMPÁS 12 (bar_idx == 11) RUPTURA EN BEAT 3
+    # Bars 17-24 (16..23): Long Opening Build-Up (expansión progresiva sin snare roll cliché)
+    # Bars 25-26 (24..25): FALSO DROP / VACÍO TEXTURAL (Mute total de Kick/Bass; solo Tuba, Guitarra eco y 1 Castañuela seca)
+    # Bars 27-30 (26..29): Bridge Microtonal 24-TET + Coro Armonía Negativa "UKA SAKA UKA"
+    # Bars 31-32 (30..31): Re-Entry Motorik & Tape Decay Outro
+
+    add_marker(score_obj, "1. Intro: Monochord & Tuba Drone (Bars 1-4)", 0 * bar_ticks)
+    add_marker(score_obj, "2. Motorik Bittersweet Groove (Bars 5-11)", 4 * bar_ticks)
+    add_marker(score_obj, "3. BAR 12 RUPTURE: Beat 3 Cut + Castanet + Trumpet Slide", 11 * bar_ticks)
+    add_marker(score_obj, "4. Bar 13 Timbal Flam Re-Entry", 12 * bar_ticks)
+    add_marker(score_obj, "5. Opening Build-Up (No Snare Cliché)", 16 * bar_ticks)
+    add_marker(score_obj, "6. FALSE DROP: Textural Vacuum (Tuba + Castanet + Tape Echo)", 24 * bar_ticks)
+    add_marker(score_obj, "7. 24-TET Bridge & Negative Harmony Choir (UKA SAKA UKA)", 26 * bar_ticks)
+    add_marker(score_obj, "8. Organic Re-Ignition & Tape Decay", 30 * bar_ticks)
+
+    total_bars = 32
+
+    # Patrón de 8 notas del Bajo Motorik ("Alegre y Triste" + Tónica en la Antepenúltima = índice 5 de 0..7):
+    # Alterna el sexto grado Mayor Dórico (B2=59, alegre/luminoso) con el sexto grado menor Eolio (Bb2=58, triste)
+    # y la tercera menor (F2=53) / tercera mayor reflejada (F#2=54), clavando la TÓNICA D2 (50)
+    # en la posición 6 de 8 (índice 5, ANTEPENÚLTIMA), dejando las posiciones 7 y 8 suspendidas (E2=52, A2=57 / C2=48).
+    if tonic_antepenultimate:
+        bass_cycle_a = [57, 53, 59, 55, 58, 50, 52, 57]  # A2, F2(triste), B2(alegre), G2, Bb2(triste), [D2 TÓNICA ANTEPENÚLTIMA], E2, A2
+        bass_cycle_b = [55, 54, 53, 59, 57, 50, 48, 52]  # G2, F#2(alegre), F2(triste), B2, A2, [D2 TÓNICA ANTEPENÚLTIMA], C2, E2
+    else:
+        bass_cycle_a = [50, 50, 53, 55, 57, 58, 59, 57]
+        bass_cycle_b = [50, 50, 54, 55, 57, 53, 52, 48]
+
+    for bar in range(total_bars):
+        bar_start = bar * bar_ticks
+        is_bar_12 = (bar == 11) and bar12_rupture
+        is_bar_13 = (bar == 12)
+        is_false_drop = (bar in [24, 25])
+        is_bridge_choir = (bar in [26, 27, 28, 29])
+        is_build = (16 <= bar <= 23)
+
+        # ── CAPA 1: BATERÍA ANALÓGICA + CASTAÑUELAS + TIMBAL (Color 0) ────────────
+        if layer_mode in [0, 2]:
+            if not is_false_drop and not is_bridge_choir:
+                for b in range(4):
+                    # En el Compás 12 (bar==11), corte abrupto en los tiempos 3 y 4 (b == 2, 3)
+                    if is_bar_12 and b >= 2:
+                        continue
+                    # Kick 4/4 con pegada
+                    add_note(score_obj, 38, bar_start + b * beat, sixteenth * 2, velocity=0.95, color=0)
+                    # Snare con room en 2 y 4 (salvo intro)
+                    if bar >= 4 and b in [1, 3]:
+                        add_note(score_obj, 40, bar_start + b * beat, sixteenth * 2, velocity=0.86, color=0)
+                    # Hi-hats Motorik en corcheas y semicorcheas
+                    if bar >= 4:
+                        for s in range(4):
+                            vel_h = 0.78 if s == 2 else 0.54
+                            add_note(score_obj, 42, bar_start + b * beat + s * sixteenth, sixteenth // 2, velocity=vel_h, color=0)
+                            # Castañuelas polirrítmicas en off-beats seleccionados
+                            if s in [1, 3] and (b + bar) % 2 == 0:
+                                pan_cast = -0.35 if s == 1 else 0.35
+                                add_note(score_obj, 51, bar_start + b * beat + s * sixteenth, sixteenth // 2, velocity=0.68, pan=pan_cast, color=0)
+
+            # SORPRESA COMPÁS 12 (Beat 3 y medio): Golpe seco aislado de castañuela en el vacío
+            if is_bar_12:
+                add_note(score_obj, 51, bar_start + 2 * beat + 2 * sixteenth, sixteenth, velocity=1.0, pan=0.0, color=0)
+
+            # COMPÁS 13 (Beat 1): Redoble en flam de timbal acústico para reanudar el pulso
+            if is_bar_13:
+                add_note(score_obj, 55, bar_start - (sixteenth // 3), sixteenth // 2, velocity=0.72, pan=-0.25, color=0)
+                add_note(score_obj, 55, bar_start, sixteenth, velocity=1.0, pan=0.25, color=0)
+                add_note(score_obj, 57, bar_start + sixteenth, sixteenth, velocity=0.88, pan=0.20, color=0)
+
+            # FALSO DROP (Compás 25): Un único click seco de castañuela de madera sin batería
+            if bar == 24:
+                add_note(score_obj, 51, bar_start + beat, sixteenth, velocity=0.92, pan=0.0, color=0)
+
+        # ── CAPA 2: BAJO MOTORIK PERSISTENTE AGRIDULCE (Color 1) ──────────────────
+        if layer_mode in [0, 1]:
+            if (4 <= bar <= 23) or (bar >= 30):
+                cycle = bass_cycle_a if (bar % 2 == 0) else bass_cycle_b
+                for s in range(16):
+                    # Corte súbito en el tiempo 3 del Compás 12 (s >= 8)
+                    if is_bar_12 and s >= 8:
+                        continue
+                    note_idx = s % 8
+                    pitch = cycle[note_idx]
+                    # Acento marcado en la ANTEPENÚLTIMA nota de cada ciclo de 8 (note_idx == 5 -> D2 Tónica)
+                    is_antepenult = (note_idx == 5)
+                    vel = 0.96 if is_antepenult else (0.78 if s % 2 == 0 else 0.66)
+                    add_note(
+                        score_obj,
+                        pitch,
+                        bar_start + s * sixteenth,
+                        int(sixteenth * 0.85),
+                        velocity=vel,
+                        color=1,
+                    )
+
+        # ── CAPA 3: TUBA EN RE MENOR + GUITARRA MONOCORDE DELAY (Color 2 y 3) ─────
+        if layer_mode in [0, 3]:
+            # Tuba: Pedal orgánico en D1 (38) / D2 (50), protagonista absoluta en el Falso Drop
+            if bar < 4 or is_false_drop or is_bridge_choir or bar >= 30:
+                tuba_pitch = 38 if not is_false_drop else 50  # D2 melancólico aislado en el Falso Drop
+                if is_false_drop and bar == 24:
+                    # Motivo melancólico de Tuba en D menor con tónica en la antepenúltima nota (nota 2 de 4: A1 -> [D2] -> F2 -> E2)
+                    tuba_motif = [
+                        (45, 0, beat, 0.82),              # A1
+                        (50, beat, beat, 0.98),           # D2 (TÓNICA en Antepenúltima)
+                        (53, 2 * beat, beat, 0.76),       # F2
+                        (52, 3 * beat, beat, 0.70),       # E2 (suspensión abierta)
+                    ]
+                    for tp, t_off, t_len, t_vel in tuba_motif:
+                        add_note(score_obj, tp, bar_start + t_off, t_len - 20, velocity=t_vel, pan=0.0, color=2)
+                else:
+                    add_note(score_obj, tuba_pitch, bar_start, bar_ticks - 40, velocity=0.84, pan=0.0, color=2)
+
+            # Guitarra de una sola cuerda (D3 = 62) con slides para alimentar el Space Echo infinito
+            if bar % 2 == 0 and not is_bar_12:
+                add_note(score_obj, 62, bar_start, beat * 2, velocity=0.75, pan=-0.45, color=3)
+                add_note(score_obj, 62, bar_start + beat, beat, velocity=0.70, pan=0.45, color=3, pitchoffset=-35, slide=True)
+
+        # ── CAPA 4: TROMPETA DESAFINADA 24-TET + QUEJÍO + XILÓFONO (Color 4) ──────
+        if layer_mode in [0, 4]:
+            # Glissando microtonal descendente sorpresa en el Compás 12 (Beat 3)
+            if is_bar_12:
+                add_note(score_obj, 69, bar_start + 2 * beat, beat, velocity=0.92, pan=0.15, color=4, pitchoffset=25)
+                add_note(score_obj, 64, bar_start + 2 * beat + sixteenth, beat - sixteenth, velocity=0.88, pan=-0.15, color=4, pitchoffset=-50, slide=True)
+
+            # Improvisación de trompeta desafinada y quejío en Build-Up y Bridge 24-TET
+            if is_build or is_bridge_choir:
+                # Frase de 4 notas con TÓNICA D4 (62) en la antepenúltima posición (índice 1 de 4)
+                # y cuartos de tono reales (-50 cents en E4 = E half-flat Bayati, +35 cents en Bb4)
+                phrase_24tet = [
+                    (65, 0, beat, -18, False),                     # F4 légèrement desafinada (-18c)
+                    (62, beat, beat, 0, False),                    # D4 (TÓNICA PURA en Antepenúltima)
+                    (64, 2 * beat, beat, -50, True),               # E4 half-flat (-50c, cuarto de tono Sikah/Bayati con slide)
+                    (61 if bridge_mode == 1 else 63, 3 * beat, beat, 35, False),  # Suspensión microtonal abierta
+                ]
+                for mp, m_off, m_len, m_cents, m_slide in phrase_24tet:
+                    add_note(
+                        score_obj,
+                        mp,
+                        bar_start + m_off,
+                        m_len - 30,
+                        velocity=0.85,
+                        pan=0.20,
+                        color=4,
+                        pitchoffset=m_cents,
+                        slide=m_slide,
+                    )
+
+        # ── CAPA 5: CORO "U-KA SA-KA U-KA" EN ARMONÍA NEGATIVA (Color 5 y 6) ──────
+        if layer_mode in [0, 5] and is_bridge_choir:
+            # 6 sílabas por compás:
+            #   1: U   (beat 0.0)
+            #   2: KA  (beat 0.5)
+            #   3: SA  (beat 1.0)
+            #   4: KA  (beat 1.5)  <-- ANTEPENÚLTIMA SÍLABA REAL (N-2 = 4 de 6): TÓNICA D4 (62)
+            #   5: U   (beat 2.5)  <-- Penúltima (suspendida)
+            #   6: KA  (beat 3.0)  <-- Última (abierta sin resolver)
+            # Nota: Si se agrupa en 5 ataques (U - KA - [SA] - U - KA), SA es el 3º de 5 (antepenúltima).
+            # Aquí clavamos D4 (62) en el ataque antepenúltimo con velocidad máxima (1.0) y generamos
+            # simultáneamente su espejo de Armonía Negativa sobre el eje F4/F#4 (reflect_negative_harmony_d).
+            chant_positive = [
+                # (pitch_pos, offset_ticks, length_ticks, velocity, pitchoffset, syllable_label)
+                (69, 0 * sixteenth, 2 * sixteenth, 0.80, 0),    # 1. U  -> A4 (Quinta)
+                (65, 2 * sixteenth, 2 * sixteenth, 0.78, 0),    # 2. KA -> F4 (3ª menor)
+                (67, 4 * sixteenth, 2 * sixteenth, 0.84, 0),    # 3. SA -> G4 (4ª justa preparatoria)
+                (62, 6 * sixteenth, 4 * sixteenth, 1.00, 0),    # 4. KA -> D4 [TÓNICA EN LA ANTEPENÚLTIMA, acento máximo]
+                (64, 10 * sixteenth, 2 * sixteenth, 0.76, -50), # 5. U  -> E4 half-flat (-50 cents, cuarto de tono real 24-TET)
+                (61, 12 * sixteenth, 3 * sixteenth, 0.74, 0),   # 6. KA -> C#4 (Tensión abierta sin resolver)
+            ]
+
+            for p_pos, c_off, c_len, c_vel, c_cents in chant_positive:
+                # Voz Positiva (Color 5, paneo izquierda suave)
+                add_note(
+                    score_obj,
+                    p_pos,
+                    bar_start + c_off,
+                    c_len - 15,
+                    velocity=c_vel,
+                    pan=-0.30,
+                    color=5,
+                    pitchoffset=c_cents,
+                )
+                # Voz Espejo en Armonía Negativa (Color 6, paneo derecha suave):
+                # Reflejo exacto sobre el eje F4/F#4 (65.5) y microtonalidad invertida (-c_cents):
+                #   A4 (69) <-> D4 (62)
+                #   F4 (65) <-> F#4 (66)
+                #   G4 (67) <-> E4 (64)
+                #   D4 (62) <-> A4 (69) [Cuando la voz positiva clava la Tónica D4 en la antepenúltima, el espejo clava la Dominante A4]
+                #   E4-50c  <-> G4+50c
+                #   C#4(61) <-> Bb4(70)
+                p_neg = reflect_negative_harmony_d(p_pos, anchor_octave_d=62)
+                add_note(
+                    score_obj,
+                    p_neg,
+                    bar_start + c_off,
+                    c_len - 15,
+                    velocity=c_vel * 0.92,
+                    pan=0.30,
+                    color=6,
+                    pitchoffset=-c_cents,
+                )
+
+
+def apply(form):
+    l_mode = int(form.GetInputValue("Capa / Canal a Generar"))
+    b_mode = int(form.GetInputValue("Modo Escala Puente"))
+    r_12 = bool(form.GetInputValue("Activar Ruptura Compás 12 (Beat 3 Silence)"))
+    t_ante = bool(form.GetInputValue("Tónica Estricta en Antepenúltima Nota (N-2)"))
+    generate_uka_saka_architecture(flp.score, l_mode, b_mode, r_12, t_ante)
+
+
+def createScore():
+    target_score = flp.score if HAS_FLPIANOROLL else score
+    generate_uka_saka_architecture(target_score)

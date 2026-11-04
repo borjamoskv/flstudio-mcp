@@ -56,7 +56,7 @@ def render_chunk(chunk_info):
     return idx, out_file, dt
 
 def main():
-    print(f"🚀 Starting parallel render of 36,000 frames (20 minutes) across 12 chunks...")
+    print("🚀 Starting parallel render of 36,000 frames (20 minutes) across 12 chunks...")
     t_start = time.time()
     
     # 3 concurrent workers in parallel on Apple Silicon M3 Pro

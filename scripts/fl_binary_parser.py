@@ -4,7 +4,6 @@ FL Studio Binary & Audio Signal Reverse Engineering Engine
 Inspects FL Studio .flp project binaries, .fst preset binaries, and RIFF .wav audio headers.
 """
 
-import sys
 import os
 import struct
 
@@ -16,8 +15,8 @@ def inspect_wav_binary(file_path):
         return {"error": "Not a valid RIFF/WAVE binary"}
 
     chunk_size = struct.unpack('<I', data[4:8])[0]
-    fmt_id = data[12:16]
-    fmt_size = struct.unpack('<I', header_offset := data[16:20])[0]
+    data[12:16]
+    struct.unpack('<I', _header_offset := data[16:20])[0]
     audio_format, channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack('<HHIIHH', data[20:36])
 
     duration_sec = (chunk_size - 36) / byte_rate if byte_rate > 0 else 0
@@ -41,7 +40,7 @@ def inspect_fl_binary(file_path):
     if data[:4] != b'FLhd':
         return {"error": "Not a valid FL Studio FLhd binary"}
 
-    hdr_len = struct.unpack('<I', data[4:8])[0]
+    struct.unpack('<I', data[4:8])[0]
     fmt_type, channels, ppq = struct.unpack('<HHH', data[8:14])
     chunk_type = data[14:18].decode('ascii', errors='ignore')
 

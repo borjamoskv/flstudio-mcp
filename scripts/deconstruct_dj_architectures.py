@@ -13,11 +13,8 @@ Protocolo C5-REAL (Cortafuegos 16):
 - Extracción de interfaces, latencias y modelos de consenso para SWARM-1000.
 """
 
-import os
-import sys
 import json
 import subprocess
-import glob
 from pathlib import Path
 
 BASE_DIR = Path("/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp")
@@ -62,12 +59,12 @@ if SWARMDJ_PATH.exists():
         if af.name not in ["__init__.py", "base.py"]:
             try:
                 content = af.read_text(encoding="utf-8")
-                name_line = [l for l in content.splitlines() if "class " in l or "NAME" in l]
+                name_line = [l for l in content.splitlines() if "class " in l or "NAME" in l]  # noqa: E741
                 swarmdj_audit["modules"]["agents"]["personas"].append({
                     "file": af.name,
                     "signature": name_line[0] if name_line else "unknown"
                 })
-            except Exception as e:
+            except Exception:
                 pass
 
     # 1.2 Analizar Motor de Audio
@@ -161,7 +158,7 @@ if DJSTUDIO_APP.exists():
             })
 
 report["analyzed_targets"]["dj_studio_next"] = djstudio_audit
-print(f"  [OK] DJ.Studio analizado: Runtime dual ONNX/Torch + N-API C++ descubierto.")
+print("  [OK] DJ.Studio analizado: Runtime dual ONNX/Torch + N-API C++ descubierto.")
 
 # ==============================================================================
 # 3. DECONSTRUCCIÓN EN SALA LIMPIA: SERATO DJ PRO

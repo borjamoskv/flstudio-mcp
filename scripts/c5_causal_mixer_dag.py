@@ -11,7 +11,7 @@ import math
 import time
 import json
 import hashlib
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any, Tuple
 
 
 class CausalMixerDAG:

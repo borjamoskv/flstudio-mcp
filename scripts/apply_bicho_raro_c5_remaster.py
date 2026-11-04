@@ -10,7 +10,6 @@ Aplica las 3 optimizaciones cuantitativas sobre la pista fuente:
 """
 
 import os
-import sys
 import numpy as np
 import soundfile as sf
 from scipy import signal

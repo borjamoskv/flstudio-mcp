@@ -15,6 +15,7 @@ Aligned with:
 """
 
 import sys
+import json
 import os
 import time
 import ast
@@ -107,11 +108,17 @@ def fl_health_check() -> str:
         report_lines.append("❌ CoreMIDI Port: OFFLINE")
 
     # 2. FL Studio Application
-    fl_app = Path("/Applications/FL Studio 2025.app")
-    if fl_app.exists():
-        report_lines.append(f"✅ FL Studio App: INSTALLED ({fl_app})")
+    fl_apps = [
+        Path("/Applications/FL Studio 2026.app"),
+        Path("/Applications/FL Studio 2025.app"),
+        Path("/Applications/FL Studio 24.app"),
+        Path("/Applications/FL Studio 21.app"),
+    ]
+    found_app = next((app for app in fl_apps if app.exists()), None)
+    if found_app:
+        report_lines.append(f"✅ FL Studio App: INSTALLED ({found_app})")
     else:
-        report_lines.append("⚠️ FL Studio 2025 not found in default /Applications")
+        report_lines.append("⚠️ FL Studio App: not found in default /Applications")
 
     # 3. Hardware Controller Script
     hw_script = FL_HARDWARE / "AntigravityMCP/device_Antigravity_MCP.py"
@@ -739,7 +746,7 @@ def fl_inspect_binary_header(file_path: str) -> Dict[str, Any]:
 
     # 1. FL Studio Project Binary (.flp)
     if data[:4] == b'FLhd':
-        hdr_len = struct.unpack('<I', data[4:8])[0]
+        struct.unpack('<I', data[4:8])[0]
         fmt_type, channels, ppq = struct.unpack('<HHH', data[8:14])
         chunk_type = data[14:18].decode('ascii', errors='ignore')
         return {
@@ -2435,7 +2442,7 @@ def fl_run_self_test() -> Dict[str, Any]:
 
     # Test 9: Web Audio Cockpit HUD
     try:
-        hud_res = fl_export_web_audio_hud()
+        fl_export_web_audio_hud()
         results["tests"]["web_audio_hud"] = "PASSED (Exported HTML5 Studio Cockpit)"
     except Exception as e:
         results["tests"]["web_audio_hud"] = f"FAILED: {e}"
@@ -2894,11 +2901,272 @@ def fl_swarm1000_dispatch_midi_state(
 
 
 # ═══════════════════════════════════════════════════════════════
+# BALAG-OMEGA UNIFIED SOVEREIGN MUSIC ENGINE (48 kHz / 24-BIT)
+# ═══════════════════════════════════════════════════════════════
+
+@mcp.tool()
+def fl_balag_omega_produce(
+    title: str = "Balag_Omega_Unified",
+    bpm: float = 116.0,
+    key: str = "A Major",
+    bars: int = 8,
+    scale_scl: str = "babylon60_just_intonation_12.scl",
+    studio_preset: str = "borja_moskv_motorik",
+    use_analog_stems: bool = True,
+    use_kish_neural_timbre: bool = True,
+    use_balag_dsp: bool = True,
+    compile_flp: bool = True,
+    compile_midi: bool = True
+) -> Dict[str, Any]:
+    """
+    Orquestador Musical Unificado (BALAG-OMEGA):
+    1. Genera partitura microtonal (.scl/.mid con +6ms behind-the-beat) + Prompt Causal Suno/Udio.
+    2. Ensambla Stems Analógicos (48kHz) + KISH Neural Timbre + BALAG-60 Anti-Machine DSP.
+    3. Compila proyecto multipista .flp nativo para FL Studio 2025.
+    4. Masteriza a 48 kHz / 24-bit y ejecuta el Gate Acústico Rubin Fail-Closed (WCF, SFM, LPC).
+    """
+    try:
+        balag_dir = Path("/Users/borjafernandezangulo/10_PROJECTS/BALAG-60")
+        if not balag_dir.exists():
+            balag_dir = Path("/Users/borjafernandezangulo/10_PROJECTS/99_ARCHIVO_INERTE/BALAG-60")
+        if balag_dir.exists() and str(balag_dir) not in sys.path:
+            sys.path.insert(0, str(balag_dir))
+        from c5_music_schema import TrackSpec
+        from balag_omega_engine import produce_unified_track
+
+        spec = TrackSpec(
+            title=title,
+            bpm=bpm,
+            key=key,
+            bars=bars,
+            scale_scl=scale_scl,
+            studio_preset=studio_preset,
+            use_analog_stems=use_analog_stems,
+            use_kish_neural_timbre=use_kish_neural_timbre,
+            use_balag_dsp=use_balag_dsp,
+            compile_flp=compile_flp,
+            compile_midi=compile_midi,
+        )
+        receipt = produce_unified_track(spec, update_sitrep=True)
+        return receipt.to_dict()
+    except Exception as e:
+        logger.error(f"Error in fl_balag_omega_produce: {e}")
+        return {"status": "SECURITY_ABORT", "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
+# RAE COMPLETE REVERSE ENGINEERING ENGINE (147 PLUGINS & CORE)
+# ═══════════════════════════════════════════════════════════════
+
+@mcp.tool()
+def fl_rae_reverse_engineer_plugin(plugin_name: str) -> Dict[str, Any]:
+    """
+    Devuelve la ficha completa de Ingeniería Inversa RAE (Real Academia Española + Reverse Audio Engine)
+    de cualquier plugin de FL Studio 2025 (51 Generadores, 89 Efectos, 7 VST3) o subsistema nuclear (8 Core):
+    incluye término RAE, definición académica/física, ecuación matemática de transferencia H(z)/y[n],
+    arquitectura interna, parámetros clave, mapeo MIDI CC y estructura binaria del chunk 0xD5 (.fst/.flp).
+    """
+    from scripts.fl_native_plugin_reverse_engine import inspect_plugin_rae
+    return inspect_plugin_rae(plugin_name)
+
+
+@mcp.tool()
+def fl_rae_search_lexicon(query: str = "") -> Dict[str, Any]:
+    """
+    Busca en el Diccionario Léxico RAE de Ingeniería Acústica (35 términos) y en el catálogo
+    de 147 plugins de FL Studio 2025 por término en español, anglicismo DAW o familia matemática DSP.
+    """
+    from scripts.fl_native_plugin_reverse_engine import search_rae_lexicon
+    return search_rae_lexicon(query)
+
+
+@mcp.tool()
+def fl_rae_audit_all_plugins(
+    write_artifacts: bool = True, plugins_root: Optional[str] = None, simulation: bool = False,
+    real_io_evidence_dir: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Compara nombres instalados con las 147 fichas del catálogo. No verifica DSP.
+    verified=False y coverage_percent=null hasta disponer de comparación funcional.
+    La ausencia de instalación produce FAIL_MISSING_EVIDENCE; simulation es explícita.
+    """
+    from scripts.fl_native_plugin_reverse_engine import scan_native_fl_plugins
+    return scan_native_fl_plugins(write_artifacts=write_artifacts, plugins_root=plugins_root, simulation=simulation, real_io_evidence_dir=real_io_evidence_dir)
+
+
+@mcp.tool()
+def fl_verify_installed_io(
+    evidence_dir: str, include_plugins: bool = True, include_applications: bool = True,
+) -> Dict[str, Any]:
+    """Run original installed AU plugins and local Grok --version in network-denied processes.
+
+    Keeps stimuli, two outputs per case, parameters/state, binary hashes and raw
+    process logs in a new evidence directory. Verifies bounded gain/bypass/version
+    cases only. Missing, mismatched or nonreproducible evidence remains blocked.
+    """
+    from scripts.real_io_verifier import run_suite
+    try:
+        return run_suite(evidence_dir, plugins=include_plugins, applications=include_applications)
+    except Exception as exc:
+        return {"status": "BLOCKED", "requested_cases_passed": False,
+                "error": f"{type(exc).__name__}: {exc}"}
+
+
+@mcp.tool()
+def fl_rae_sculpt_human_kick_and_sidechain(
+    bpm: float = 122.0,
+    key_root_hz: float = 49.0,
+    bars: int = 4,
+    kick_style: str = "punchy_club_human",
+    sidechain_depth_sub: float = 0.92,
+    sidechain_depth_high: float = 0.22,
+) -> Dict[str, Any]:
+    """
+    Sintetiza un patrón de Kick con articulación humana (fase bloqueada a 0 rad, barrido exponencial doble,
+    muesca anti-barro en 195 Hz, Soft Clipper tanh y micro-dinámica por pulso) y aplica un Sidechain
+    Multibanda acoplado en fase (Frequency Splitter 140 Hz: agachamiento profundo del subgrave <140 Hz
+    y preservación armónica >=140 Hz) sobre un bajo Transistor Bass y acordes rasgueados de FLEX,
+    auditando el resultado con el Linter Acústico Rubin.
+    """
+    from scripts.rae_human_producer_engine import synthesize_human_kick_and_coupled_sidechain
+    return synthesize_human_kick_and_coupled_sidechain(
+        bpm=bpm,
+        key_root_hz=key_root_hz,
+        bars=bars,
+        kick_style=kick_style,
+        sidechain_depth_sub=sidechain_depth_sub,
+        sidechain_depth_high=sidechain_depth_high,
+    )
+
+
+@mcp.tool()
+def fl_rae_automate_flex_and_plugins_human(
+    preset_style: str = "satin_maceo_hybrid",
+    bpm: float = 120.0,
+    bars: int = 8,
+    send_live_midi: bool = False,
+) -> Dict[str, Any]:
+    """
+    Genera curvas de automatización humana (arcos de tensión de frase + deriva fractal 1/f)
+    para los 8 Macros de FLEX, el filtro ácido de Transistor Bass y el Auto-Ducking de LuxeVerb,
+    exportando además una partitura nativa (.fsc) con micro-rasgueo de acordes (strumming) y bolsillo laid-back.
+    """
+    from scripts.rae_human_producer_engine import (
+        export_human_production_markdown_guide,
+        generate_human_flex_and_plugin_performance,
+    )
+    export_human_production_markdown_guide()
+    return generate_human_flex_and_plugin_performance(
+        preset_style=preset_style,
+        bpm=bpm,
+        bars=bars,
+        send_live_midi=send_live_midi,
+    )
+
+
+@mcp.tool()
+def fl_rae_render_complex_arrangement_and_buildup(
+    bpm: float = 124.0,
+    key_root_hz: float = 49.0,
+    buildup_bars: int = 8,
+    drop_bars: int = 4,
+) -> Dict[str, Any]:
+    """
+    Construye una Macro-Estructura Compleja de Canción en 6 Actos (.flp binario nativo de 88 compases)
+    y sintetiza el render acústico real (.wav 48 kHz) del Build-Up Largo -> Silencio Cálido Pre-Drop
+    (The Pre-Drop Vacuum) -> Full Club Drop, aplicando lavado exponencial de subgraves (HPF Washout
+    30 Hz -> 260 Hz), aceleración geométrica de redoble (1/4 -> 1/8 -> 1/16 -> 1/32), apertura de los
+    8 Macros de FLEX, Shepard-Risset Riser y Sidechain Multibanda a 140 Hz.
+    """
+    from scripts.rae_human_producer_engine import synthesize_complex_arrangement_and_long_buildup
+    return synthesize_complex_arrangement_and_long_buildup(
+        bpm=bpm,
+        key_root_hz=key_root_hz,
+        buildup_bars=buildup_bars,
+        drop_bars=drop_bars,
+    )
+
+
+@mcp.tool()
+def fl_rae_produce_human_masterpiece(
+    bpm: float = 122.0,
+    key_root_hz: float = 49.0,
+    bars: int = 8,
+) -> Dict[str, Any]:
+    """
+    Orquesta en silicio las 7 Leyes RAE del Productor Humano:
+      1. Pocket Rítmico Diferencial (+6.8 ms Bajo Laid-Back, Swing 58%, Ghost Snares y Clap Pre-Snap Flams -11 ms).
+      2. Articulación Polifónica en FLEX (Micro-Strumming 12 ms/voz + Top-Note Voicing +28% + Detune +-3.5 cents).
+      3. Respiración de los 8 Macros de FLEX + Call & Response Delay/Reverb Throws en los huecos melódicos.
+      4. Escultura de Kick con Fase Anclada (0 rad), Notch en 195 Hz y Sidechain Multibanda a 140 Hz.
+      5. Mutación cada 4/8 Compases (Ear Candy: Reverse Reverb Swell antes del acorde + Turnaround Tom Fill).
+      6. Silencio Cálido Analógico (-44 dBFS) contra el cero digital muerto.
+      7. Masterización Anti-Squash (Soft Clipper tanh + Auditoría Acústica Rubin fail-closed).
+    """
+    from scripts.rae_human_producer_engine import synthesize_full_human_producer_masterpiece
+    return synthesize_full_human_producer_masterpiece(
+        bpm=bpm,
+        key_root_hz=key_root_hz,
+        bars=bars,
+    )
+
+
+@mcp.tool()
+def fl_rae_produce_deep_studio_laws_8_to_14(
+    bpm: float = 122.0,
+    key_root_hz: float = 49.0,
+    bars: int = 8,
+) -> Dict[str, Any]:
+    """
+    Orquesta en silicio las Leyes 8 a 14 de Ingeniería de Estudio Humano Avanzado:
+      8. Foley Orgánico Fuera de Rejilla (+-14 ms off-grid en Slicex/DirectWave).
+      9. Respiración de Envolvente de Batería (Hi-Hat Decay Morphing 11 ms -> 58 ms hacia el final de frase).
+      10. Truco Pultec de Subgrave (Realce en fundamental 49 Hz + corte simultáneo en 98-105 Hz).
+      11. Compresión Paralela Nueva York (82% Dry Transitorio + 18% NY Crush Bus Saturado).
+      12. Micro-Modulación de Tempo Humana (Rubato de Conducción: -6 ms hacia el clímax de frase).
+      13. Nota Pedal Aguda Sostenida con Delayed Vibrato (entra tras 180 ms a 5.4 Hz).
+      14. Sidechain Espectral Dinámico en 2 kHz (el Lead excava -2.8 dB en la presencia de FLEX solo cuando canta).
+    """
+    from scripts.rae_human_producer_engine import synthesize_deep_studio_human_laws_8_to_14
+    return synthesize_deep_studio_human_laws_8_to_14(
+        bpm=bpm,
+        key_root_hz=key_root_hz,
+        bars=bars,
+    )
+
+
+@mcp.tool()
+def fl_rae_produce_andras_lindstrom_balearic_opener(
+    track_title: str = "Borja Moskv - Yolando Moon",
+    bpm: float = 122.0,
+    key_root_hz: float = 49.0,
+) -> Dict[str, Any]:
+    """
+    Sintetiza el nuevo tema 'Borja Moskv - Yolando Moon' bajo la Matriz Híbrida Satin Jackets x Maceo Plex x AIR
+    a 122 BPM (G1 = 49.0 Hz / C Minor Penrose Stair Loop):
+      - Satin Jackets: Fender Rhodes 73 con acordes Penrose Stair (Abmaj9 -> Bb9 -> Cm9 -> Fm9), micro-strumming
+        (+12 ms/voz), Top-Note Voicing (+28%) y modulación de Picarda (Cmaj9).
+      - Maceo Plex: Kick Tecno-Industrial con barrido 3.8 kHz -> 49 Hz, Rumble Subgrave, Bajo Minimoog con saltos
+        de octava en laid-back pocket (+6.8 ms) y Arpegio FM Metálico de 128 pasos con microtonalidad 24-TET.
+      - AIR Moon Safari: Solina String Ensemble analógico y Dub Delay 3/16.
+    Exporta Master 24-bit .wav, 5 Stems multicanal, proyecto .flp y partitura .fsc.
+    """
+    from scripts.rae_human_producer_engine import synthesize_andras_lindstrom_128step_balearic_opening
+    return synthesize_andras_lindstrom_128step_balearic_opening(
+        track_title=track_title,
+        bpm=bpm,
+        key_root_hz=key_root_hz,
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     logger.info("Starting FL Studio SOTA MCP Server v21.0 Hyper-Spatial Continuum on stdio transport…")
     mcp.run()
+
+
 
 
 

@@ -52,7 +52,7 @@ def audit_entropy():
                 headers = re.findall(r'^(#{1,6}\s+.+)$', content, re.MULTILINE)
                 for h in headers:
                     file_headers[h.strip()].append(rel_path)
-        except Exception as e:
+        except Exception:
             pass
 
     # 1. Jaccard Similarity Audit

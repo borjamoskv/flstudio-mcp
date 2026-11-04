@@ -3,7 +3,7 @@
 Generate crisp, hilarious South Park paper cut-out character parts and studio background
 """
 import os
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 PUB = "/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp/remotion-video/public"
 os.makedirs(PUB, exist_ok=True)

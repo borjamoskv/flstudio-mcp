@@ -4,7 +4,6 @@ Antigravity SOTA Locrian & Xenharmonic Techno Engine
 Implements 24-TET Quarter-Tone Neutral Locrian, Locrian Natural 6, and Super-Locrian (Altered Scale) multi-layer patterns.
 """
 
-import math
 import random
 import os
 import mido

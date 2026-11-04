@@ -16,8 +16,6 @@ Extended 96-Bar Masterpiece (192.0s @ 120.0 BPM):
 """
 
 import math
-import os
-import struct
 import wave
 import subprocess
 import numpy as np
@@ -56,7 +54,7 @@ NUM_BARS = 96
 TOTAL_DURATION = BAR_DUR * NUM_BARS
 TOTAL_SAMPLES = int(SAMPLE_RATE * TOTAL_DURATION)
 
-print(f"=== Synthesizing Cosmic Microtonal Glitch & Duende Masterpiece (Extended) ===")
+print("=== Synthesizing Cosmic Microtonal Glitch & Duende Masterpiece (Extended) ===")
 print(f"Duration: {TOTAL_DURATION:.2f}s ({NUM_BARS} bars @ {BPM} BPM)")
 print(f"Total Samples: {TOTAL_SAMPLES} @ {SAMPLE_RATE} Hz")
 

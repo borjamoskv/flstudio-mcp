@@ -17,7 +17,6 @@ Instruments Split Into Individual Tracks:
 
 import os
 import mido
-from typing import List, Dict, Tuple
 
 WORKSPACE_DIR = os.path.expanduser("~/10_PROJECTS/flstudio-mcp")
 STEMS_DIR = os.path.join(WORKSPACE_DIR, "samples", "separate_instrument_tracks")
@@ -38,14 +37,6 @@ def split_midi_into_separate_tracks():
     src_mid = mido.MidiFile(SOURCE_MIDI_PATH)
     print(f"📖 Loaded Source MIDI: {len(src_mid.tracks)} tracks.")
 
-    instrument_names = [
-        "01_Fender_Rhodes_73_Satin_Jackets",
-        "02_Solina_Strings_AIR_Pad",
-        "03_Minimoog_Sub_Bass",
-        "04_Maceo_Industrial_303_Acid",
-        "05_AIR_Vocoder_Space_Lead",
-        "06_Maceo_Techno_Kick_DSP_Drums"
-    ]
 
     generated_files = []
 

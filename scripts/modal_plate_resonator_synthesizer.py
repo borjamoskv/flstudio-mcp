@@ -21,7 +21,6 @@ Acoustic Physics:
 6. Centralized WAV export to ~/Music/FL Studio Bounces/Modal_Plates/
 """
 
-import math
 import wave
 import logging
 from pathlib import Path

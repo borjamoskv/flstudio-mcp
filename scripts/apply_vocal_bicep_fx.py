@@ -9,7 +9,6 @@ Cadena de Procesamiento Específica para Vocales ("Bicho Raro"):
 4. Sidechain Reverb Gated de alta densidad (blooms eufóricos entre palabras).
 """
 
-import os
 import numpy as np
 import soundfile as sf
 from scipy import signal

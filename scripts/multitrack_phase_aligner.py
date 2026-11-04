@@ -19,7 +19,6 @@ Mechanics:
 6. Centralized WAV export to ~/Music/FL Studio Bounces/Phase_Aligned/
 """
 
-import math
 import wave
 import logging
 from pathlib import Path
@@ -165,7 +164,7 @@ def align_multitrack_stems_phase(
     lags = np.arange(-len(s_seg) + 1, len(r_seg))
 
     # Restrict to search window
-    mid = len(s_seg) - 1
+    len(s_seg) - 1
     valid_window = (lags >= -max_lag_samples) & (lags <= max_lag_samples)
     corr_window = corr[valid_window]
     lags_window = lags[valid_window]

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import os, gc, time, subprocess, torch
+import os
+import gc
+import subprocess
+import torch
 import soundfile as sf
 import numpy as np
-import scipy.signal as signal
 from f5_tts.api import F5TTS
 
 OUT_DIR = "/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp/remotion-video/public/ceutong_audio"
@@ -82,7 +84,7 @@ cmd_mac = [
     "-ar", "44100", dst_mac
 ]
 subprocess.run(cmd_mac, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-print(f"  ✓ MacGyver hero voice generated")
+print("  ✓ MacGyver hero voice generated")
 
 
 # 4. BORJA MOSKV, MITXU & ALAIN WITH F5-TTS (SOTA MPS)

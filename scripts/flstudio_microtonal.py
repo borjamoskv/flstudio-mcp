@@ -5,11 +5,9 @@ Computes sub-cent pitch bend matrices, MPE polyphonic channels, and Xenharmonic 
 Supports 24-TET (Quarter-tones / Makam), 19-TET, 31-TET, Just Intonation, and Bohlen-Pierce.
 """
 
-import math
-import os
 import random
 import mido
-from typing import List, Dict, Tuple, Optional
+from typing import List
 
 # Microtonal Scale Systems (Frequency ratios or Cents offsets relative to 12-TET root)
 MICROTONAL_SYSTEMS = {
@@ -171,7 +169,7 @@ def export_scala_scl_file(system_name: str, output_path: str) -> str:
 
     lines = [
         f"! {system_name}.scl",
-        f"! Created by Antigravity FL Studio MCP Microtonal Engine",
+        "! Created by Antigravity FL Studio MCP Microtonal Engine",
         f"{desc}",
         f"{len(cents_list)}"
     ]

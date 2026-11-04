@@ -1,7 +1,6 @@
 import mido
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 import random
-import math
 from pathlib import Path
 
 PPQ = 480

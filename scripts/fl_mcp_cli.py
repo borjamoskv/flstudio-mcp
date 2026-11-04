@@ -5,8 +5,6 @@ Provides high-exergy command-line and interactive REPL control over FL Studio 20
 """
 
 import sys
-import os
-import time
 import argparse
 from pathlib import Path
 
@@ -14,7 +12,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import mcp_server
+import mcp_server  # noqa: E402
 
 BANNER = r"""
  ██████╗███████╗   ██████╗ ███████╗ █████╗ ██╗     

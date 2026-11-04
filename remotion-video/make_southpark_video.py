@@ -19,9 +19,8 @@ import math
 import os
 import shutil
 import subprocess
-import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 
 import edge_tts
 import numpy as np
@@ -58,6 +57,15 @@ CHARACTERS = {
         "color": "#00ffcc",
         "badge": "🐩⚡ ALAIN // ELEKTROCANICHE",
         "slide": "rave.jpg",
+    },
+    "unai": {
+        "name": "UNAI LYNCH",
+        "voice": "es-ES-AlvaroNeural",
+        "rate": "+14%",
+        "pitch": "+2Hz",
+        "color": "#a855f7",
+        "badge": "🎬 UNAI // SURREALISMO & PISCINA",
+        "slide": "bar.jpg",
     },
     "chiquito": {
         "name": "CHIQUITO DE LA CALZADA",
@@ -317,6 +325,19 @@ CHARACTERS = {
 # 2. GENERADOR DE GUIONES PREESTABLECIDOS (3 A 4 MINUTOS / 21 ESCENAS)
 # -----------------------------------------------------------------------------
 TOPIC_SCRIPTS = {
+    "chanante": [
+        ("unai", "alain", "Hola, zagales, soy David Lynch. He montao una piscinilla desmontable de plástico en La Rioja con cuatro hierros y después de salir de esto me he venido unos días a flotar con manguitos."),
+        ("unai", "borja", "He subido un tema de noise a SoundCloud en privado con clave de cuarenta dígitos. Si la gente lo escucha, se me desmagnetiza el cardado. Ahora voy a Bilbao a ver qué desastre hay."),
+        ("mitxu", "unai", "¡Míralo, qué tontaco! Al pimiento verde se le echa un chorrín generoso de Orlando, sal gorda y a correr, ¡que eso no tiene ningún puto misterio!"),
+        ("mitxu", "alain", "Y dejad de odiar al que tiene dinero, copón, que tener billetes es hermosísimo. Te plantas tus gafas de soldador a las tres de la mañana y a campeonar en el Juanma."),
+        ("patxi", "mitxu", "¡Mitxu, no enciendas la freidora que tengo el bar en ciclo cerrado! El cuerpo humano es setenta por ciento agua: te plantas en el andén de Metro Uribarri con bañador rojo y eres una pila viviente."),
+        ("patxi", "lander", "Lo que pasa es que a las eléctricas no les interesa que la peña tenga energía libre inalámbrica por el aire, ¡pero yo he hecho experimentos en el portal y funciona!"),
+        ("alain", "patxi", "¡Cuidado con el Bot de Hacienda! ¡Que los revienta, los mata, los masacra! He comprado una caja de ritmos en Róterdam a ciento dieciocho bombos y el algoritmo me ha bloqueao la cuenta."),
+        ("alain", "borja", "Toma, Borja, escúchate este audio de quince minutos y treinta y tres segundos a un x donde te explico el artículo catorce de la ley del IVA."),
+        ("lander", "alain", "Vengo de la nave de Zorroza... Andaba buscando cobertura cero ge de Vodafone y me he caído en el alcantarillado. En mi nave no hay luz ni WhatsApp: la luz del sol es de flojos."),
+        ("lander", "mitxu", "Dos Technics descalibrados encima de cajas de Kas y cuatro mil vinilos llenos de polvo. Landerground en el silicio hasta la tumba."),
+        ("borja", "lander", "¡Hijo de puta, hay que ver el videoclip! Fin del asalto chanante."),
+    ],
     "hacienda": [
         ("borja", "alain", "Bienvenidos a Jarana Cast: donde Hacienda cree que un M3 es lujo y nosotros sabemos que es un andamiaje termodinámico."),
         ("alain", "borja", "¡Borja, el inspector me ha enviado una carta pidiéndome los tickets del aceite del BMW de los últimos siete años!"),
@@ -619,8 +640,8 @@ def render_parallel(total_frames, final_output_path, master_wav, max_workers=4, 
 # -----------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="Master Remotion South Park Video Generator (3 a 4 Minutos)")
-    parser.add_argument("--topic", type=str, default="hacienda", choices=["hacienda", "ceutong", "custom"],
-                        help="Tema del guion automático ('hacienda', 'ceutong', o 'custom')")
+    parser.add_argument("--topic", type=str, default="hacienda", choices=["hacienda", "ceutong", "chanante", "custom"],
+                        help="Tema del guion automático ('hacienda', 'ceutong', 'chanante', o 'custom')")
     parser.add_argument("--script", type=str, default=None,
                         help="Ruta a un archivo JSON con diálogo custom: [[speaker, guest, text], ...]")
     parser.add_argument("--title", type=str, default=None,
@@ -635,6 +656,8 @@ def main():
                         help="Número de workers en paralelo para renderizado Remotion (defecto: 3)")
     parser.add_argument("--output", type=str, default=None,
                         help="Nombre del archivo MP4 final en ~/Music/")
+    parser.add_argument("--audio-only", action="store_true",
+                        help="Generar únicamente el máster de audio y telemetría FFT sin renderizado Remotion")
     
     args = parser.parse_args()
     
@@ -650,6 +673,9 @@ def main():
         if topic_key == "hacienda":
             title = args.title or "JARANA CAST // EL BOT DE HACIENDA Y EL M3"
             subtitle = args.subtitle or "TEMPORADA 1 · DEBATE DE ALTA EXERGÍA · 3.5 MINUTOS"
+        elif topic_key == "chanante":
+            title = args.title or "LA HORA CHANANTE // CUADRILLA NEXUS"
+            subtitle = args.subtitle or "EL BOT, EL PIMIENTO Y LA BATERÍA SAGRADA"
         else:
             title = args.title or "CEUTONG // EL HONG KONG DEL ESTRECHO"
             subtitle = args.subtitle or "TEMPORADA 1 · SOBERANÍA TERRITORIAL · 3.5 MINUTOS"
@@ -678,6 +704,12 @@ def main():
     )
     
     # 3. Parallel Render
+    if args.audio_only:
+        print("\n✅ Modo --audio-only completado con éxito.")
+        print(f"📍 Master WAV: {master_wav}")
+        print(f"📍 Telemetría FFT: {os.path.join(PUB_DIR, 'universal_video_telemetry.json')}")
+        return
+
     render_parallel(
         total_frames=total_frames,
         final_output_path=final_output_path,

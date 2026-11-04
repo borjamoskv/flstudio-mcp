@@ -11,7 +11,6 @@ Integra:
 5. Limiter / Soft-Clipper Multibanda de Masterización comercial para fijar -11.5 LUFS / -1.0 dBFS True Peak.
 """
 
-import os
 import numpy as np
 import soundfile as sf
 from scipy import signal
@@ -160,11 +159,11 @@ def main():
     final_lufs = meter.integrated_loudness(mix)
     final_peak = 20 * np.log10(np.max(np.abs(mix)))
 
-    print(f"\n==========================================")
-    print(f"MASTERIZACIÓN COMPLETADA CON ÉXITO:")
+    print("\n==========================================")
+    print("MASTERIZACIÓN COMPLETADA CON ÉXITO:")
     print(f"Loudness Integrado Final : {final_lufs:.2f} LUFS")
     print(f"Pico Máximo Final       : {final_peak:.2f} dBFS")
-    print(f"==========================================")
+    print("==========================================")
 
     sf.write(OUTPUT_PATH, mix, sr, subtype='PCM_24')
     print(f"Master final guardado en:\n{OUTPUT_PATH}")

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import time
 import subprocess
-import pyautogui
 
 def run_applescript(script):
     p = subprocess.Popen(['osascript', '-e', script], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

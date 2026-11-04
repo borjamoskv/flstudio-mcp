@@ -25,8 +25,6 @@ Minimal Microtonal Soul Locrian Synthesizer (Organic Multi-Sample Engine + Slide
 """
 
 import math
-import os
-import struct
 import wave
 import subprocess
 import numpy as np
@@ -59,7 +57,7 @@ NUM_BARS = 210  # 210 bars * 2.0s = 420.0s = exactly 7 minutes!
 TOTAL_DURATION = BAR_DUR * NUM_BARS
 TOTAL_SAMPLES = int(SAMPLE_RATE * TOTAL_DURATION)
 
-print(f"=== Synthesizing Organic Minimal Microtonal Soul Locrian Masterpiece (7 Minutes) ===")
+print("=== Synthesizing Organic Minimal Microtonal Soul Locrian Masterpiece (7 Minutes) ===")
 print(f"Duration: {TOTAL_DURATION:.2f}s ({NUM_BARS} bars @ {BPM} BPM = {TOTAL_DURATION/60:.2f} min)")
 print(f"Total Samples: {TOTAL_SAMPLES} @ {SAMPLE_RATE} Hz")
 
@@ -145,8 +143,8 @@ p_bass_c2 = INST_DIR / "5String BopBass Pick_C2.wav"
 p_bass_e1 = INST_DIR / "5String BopBass Pick_E1.wav"
 raw_c2, _ = sf.read(str(p_bass_c2))
 raw_e1, _ = sf.read(str(p_bass_e1))
-if raw_c2.ndim > 1: raw_c2 = np.mean(raw_c2, axis=1)
-if raw_e1.ndim > 1: raw_e1 = np.mean(raw_e1, axis=1)
+if raw_c2.ndim > 1: raw_c2 = np.mean(raw_c2, axis=1)  # noqa: E701
+if raw_e1.ndim > 1: raw_e1 = np.mean(raw_e1, axis=1)  # noqa: E701
 
 BASE_C2_HZ = 65.82
 BASE_E1_HZ = 41.33
@@ -237,7 +235,7 @@ for b in range(0, NUM_BARS, 2):
 print("-> Synthesizing Acoustic Honduras Rosewood Xylophone (Physical Bar Modes)...")
 p_clav = DRUMS_DIR / "FL 808 Clav.wav"
 clav_hit, _ = sf.read(str(p_clav))
-if clav_hit.ndim > 1: clav_hit = np.mean(clav_hit, axis=1)
+if clav_hit.ndim > 1: clav_hit = np.mean(clav_hit, axis=1)  # noqa: E701
 
 def synth_organic_rosewood_bar(freq_hz: float, mallet_hardness: float = 0.70) -> np.ndarray:
     dur = 1.35
@@ -309,7 +307,7 @@ rhodes_samples = {}
 for idx, fund_f in [(3, 65.43), (5, 130.86), (7, 260.95), (9, 525.00), (11, 1050.00)]:
     p_r = INST_DIR / f"Rhodes Piano ({idx}).wav"
     r_data, _ = sf.read(str(p_r))
-    if r_data.ndim > 1: r_data = np.mean(r_data, axis=1)
+    if r_data.ndim > 1: r_data = np.mean(r_data, axis=1)  # noqa: E701
     rhodes_samples[idx] = (r_data, fund_f)
 
 def render_real_rhodes_note(target_hz: float, dur_s: float = 7.5) -> np.ndarray:
@@ -395,9 +393,9 @@ p_g_d5 = INST_DIR / "Nylon Guitar d5.wav"
 raw_g_d4, _ = sf.read(str(p_g_d4))
 raw_g_g4, _ = sf.read(str(p_g_g4))
 raw_g_d5, _ = sf.read(str(p_g_d5))
-if raw_g_d4.ndim > 1: raw_g_d4 = np.mean(raw_g_d4, axis=1)
-if raw_g_g4.ndim > 1: raw_g_g4 = np.mean(raw_g_g4, axis=1)
-if raw_g_d5.ndim > 1: raw_g_d5 = np.mean(raw_g_d5, axis=1)
+if raw_g_d4.ndim > 1: raw_g_d4 = np.mean(raw_g_d4, axis=1)  # noqa: E701
+if raw_g_g4.ndim > 1: raw_g_g4 = np.mean(raw_g_g4, axis=1)  # noqa: E701
+if raw_g_d5.ndim > 1: raw_g_d5 = np.mean(raw_g_d5, axis=1)  # noqa: E701
 
 guitar_samples = {
     'd4': (raw_g_d4, 147.00),
@@ -602,8 +600,8 @@ p_rim = DRUMS_DIR / "FL 909 Rim.wav"
 p_conga = DRUMS_DIR / "FL 808 Conga.wav"
 rim_sample, _ = sf.read(str(p_rim))
 conga_sample, _ = sf.read(str(p_conga))
-if rim_sample.ndim > 1: rim_sample = np.mean(rim_sample, axis=1)
-if conga_sample.ndim > 1: conga_sample = np.mean(conga_sample, axis=1)
+if rim_sample.ndim > 1: rim_sample = np.mean(rim_sample, axis=1)  # noqa: E701
+if conga_sample.ndim > 1: conga_sample = np.mean(conga_sample, axis=1)  # noqa: E701
 
 conga_high = resample_pitch(conga_sample, 1.25)
 conga_low = resample_pitch(conga_sample, 0.85)
@@ -656,10 +654,10 @@ shaker3, _ = sf.read(str(p_shaker3))
 shaker4, _ = sf.read(str(p_shaker4))
 ohat, _ = sf.read(str(p_ohat))
 chat, _ = sf.read(str(p_chat))
-if shaker3.ndim > 1: shaker3 = np.mean(shaker3, axis=1)
-if shaker4.ndim > 1: shaker4 = np.mean(shaker4, axis=1)
-if ohat.ndim > 1: ohat = np.mean(ohat, axis=1)
-if chat.ndim > 1: chat = np.mean(chat, axis=1)
+if shaker3.ndim > 1: shaker3 = np.mean(shaker3, axis=1)  # noqa: E701
+if shaker4.ndim > 1: shaker4 = np.mean(shaker4, axis=1)  # noqa: E701
+if ohat.ndim > 1: ohat = np.mean(ohat, axis=1)  # noqa: E701
+if chat.ndim > 1: chat = np.mean(chat, axis=1)  # noqa: E701
 
 hh_l, hh_r = stems["07_HiHats_Shakers_Minimal"]
 

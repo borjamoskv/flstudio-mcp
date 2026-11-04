@@ -22,7 +22,7 @@ def load_cookies(filepath):
     cookies = []
     with open(filepath, 'r') as f:
         for line in f:
-            if not line or line.startswith('#'): continue
+            if not line or line.startswith('#'): continue  # noqa: E701
             parts = line.strip().split('\t')
             if len(parts) >= 7:
                 cookies.append({

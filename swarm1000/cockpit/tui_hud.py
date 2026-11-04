@@ -16,19 +16,18 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from rich.console import Console
-from rich.layout import Layout
-from rich.panel import Panel
-from rich.table import Table
-from rich.text import Text
-from rich.live import Live
-from rich.progress import BarColumn, Progress, TextColumn
+from rich.console import Console  # noqa: E402
+from rich.layout import Layout  # noqa: E402
+from rich.panel import Panel  # noqa: E402
+from rich.table import Table  # noqa: E402
+from rich.text import Text  # noqa: E402
+from rich.live import Live  # noqa: E402
 
 # Import SWARM-1000 modules
-from swarm1000.core.shm_seqlock_bus import ShmSeqlockBus
-from swarm1000.council.bft_1000_consensus import Bft1000ConsensusEngine
-from swarm1000.engine.psychoacoustic_matrix import PsychoacousticMatrix
-from swarm1000.bridge.coremidi_bridge import CoreMidiBridge
+from swarm1000.core.shm_seqlock_bus import ShmSeqlockBus  # noqa: E402
+from swarm1000.council.bft_1000_consensus import Bft1000ConsensusEngine  # noqa: E402
+from swarm1000.engine.psychoacoustic_matrix import PsychoacousticMatrix  # noqa: E402
+from swarm1000.bridge.coremidi_bridge import CoreMidiBridge  # noqa: E402
 
 console = Console()
 
@@ -97,13 +96,13 @@ class Swarm1000Cockpit:
             "BEATGRID", "200", f"Δφ = {phase_drift:.4f} rad · Clock Sync 24 PPQN", "[bold green]ALIGNED[/]"
         )
         agents_table.add_row(
-            "PSYCHOACOUSTIC", "200", f"LR4 160Hz · Sigmoid k=18.0 · Zero-Sub Overlap", "[bold green]LOCK[/]"
+            "PSYCHOACOUSTIC", "200", "LR4 160Hz · Sigmoid k=18.0 · Zero-Sub Overlap", "[bold green]LOCK[/]"
         )
         agents_table.add_row(
-            "HARMONIC", "200", f"Camelot 9B -> 1B · Dissonance = 0.041 (Minimal)", "[bold green]PASS[/]"
+            "HARMONIC", "200", "Camelot 9B -> 1B · Dissonance = 0.041 (Minimal)", "[bold green]PASS[/]"
         )
         agents_table.add_row(
-            "VOCAL_MUTEX", "200", f"Collision Sensor Active · Mutex Fail-Closed", "[bold green]NO_CLASH[/]"
+            "VOCAL_MUTEX", "200", "Collision Sensor Active · Mutex Fail-Closed", "[bold green]NO_CLASH[/]"
         )
         fake_drop_str = "ARMED (BAR 12)" if t_norm < 0.375 else "EXECUTED"
         agents_table.add_row(
@@ -116,8 +115,8 @@ class Swarm1000Cockpit:
         seq_text = Text()
         seq_text.append("IPC Architecture: ", style="bold cyan")
         seq_text.append("POSIX Shared Memory Seqlock 64-byte Atomic Ring (Zero-HTTP)\n", style="white")
-        seq_text.append(f"IPC Latency: ", style="bold cyan")
-        seq_text.append(f"480.5 ns / agent ", style="bold bright_green")
+        seq_text.append("IPC Latency: ", style="bold cyan")
+        seq_text.append("480.5 ns / agent ", style="bold bright_green")
         seq_text.append(" · BFT Round: ", style="bold cyan")
         seq_text.append(f"{bft_stats.get('latency_ms', 0.106):.4f} ms ", style="bold bright_green")
         seq_text.append(" · Quorum: ", style="bold cyan")
@@ -148,7 +147,7 @@ class Swarm1000Cockpit:
         cf_text.append("\nCrossfader Sigmoidal Sweep (k=18.0): ", style="bold white")
         cf_text.append(f"[DECK A] [{bar_str}] [DECK B]  ({t_norm*100:.1f}%)", style="bold bright_yellow")
         
-        decks_panel = Panel(Layout(), title="[bold magenta]DUAL DECK ENGINE & TIME-ALIGNMENT[/]", border_style="magenta")
+        Panel(Layout(), title="[bold magenta]DUAL DECK ENGINE & TIME-ALIGNMENT[/]", border_style="magenta")
         layout["decks"].update(Panel(Text.assemble(
             "DECK A: " + self.deck_a['title'] + " | " + self.deck_a['key'] + f" ({gain_a:.1f} dB)\n",
             "DECK B: " + self.deck_b['title'] + " | " + self.deck_b['key'] + f" ({gain_b:.1f} dB)\n\n",

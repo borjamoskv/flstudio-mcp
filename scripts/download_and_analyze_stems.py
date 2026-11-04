@@ -5,14 +5,11 @@ Uses browser_cookie3 to fetch Google Drive files and librosa/soundfile for DSP a
 """
 
 import os
-import sys
 import json
-import time
 import requests
 import browser_cookie3
 import librosa
 import numpy as np
-import soundfile as sf
 
 STEMS_MANIFEST = [
     ("1MytyjWT-M2Ci38mS7yRPri0S1_079kkG", "01_kick_selections.wav", "Kick Drums"),

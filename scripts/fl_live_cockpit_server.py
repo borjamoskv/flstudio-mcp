@@ -14,7 +14,6 @@ Endpoints:
 - GET  /api/status           : Server health, active ports, and connection status
 """
 
-import os
 import sys
 import json
 import time

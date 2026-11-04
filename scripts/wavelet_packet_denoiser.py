@@ -192,7 +192,7 @@ def denoise_wavelet_packet_transform(
     noise_est = audio - denoised_audio
     orig_rms = float(np.sqrt(np.mean(audio ** 2)) + 1e-12)
     noise_rms = float(np.sqrt(np.mean(noise_est ** 2)) + 1e-12)
-    denoised_rms = float(np.sqrt(np.mean(denoised_audio ** 2)) + 1e-12)
+    float(np.sqrt(np.mean(denoised_audio ** 2)) + 1e-12)
 
     snr_improvement_db = float(20.0 * np.log10(orig_rms / noise_rms))
 

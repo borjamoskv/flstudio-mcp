@@ -17,9 +17,8 @@ import sys
 import math
 import wave
 import struct
-import json
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any
 
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:

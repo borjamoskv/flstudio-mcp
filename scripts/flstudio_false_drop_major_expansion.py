@@ -10,7 +10,6 @@ Harmonic Architecture:
   Provides intense emotional contrast between minor dark house tension and major euphoric release.
 """
 
-import sys
 import os
 import mido
 

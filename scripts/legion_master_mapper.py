@@ -8,7 +8,6 @@ into a unified FL Studio .legion master production matrix.
 import os
 import json
 import mido
-from typing import Dict, List
 
 LEGION_19_TRACK_SCHEMA = {
     "version": "5.0-SOVEREIGN",
@@ -56,7 +55,7 @@ def apply_master_legion_over_midi(port_name: str = "Antigravity MCP Out") -> boo
 
         # 2. Configure Mixer Track Volumes & Panning for all 19 tracks
         for t in LEGION_19_TRACK_SCHEMA["tracks"]:
-            track_id = t["id"]
+            t["id"]
             pan_val = t.get("pan", 0.0)
             pan_byte = int((pan_val + 1.0) * 63.5)
 

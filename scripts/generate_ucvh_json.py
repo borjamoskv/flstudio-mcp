@@ -65,7 +65,7 @@ def generate_podcast_json(output_path):
                 "geminiPrompt": item["geminiPrompt"],
                 "clipVideo": f"/clips/ucvh_{scene_id}.mp4",
                 "audioSpeech": f"/audios/ucvh_voz_{scene_id}.mp3",
-                "keyframeFallback": f"/shot1_keyframe.png"
+                "keyframeFallback": "/shot1_keyframe.png"
             }
             scenes.append(scene)
             scene_id += 1

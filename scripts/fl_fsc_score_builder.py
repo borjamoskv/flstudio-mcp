@@ -159,11 +159,18 @@ class FLScoreBuilder:
         }
 
 
-def generate_dark_cyber_flamenco_fsc(output_path: str, root_pitch: int = 50) -> Dict[str, Any]:
+def generate_dark_cyber_flamenco_fsc(output_path: Optional[str] = None, root_pitch: int = 50) -> Dict[str, Any]:
     """Generates a Dark Cyber-Flamenco compás score in native .fsc format."""
+    if output_path is None:
+        bounces = Path.home() / "Music" / "FL Studio Bounces" / "Scores"
+        output_path = str(bounces / "Dark_Cyber_Flamenco_Score.fsc")
     builder = FLScoreBuilder(ppq=96)
     builder.add_flamenco_compas(root_pitch=root_pitch, bars=4)
     return builder.export_fsc(output_path)
+
+
+# Canonical alias for backwards compatibility
+generate_dark_cyber_flamenco_score = generate_dark_cyber_flamenco_fsc
 
 
 if __name__ == "__main__":

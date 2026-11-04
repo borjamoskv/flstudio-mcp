@@ -17,13 +17,10 @@ Song Structure (144 Bars Total):
 8.  Outro / Deconstruction                      : Bars 129-144(16 bars)
 """
 
-import math
-import struct
-import wave
 import os
 import random
 import mido
-from typing import List, Dict, Any
+from typing import List, Dict
 
 WORKSPACE_DIR = os.path.expanduser("~/10_PROJECTS/flstudio-mcp")
 SAMPLES_DIR = os.path.join(WORKSPACE_DIR, "samples", "hybrid_flow")

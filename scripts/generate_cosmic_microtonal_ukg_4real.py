@@ -35,9 +35,6 @@ Centralized into canonical ~/Music/
 """
 
 import math
-import os
-import struct
-import wave
 import subprocess
 import numpy as np
 import soundfile as sf
@@ -266,7 +263,7 @@ def synthesize_bass_note(f_start, f_end, dur_s, has_scoop=True):
     
     # Lowpass filter envelope
     donk_env = np.exp(-t / max(dur_s * 0.65, 0.08))
-    donk_raw = carrier * donk_env
+    carrier * donk_env
     
     # Add subtle stereo chorus / micro-detune to the donk
     phase_l = 2.0 * np.pi * np.cumsum(f_traj * 1.003) / SAMPLE_RATE

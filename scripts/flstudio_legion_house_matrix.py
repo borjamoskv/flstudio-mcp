@@ -9,18 +9,14 @@ Applies full House producers framework:
 - C5-REAL: 19-Track FL Studio 2025 Mixer Matrix Configuration
 """
 
-import sys
 import os
-import time
-import math
 import random
 import mido
-from typing import List, Dict, Tuple
 
 # Try importing local helper engines
 try:
     from flstudio_mcp_bridge import FLStudioMCPBridge
-    from flstudio_microtonal import cents_to_pitch_bend, MICROTONAL_SYSTEMS
+    import flstudio_microtonal  # noqa: F401
 except ImportError:
     # Inline fallback if run from external path
     FLStudioMCPBridge = None

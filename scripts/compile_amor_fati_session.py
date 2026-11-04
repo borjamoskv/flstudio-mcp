@@ -15,11 +15,10 @@ Compiles a native binary FL Studio project (.flp) directly linking:
 - Seamless drag-and-drop replacement with native .fst synth presets
 """
 
-import sys
 import struct
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 DEFAULT_PPQ = 96
 
@@ -179,7 +178,7 @@ def compile_amor_fati_bare_metal_flp(
 
     # 5. Note Events (Stem Triggers + Minimalist Motifs)
     bar_ticks = 4 * DEFAULT_PPQ
-    ticks_total = total_bars * bar_ticks
+    total_bars * bar_ticks
     notes: List[Dict[str, Any]] = []
 
     def add_note(pos: int, pitch: int, dur: int, vel: int, ch_idx: int, pan: int = 64):

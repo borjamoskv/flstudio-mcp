@@ -55,9 +55,9 @@ def render_agent_chunk(chunk_info):
     return agent_id, out_file, dt
 
 def main():
-    print(f"🚀 INICIANDO ENJAMBRE DE 21 AGENTES: COMBATE COMPLETO SOTA (ROLLO MITXU)...")
-    print(f"📊 Composición: StreetFighterBerghain (5.400 frames / 180s @ 30fps)")
-    print(f"👥 Total Agentes en Paralelo: 21")
+    print("🚀 INICIANDO ENJAMBRE DE 21 AGENTES: COMBATE COMPLETO SOTA (ROLLO MITXU)...")
+    print("📊 Composición: StreetFighterBerghain (5.400 frames / 180s @ 30fps)")
+    print("👥 Total Agentes en Paralelo: 21")
     t_start = time.time()
 
     with ProcessPoolExecutor(max_workers=6) as executor:
@@ -91,7 +91,7 @@ def main():
 
     total_time = time.time() - t_start
     final_sz = os.path.getsize(FINAL_VIDEO_PATH) / (1024 * 1024)
-    print(f"\n🏆 ¡RENDERIZADO SOTA DE COMBATE FINALIZADO!")
+    print("\n🏆 ¡RENDERIZADO SOTA DE COMBATE FINALIZADO!")
     print(f"⏱️ Tiempo total: {total_time:.1f}s ({total_time/60:.2f} min)")
     print(f"📍 Archivo final: {FINAL_VIDEO_PATH}")
     print(f"💾 Tamaño: {final_sz:.2f} MB")

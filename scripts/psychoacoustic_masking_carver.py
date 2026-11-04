@@ -185,7 +185,7 @@ def compute_bark_energy(samples: List[float], sample_rate: int) -> List[float]:
         k = int(0.5 + (n * fc) / sample_rate)
         w = 2.0 * math.pi * k / n
         cos_w = math.cos(w)
-        sin_w = math.sin(w)
+        math.sin(w)
         coeff = 2.0 * cos_w
 
         step = max(1, n // 4096)

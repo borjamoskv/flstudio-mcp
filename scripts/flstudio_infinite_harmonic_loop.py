@@ -8,7 +8,6 @@ This creates the hypnotic, never-ending infinite cycle where the tonic note/chor
 forcing the ear into a continuous circular momentum.
 """
 
-import sys
 import os
 import mido
 

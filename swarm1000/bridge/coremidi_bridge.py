@@ -5,9 +5,7 @@ Apple Silicon Native CoreMIDI Virtual Port & Automation Dispatcher
 Zero-Latency MIDI CC / Transport Control for FL Studio, DAWs & Hardware Mixers
 """
 
-import sys
 import time
-import math
 from typing import Optional, Dict, Any
 
 try:

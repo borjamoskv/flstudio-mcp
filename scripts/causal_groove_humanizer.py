@@ -13,15 +13,14 @@ Groove Mechanics:
 - Full binary roundtrip: parses native .fsc scores, humanizes tick offsets & velocities, and serializes .fsc
 """
 
-import math
 import struct
 import random
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 import numpy as np
 
-from scripts.fl_fsc_score_builder import FLScoreBuilder, encode_varlen
+from scripts.fl_fsc_score_builder import FLScoreBuilder
 
 logger = logging.getLogger("FLStudio-GrooveHumanizer")
 

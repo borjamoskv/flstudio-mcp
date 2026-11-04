@@ -1,4 +1,3 @@
-import os
 import subprocess
 import numpy as np
 import scipy.signal as signal
@@ -122,7 +121,7 @@ master_right = np.zeros(TOTAL_SAMPLES)
 def place_audio(clip, time_sec, vol=1.0, pan=0.0):
     start = int(time_sec * SR)
     end = start + len(clip)
-    if start >= TOTAL_SAMPLES: return
+    if start >= TOTAL_SAMPLES: return  # noqa: E701
     if end > TOTAL_SAMPLES:
         clip = clip[:TOTAL_SAMPLES - start]
         end = TOTAL_SAMPLES

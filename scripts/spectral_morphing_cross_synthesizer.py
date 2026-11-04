@@ -11,7 +11,6 @@ Formulation:
 - High-transient phase preservation avoiding smearing
 """
 
-import math
 import wave
 import logging
 from pathlib import Path

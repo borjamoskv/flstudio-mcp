@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-import os, gc, time, subprocess, torch, soundfile as sf
+import os
+import gc
+import time
+import subprocess
+import torch
+import soundfile as sf
 from f5_tts.api import F5TTS
 
 print("=== INICIALIZANDO F5-TTS SOTA ENGINE ===")
@@ -88,10 +93,10 @@ VOICES = [
 generated_files = []
 
 for v in VOICES:
-    print(f"\n==========================================")
+    print("\n==========================================")
     print(f"CLONANDO VOZ: {v['name']} ({v['id']})")
     print(f"Ref: {v['ref_file']}")
-    print(f"==========================================")
+    print("==========================================")
     
     for item in v["lines"]:
         tag = item["tag"]

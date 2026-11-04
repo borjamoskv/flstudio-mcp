@@ -90,7 +90,7 @@ def generate_flamenco_vibrato_bend(
     beats = bars * 4
     total_ticks = beats * ticks_per_beat
     sec_per_beat = 60.0 / bpm
-    total_sec = beats * sec_per_beat
+    beats * sec_per_beat
 
     events: List[Tuple[int, bytes]] = []
     step_ticks = 12  # Every 32nd note triplet for ultra-smooth resolution

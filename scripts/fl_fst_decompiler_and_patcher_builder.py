@@ -11,10 +11,9 @@ C5-REAL DEEP REVERSE ENGINEERING: FL Studio Binary Encoder, Patcher & VFX Script
 """
 
 import os
-import sys
 import struct
 import json
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Any
 
 WORKSPACE_DIR = os.path.expanduser("~/10_PROJECTS/flstudio-mcp")
 SAMPLES_DIR = os.path.join(WORKSPACE_DIR, "samples")
@@ -43,7 +42,7 @@ class FLBinaryDecompiler:
         if len(self.data) < 14 or self.data[:4] != b'FLhd':
             return {"error": "Invalid FLhd binary header"}
 
-        header_len = struct.unpack('<I', self.data[4:8])[0]
+        struct.unpack('<I', self.data[4:8])[0]
         format_type = struct.unpack('<H', self.data[8:10])[0]
         channel_count = struct.unpack('<H', self.data[10:12])[0]
         tpb = struct.unpack('<H', self.data[12:14])[0]

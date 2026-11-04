@@ -13,7 +13,6 @@ B-Format Channels:
 
 import math
 import wave
-import struct
 import logging
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
@@ -166,7 +165,6 @@ def encode_to_ambisonics_bformat(
 
 
 if __name__ == "__main__":
-    import sys
     test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = encode_to_ambisonics_bformat(str(test_in), azimuth_deg=45.0, elevation_deg=15.0)

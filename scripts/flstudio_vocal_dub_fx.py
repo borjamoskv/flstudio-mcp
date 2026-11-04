@@ -4,8 +4,6 @@ Vocal Dub FX & Spatial Delay Processor for 'No Lo Entiende' (116 BPM)
 Configures FL Studio delay sends, 3/16 Dotted 8th Ping-Pong delays, and automated vocal space sends.
 """
 
-import sys
-import os
 import mido
 
 def setup_vocal_dub_fx():

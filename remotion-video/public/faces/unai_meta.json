@@ -1,0 +1,11 @@
+{
+  "name": "unai",
+  "width": 675,
+  "height": 1007,
+  "split_y": 824,
+  "bleed": 8,
+  "top_file": "faces/unai_top.png",
+  "jaw_file": "faces/unai_jaw.png",
+  "recommended_flap_gap": 45,
+  "body_color": "#2563eb"
+}

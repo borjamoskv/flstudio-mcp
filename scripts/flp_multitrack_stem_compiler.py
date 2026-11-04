@@ -23,7 +23,7 @@ import json
 import struct
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger("FLStudio-StemCompiler")
 
@@ -90,8 +90,8 @@ def compile_multitrack_stems_flp(
     tempo_int = int(bpm * 1000)
     dt_stream += struct.pack("<I", tempo_int)
 
-    # 3. Event 0xCA: Title
-    title_bytes = project_title.encode("utf-8") + b"\x00"
+    # 3. Event 0xCA: Title (UTF-16-LE native)
+    title_bytes = project_title.encode("utf-16-le") + b"\x00\x00"
     dt_stream.append(0xCA)
     dt_stream += encode_varlen(len(title_bytes))
     dt_stream += title_bytes
@@ -118,8 +118,8 @@ def compile_multitrack_stems_flp(
         dt_stream += encode_varlen(len(ch_name_b))
         dt_stream += ch_name_b
 
-        # Event 0xC4: Sample File Path
-        sample_path_b = str(stem_file.resolve()).encode("utf-8") + b"\x00"
+        # Event 0xC4: Sample File Path (UTF-16-LE native for FL Studio macOS)
+        sample_path_b = str(stem_file.resolve()).encode("utf-16-le") + b"\x00\x00"
         dt_stream.append(0xC4)
         dt_stream += encode_varlen(len(sample_path_b))
         dt_stream += sample_path_b

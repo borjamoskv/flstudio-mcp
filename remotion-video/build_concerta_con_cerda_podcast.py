@@ -127,7 +127,6 @@ def build_timeline(audio_clips):
     current_time = 0.60
     
     events = []
-    total_audio_samples = 0
     for speaker, audio, text in audio_clips:
         dur = len(audio) / SR
         events.append({

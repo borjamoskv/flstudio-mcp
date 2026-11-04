@@ -1,4 +1,3 @@
-import os
 import subprocess
 import numpy as np
 import scipy.signal as signal
@@ -156,7 +155,7 @@ master_right = np.zeros(TOTAL_SAMPLES)
 def place_audio(clip, time_sec, vol=1.0, pan=0.0):
     start = int(time_sec * SR)
     end = start + len(clip)
-    if start >= TOTAL_SAMPLES: return
+    if start >= TOTAL_SAMPLES: return  # noqa: E701
     if end > TOTAL_SAMPLES:
         clip = clip[:TOTAL_SAMPLES - start]
         end = TOTAL_SAMPLES
@@ -285,9 +284,9 @@ subprocess.run(["ffmpeg", "-y", "-i", out_wav, "-b:a", "320k", out_mp3],
                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
 # Also copy to ~/Music/
-shutil_copy = f"/Users/borjafernandezangulo/Music/STREET_FIGHTER_MASTER_SOUNDTRACK.mp3"
+shutil_copy = "/Users/borjafernandezangulo/Music/STREET_FIGHTER_MASTER_SOUNDTRACK.mp3"
 subprocess.run(["cp", out_mp3, shutil_copy], check=True)
 
-print(f"🎉 MASTER AUDIO COMPILED!")
+print("🎉 MASTER AUDIO COMPILED!")
 print(f"📍 Location: {out_mp3}")
 print(f"📍 Music library: {shutil_copy}")

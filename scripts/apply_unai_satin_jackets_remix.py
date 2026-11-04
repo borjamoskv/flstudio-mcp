@@ -51,7 +51,7 @@ def execute_unai_remix_integration():
     midi_path = os.path.expanduser("~/10_PROJECTS/flstudio-mcp/scripts/satin_jackets_infinite_loop.mid")
     if os.path.exists(midi_path):
         mid = mido.MidiFile(midi_path)
-        print(f" [4/4] Transmitiendo bucle armónico infinito 'Satin Jackets' (Cm9 Penúltima Tónica) a FL Studio...")
+        print(" [4/4] Transmitiendo bucle armónico infinito 'Satin Jackets' (Cm9 Penúltima Tónica) a FL Studio...")
         for track in mid.tracks:
             for msg in track:
                 if not msg.is_meta:

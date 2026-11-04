@@ -28,14 +28,13 @@ Pipeline Architecture:
    - Centralized export to ~/Music/FL Studio Bounces/POC_Sovereign_Transcendence/
 """
 
-import os
 import sys
 import json
 import time
 import wave
 import logging
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 import numpy as np
 
 # Ensure scripts directory is on sys.path
@@ -43,19 +42,19 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 # Import the v18-v20 SOTA procedural engines
-from fuxian_modal_counterpoint_builder import compose_algorithmic_modal_counterpoint
-from vocal_tract_physical_modeler import synthesize_formant_vocal_tract
-from modal_plate_resonator_synthesizer import synthesize_modal_plate_resonator
-from spectral_freeze_drone_synthesizer import synthesize_spectral_freeze_drone
-from shepard_risset_glissando_synthesizer import synthesize_shepard_risset_glissando
-from homomorphic_cepstral_deconvolver import deconvolve_homomorphic_cepstrum
-from multitrack_phase_aligner import align_multitrack_stems_phase
-from image_source_binaural_room_simulator import simulate_binaural_room_acoustics
-from multiband_transient_shaper import shape_multiband_transients
-from mastering_chain_ebu_r128 import master_audio_ebu_r128
-from stochastic_resonance_dither_engine import apply_psychoacoustic_noise_shaping_dither
-from psychoacoustic_mir_extractor import extract_harmonic_perceptual_features
-from flp_multitrack_stem_compiler import compile_multitrack_stems_flp
+from fuxian_modal_counterpoint_builder import compose_algorithmic_modal_counterpoint  # noqa: E402
+from vocal_tract_physical_modeler import synthesize_formant_vocal_tract  # noqa: E402
+from modal_plate_resonator_synthesizer import synthesize_modal_plate_resonator  # noqa: E402
+from spectral_freeze_drone_synthesizer import synthesize_spectral_freeze_drone  # noqa: E402
+from shepard_risset_glissando_synthesizer import synthesize_shepard_risset_glissando  # noqa: E402
+from homomorphic_cepstral_deconvolver import deconvolve_homomorphic_cepstrum  # noqa: E402
+from multitrack_phase_aligner import align_multitrack_stems_phase  # noqa: E402
+from image_source_binaural_room_simulator import simulate_binaural_room_acoustics  # noqa: E402
+from multiband_transient_shaper import shape_multiband_transients  # noqa: E402
+from mastering_chain_ebu_r128 import master_audio_ebu_r128  # noqa: E402
+from stochastic_resonance_dither_engine import apply_psychoacoustic_noise_shaping_dither  # noqa: E402
+from psychoacoustic_mir_extractor import extract_harmonic_perceptual_features  # noqa: E402
+from flp_multitrack_stem_compiler import compile_multitrack_stems_flp  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("POC-SovereignTranscendence")

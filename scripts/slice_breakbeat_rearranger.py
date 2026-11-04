@@ -13,11 +13,10 @@ Exports:
 """
 
 import sys
-import math
 import random
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
@@ -82,7 +81,7 @@ def generate_slice_arrangement(
         total_steps = bars * 16
         for step in range(total_steps):
             tick = step * step_16th
-            beat_in_bar = (step % 16) / 4.0
+            (step % 16) / 4.0
             is_downbeat = (step % 16) in (0, 4, 8, 12)
             is_syncopated = (step % 16) in (3, 6, 9, 11, 14)
 

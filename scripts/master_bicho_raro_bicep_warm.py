@@ -10,7 +10,6 @@ Re-calibración de balance tímbrico analógico cálido (Warm Dark Disco / BICEP
 - Target: -12.0 LUFS / -1.0 dBFS True Peak.
 """
 
-import os
 import numpy as np
 import soundfile as sf
 from scipy import signal
@@ -140,11 +139,11 @@ def main():
     final_lufs = meter.integrated_loudness(mix)
     final_peak = 20 * np.log10(np.max(np.abs(mix)))
 
-    print(f"\n==========================================")
-    print(f"REMASTER CÁLIDO COMPLETADO CON ÉXITO:")
+    print("\n==========================================")
+    print("REMASTER CÁLIDO COMPLETADO CON ÉXITO:")
     print(f"Loudness Integrado Final : {final_lufs:.2f} LUFS")
     print(f"Pico Máximo Final       : {final_peak:.2f} dBFS")
-    print(f"==========================================")
+    print("==========================================")
 
     sf.write(OUTPUT_PATH, mix, sr, subtype='PCM_24')
     print(f"Master cálido guardado en:\n{OUTPUT_PATH}")

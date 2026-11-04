@@ -9,7 +9,6 @@ Constructs a complete 128-bar House Producers arrangement:
 - Section 5: Outro / Deconstruction (Bars 113-128) - Filtered Synths + Percussion Fade
 """
 
-import sys
 import os
 import random
 import mido

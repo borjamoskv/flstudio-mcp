@@ -45,7 +45,7 @@ def render_master_audio_wav(output_path, sample_rate=44100, bpm=118.0):
         beat_idx = int(t / beat_sec)
         kick_sig = 0.0
         # False drop silence on beats 26 & 27 (bar 7, 3rd & 4th beats)
-        if not (beat_idx in [26, 27]):
+        if beat_idx not in [26, 27]:
             if t_beat < 0.2:
                 kick_pitch = 49.0 + (3800.0 - 49.0) * math.exp(-t_beat / 0.011)
                 phase_kick += 2.0 * math.pi * kick_pitch / sample_rate

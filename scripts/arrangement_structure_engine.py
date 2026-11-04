@@ -6,10 +6,9 @@ second drop, and outro following professional House & Techno arrangement templat
 """
 
 import os
-import math
 import random
 import mido
-from typing import List, Dict, Optional
+from typing import Optional
 
 # Professional arrangement templates (in bars)
 ARRANGEMENT_TEMPLATES = {

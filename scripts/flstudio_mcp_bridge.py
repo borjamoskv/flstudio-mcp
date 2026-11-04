@@ -4,12 +4,8 @@ Antigravity MCP Bridge SOTA Pro for FL Studio 2025
 Multi-channel MIDI mapping to support 125 tracks, FLEX macros, TB-303, and global transport.
 """
 
-import sys
-import time
-import math
 import random
 import os
-from typing import Dict, List, Optional, Tuple
 import mido
 
 class FLStudioMCPBridge:

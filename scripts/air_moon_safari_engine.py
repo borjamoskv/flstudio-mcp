@@ -7,7 +7,6 @@ Generates a complete multi-track MIDI arrangement featuring:
 3. Solina String Ensemble (High ethereal pad).
 """
 
-import math
 import random
 import os
 import mido

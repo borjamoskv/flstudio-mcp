@@ -12,7 +12,6 @@ Architecture:
 - Centralized WAV export to ~/Music/FL Studio Bounces/Analog_WDF/
 """
 
-import math
 import wave
 import logging
 from pathlib import Path

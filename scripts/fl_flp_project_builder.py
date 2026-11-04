@@ -198,7 +198,7 @@ def compile_dark_cyber_flamenco_flp(output_file: Optional[str] = None) -> Dict[s
     c_snare = builder.add_channel("02_Snare_Clap", pan=64, volume=95)
     c_bass = builder.add_channel("03_Rolling_Cyber_Bass", pan=64, volume=90)
     c_flamenco = builder.add_channel("04_Flamenco_Guitar_Arp", pan=70, volume=85)
-    c_synth = builder.add_channel("05_Cyber_Lead_Sytrus", pan=58, volume=80)
+    builder.add_channel("05_Cyber_Lead_Sytrus", pan=58, volume=80)
 
     # 4 bars of Flamenco Compas (Bulerias: accents on 3, 6, 8, 10, 12)
     accents = {3, 6, 8, 10, 12}

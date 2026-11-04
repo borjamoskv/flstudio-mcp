@@ -8,7 +8,7 @@ import math
 import struct
 import wave
 import os
-from typing import List, Tuple
+from typing import List
 
 def generate_maceo_plex_kick(
     output_path: str,

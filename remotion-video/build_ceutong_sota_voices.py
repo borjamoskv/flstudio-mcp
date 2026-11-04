@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import asyncio, os, subprocess
+import asyncio
+import os
+import subprocess
 import soundfile as sf
 import numpy as np
-import scipy.signal as signal
 import edge_tts
 
 OUT_DIR = "/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp/remotion-video/public/ceutong_audio"

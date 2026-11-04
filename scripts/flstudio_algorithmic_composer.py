@@ -6,9 +6,8 @@ Generates harmonic progressions, basslines, reference song style matching, 100-a
 
 import math
 import random
-import os
 import mido
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Optional
 
 # Key Scale Definitions (Intervals in semitones)
 SCALES = {

@@ -6,7 +6,6 @@ Fruity Delay 3, and Vital VST3.
 """
 
 import mido
-from typing import Dict, List, Optional
 
 # CC Parameter Control Maps
 TB303_CC_MAP = {

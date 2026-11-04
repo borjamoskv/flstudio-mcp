@@ -7,7 +7,6 @@
 # Real-Time Closed-Loop Telemetry Stream, Direct Sidechain Routing,
 # Track Focus & Arming, Window Navigation, Channel Rack, Transport, and Macro Modulation.
 
-import os
 import json
 import time
 import mixer

@@ -73,8 +73,7 @@ subprocess.run(cmd_mp3, check=True)
 subprocess.run(["osascript", "-e", f'set the clipboard to POSIX file "{out_opus}"'], check=True)
 subprocess.run(f'echo "{out_opus}" | pbcopy', shell=True, check=True)
 
-print(f"🎉 CLON VOCAL DE OTE TERMINADO:")
+print("🎉 CLON VOCAL DE OTE TERMINADO:")
 print(f"   -> {out_opus}")
 print(f"   -> {out_mp3}")
 print("📋 Copiado al portapapeles listo para enviar por WhatsApp!")
-EOF

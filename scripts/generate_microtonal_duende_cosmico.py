@@ -15,7 +15,6 @@ Fuses 7 iconic influences:
 Tuning System: 24-TET Makam Bayati / Hijaz / Modo Flamenco por Arriba (Root E)
 """
 
-import math
 import os
 import random
 import mido

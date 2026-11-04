@@ -81,14 +81,13 @@ def run_ingestion_pipeline():
     avatar_base = os.path.join(PROJECT_ROOT, "pika_keyframes/shot1_genesis.png")
     print(f"📍 Strategy 3 Avatar Reference: {avatar_base} (Image-to-Video Anchor)\n")
 
-    downloaded_count = 0
     skipped_count = 0
 
     for scene in scenes:
         scene_id = scene["id"]
         clip_name = f"ucvh_{scene_id}.mp4"
         clip_target = os.path.join(CLIPS_DIR, clip_name)
-        bloque = scene.get("bloque", "")
+        scene.get("bloque", "")
 
         if os.path.exists(clip_target) and os.path.getsize(clip_target) > 1000:
             skipped_count += 1
@@ -107,8 +106,8 @@ def run_ingestion_pipeline():
 
         # Strategy 1 & 3: AI Video Generation Request Log
         if not video_url:
-            print(f"  🤖 Strategy 1 & 3: Image-to-Video Prompt (Gemini / Pika):")
-            print(f"     Anchor Image: shot1_genesis.png")
+            print("  🤖 Strategy 1 & 3: Image-to-Video Prompt (Gemini / Pika):")
+            print("     Anchor Image: shot1_genesis.png")
             print(f"     Prompt: '{scene['geminiPrompt'][:70]}...'")
 
         time.sleep(0.1)

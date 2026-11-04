@@ -17,7 +17,7 @@ import wave
 import random
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 import numpy as np
 
 logger = logging.getLogger("FLStudio-Waveguide")

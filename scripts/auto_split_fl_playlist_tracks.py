@@ -16,7 +16,6 @@ Playlist Track 6: Drums & Percussion (Maceo Kick + Swing Hats)
 """
 
 import time
-import os
 import subprocess
 
 def trigger_fl_split_by_channel():

@@ -28,9 +28,21 @@ import { StreetFighterBerghain } from "./StreetFighterBerghain";
 import { StreetFighterOteguiVsEscohotado } from "./StreetFighterOteguiVsEscohotado";
 import villaMelillaData from "../public/villamelilla_telemetry.json";
 
+import { VideoclipTubaCanicheAlain } from "./VideoclipTubaCanicheAlain";
+import tubaCanicheTelemetry from "../public/tuba_caniche_telemetry.json";
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* VIDEOCLIP: TUBA MENOR, PADS Y CANICHE FELIZ FEAT. ALAIN (121 AGENTES) */}
+      <Composition
+        id="VideoclipTubaCanicheAlain"
+        component={VideoclipTubaCanicheAlain}
+        durationInFrames={tubaCanicheTelemetry.metadata.totalFrames || 4013}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
       {/* STREET FIGHTER: GORKA OTEGUI («OTE») vs. ANTONIO ESCOHOTADO */}
       <Composition
         id="StreetFighterOteguiVsEscohotado"

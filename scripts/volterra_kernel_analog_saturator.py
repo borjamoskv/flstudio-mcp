@@ -15,7 +15,6 @@ Mathematical Mechanics:
 6. Centralized WAV export to ~/Music/FL Studio Bounces/Volterra_Analog/
 """
 
-import math
 import wave
 import logging
 from pathlib import Path

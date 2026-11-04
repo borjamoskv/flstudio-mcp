@@ -11,7 +11,6 @@ VILLA MELILLA — CIUDAD VACACIONAL
 - Drop 100 BPM Katana en el superyate de Villa Melilla
 """
 
-import os
 import json
 import numpy as np
 import scipy.signal as signal
@@ -186,12 +185,12 @@ for item in dialogue_timeline:
     sig_len = min(len(sig), en - st, TOTAL_SAMPLES - st)
     
     pan = 0.50
-    if spk == "borja": pan = 0.45
-    elif spk == "mitxu": pan = 0.55
-    elif spk == "alain": pan = 0.48
-    elif spk == "chiquito": pan = 0.52
-    elif spk == "echenique": pan = 0.44
-    elif spk == "macgyver": pan = 0.56
+    if spk == "borja": pan = 0.45  # noqa: E701
+    elif spk == "mitxu": pan = 0.55  # noqa: E701
+    elif spk == "alain": pan = 0.48  # noqa: E701
+    elif spk == "chiquito": pan = 0.52  # noqa: E701
+    elif spk == "echenique": pan = 0.44  # noqa: E701
+    elif spk == "macgyver": pan = 0.56  # noqa: E701
     
     master_audio[st:st+sig_len, 0] += sig[:sig_len] * (1.0 - pan) * 1.30
     master_audio[st:st+sig_len, 1] += sig[:sig_len] * pan * 1.30
@@ -232,7 +231,7 @@ if peak > 0.96:
 sf.write(OUT_AUDIO_WAV, master_audio, SR)
 subprocess.run(["ffmpeg", "-y", "-i", str(OUT_AUDIO_WAV), "-c:a", "libmp3lame", "-b:a", "320k", str(OUT_AUDIO_MP3)], check=True)
 
-import shutil
+import shutil  # noqa: E402
 shutil.copy2(OUT_AUDIO_WAV, "/Users/borjafernandezangulo/Music/VILLA_MELILLA_Audio_Master.wav")
 shutil.copy2(OUT_AUDIO_MP3, "/Users/borjafernandezangulo/Music/VILLA_MELILLA_Audio_Master.mp3")
 
@@ -328,4 +327,3 @@ with open(OUT_DATA_JSON, "w", encoding="utf-8") as f:
 
 print(f"Telemetría guardada en {OUT_DATA_JSON} ({len(frames_data)} frames)")
 print("=== AUDIO MASTER VILLA MELILLA GENERADO CON ÉXITO ===")
-EOF

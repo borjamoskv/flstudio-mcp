@@ -38,7 +38,7 @@ def write_stereo_wav(file_path: Path, left_buf: List[float], right_buf: List[flo
 
     raw = bytearray()
     for i in range(n_samples):
-        l = math.tanh(left_buf[i] * gain)
+        l = math.tanh(left_buf[i] * gain)  # noqa: E741
         r = math.tanh(right_buf[i] * gain)
         raw.extend(struct.pack('<hh', int(l * 32767.0), int(r * 32767.0)))
 

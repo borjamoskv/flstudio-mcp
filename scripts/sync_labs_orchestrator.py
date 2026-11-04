@@ -13,7 +13,6 @@ import os
 import json
 import urllib.request
 import urllib.parse
-import time
 
 PROJECT_ROOT = "/Users/borjafernandezangulo/10_PROJECTS/flstudio-mcp"
 JSON_PATH = os.path.join(PROJECT_ROOT, "remotion-video/public/ucvh_podcast.json")

@@ -19,7 +19,6 @@ Target Locations:
 - Mirrored to ~/Music/FL Studio Bounces/Presets/
 """
 
-import os
 import shutil
 import struct
 from pathlib import Path
@@ -95,10 +94,10 @@ def create_mock_fst_preset(plugin_id: bytes, preset_name: str, payload_size: int
     plug_data = plugin_id + (b"\x00" * (payload_size - len(plugin_id)))
     stream.append(0xCD)
     # VarLen length
-    l = len(plug_data)
+    l = len(plug_data)  # noqa: E741
     while True:
         b = l & 0x7F
-        l >>= 7
+        l >>= 7  # noqa: E741
         if l:
             stream.append(b | 0x80)
         else:

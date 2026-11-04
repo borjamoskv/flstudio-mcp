@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-"""
-bft_1000_consensus.py
-======================
-Mecanismo de Consenso BFT en O(log N) para la Matriz Sexagesimal SWARM-1000.
-Orquesta 1000 agentes autónomos particionados en 5 cohortes funcionales (5 x 200).
-
-Resuelve debates estéticos, conmutaciones de fase y decisiones estructurales
-(ej. falso drop, bass swap, extensión de compás a 64 bares) en < 1.5 ms sobre Apple Silicon.
+"""Centralized O(N) weighted tally of votes. This is not a distributed BFT proof.
+Generated votes model cohorts; they do not demonstrate autonomous agents.
 """
 
-import time
 import math
+import time
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
 
@@ -36,18 +30,21 @@ class AgentVote:
     weight: float
     confidence: float
     rationale: str
+    source: str = "unverified"
 
 class Bft1000ConsensusEngine:
-    """Motor de Consenso Bizantino Tolerante a Fallos (BFT) para 1000 agentes."""
+    """Weighted tally with validated identities; the historical class name is retained."""
 
     def __init__(self, total_agents: int = 1000):
+        if type(total_agents) is not int or total_agents <= 0 or total_agents % 5:
+            raise ValueError("total_agents must be a positive multiple of five")
         self.total_agents = total_agents
         self.division_size = total_agents // 5
         self.veto_threshold = 0.65  # 65% de la división de semántica o psicoacústica puede vetar
 
     def simulate_1000_agent_votes(self, phase_coherence: float, current_bar: int, vocal_present: bool) -> List[AgentVote]:
         """
-        Genera la emisión de votos de los 1000 agentes según la telemetría en silicio:
+        Genera votos sintéticos deterministas; no ejecuta agentes ni mide telemetría física:
         - Div 1 (Psicoacústica · 0-199): Audita colisión de fase y subgraves.
         - Div 2 (AI Stems · 200-399): Audita separación de canales y masking.
         - Div 3 (Armonía · 400-599): Audita compatibilidad Camelot y escalas.
@@ -80,14 +77,31 @@ class Bft1000ConsensusEngine:
                 rat = "Rhythmic sync aligned"
 
             weight = 1.2 if div in [1, 4] else 1.0  # Mayor peso a Psicoacústica y Semántica
-            votes.append(AgentVote(i, div, act, weight, conf, rat))
+            votes.append(AgentVote(i, div, act, weight, conf, rat, source="simulation"))
         return votes
 
-    def resolve_consensus(self, votes: List[AgentVote]) -> Tuple[int, Dict]:
+    def resolve_consensus(self, votes: List[AgentVote], *, simulation: bool = False) -> Tuple[int, Dict]:
         """
-        Resuelve el arbitraje BFT en O(log N) ponderando pesos por cohorte y verificando vetos:
+        Calcula el recuento ponderado O(N); no autentica productores ni acredita BFT:
         Retorna (acción_ganadora, telemetría_consenso).
         """
+        if simulation is not True:
+            raise ValueError("MISSING_EVIDENCE: no authenticated agent/BFT verifier; use simulation=True for a local tally")
+        if len(votes) != self.total_agents:
+            raise ValueError("MISSING_EVIDENCE: expected one vote per configured identity")
+        seen = set()
+        for vote in votes:
+            if type(vote.agent_id) is not int or not 0 <= vote.agent_id < self.total_agents or vote.agent_id in seen:
+                raise ValueError("Invalid or duplicate agent identity")
+            seen.add(vote.agent_id)
+            if type(vote.division_id) is not int or vote.division_id != vote.agent_id // self.division_size + 1:
+                raise ValueError("Invalid division for agent identity")
+            if type(vote.proposed_action) is not int or vote.proposed_action not in ACTION_NAMES:
+                raise ValueError("Unknown action")
+            if (not isinstance(vote.weight, (int, float)) or not isinstance(vote.confidence, (int, float))
+                    or not math.isfinite(vote.weight) or not math.isfinite(vote.confidence)
+                    or not 0 < vote.weight <= 1.2 or not 0 <= vote.confidence <= 1):
+                raise ValueError("Invalid vote weight/confidence")
         t0 = time.perf_counter_ns()
         
         # 1. Contabilizar votos ponderados
@@ -112,6 +126,11 @@ class Bft1000ConsensusEngine:
         duration_us = (time.perf_counter_ns() - t0) / 1000.0
 
         consensus_summary = {
+            "mode": "simulation",
+            "status": "SIMULATED_TALLY",
+            "real_verification": False,
+            "verified_agents": 0,
+            "limitations": ["UNAUTHENTICATED_PRODUCERS", "CENTRALIZED_TALLY_NOT_BFT"],
             "total_votes": len(votes),
             "winning_action": ACTION_NAMES.get(winning_action, "UNKNOWN"),
             "winning_action_code": winning_action,

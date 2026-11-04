@@ -1,7 +1,5 @@
-import sys
 import os
 import mido
-import time
 import math
 import random
 import shutil

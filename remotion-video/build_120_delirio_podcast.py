@@ -1,6 +1,5 @@
 import asyncio
 import json
-import math
 import os
 import subprocess
 import edge_tts
@@ -1163,7 +1162,7 @@ async def synthesize_scene_audio(scene):
                 communicate = edge_tts.Communicate(text, cfg["voice"], rate=cfg["rate"], pitch=cfg["pitch"])
                 await communicate.save(out_mp3)
                 break
-            except Exception as e:
+            except Exception:
                 if attempt == 3:
                     # Fallback to plain AlvaroNeural without pitch/rate
                     communicate = edge_tts.Communicate(text, "es-ES-AlvaroNeural")

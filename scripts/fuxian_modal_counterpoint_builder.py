@@ -18,13 +18,11 @@ Axiomatic Constraints:
    - Centralized export to ~/Music/FL Studio Bounces/Scores/
 """
 
-import math
 import struct
 import random
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
-import numpy as np
+from typing import Dict, Any, Optional, List
 
 import sys
 sys.path.append(str(Path(__file__).resolve().parent))
@@ -282,7 +280,7 @@ def compose_algorithmic_modal_counterpoint(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fsc_file = Path(output_fsc).expanduser().resolve() if output_fsc else out_dir / f"Fuxian_Counterpoint_{mode_clean.capitalize()}_{bars}bars_{counterpoint_position}.fsc"
-    res_fsc = builder.export_fsc(str(fsc_file))
+    builder.export_fsc(str(fsc_file))
 
     # Standard MIDI Export
     mid_file = Path(output_midi).expanduser().resolve() if output_midi else out_dir / f"Fuxian_Counterpoint_{mode_clean.capitalize()}_{bars}bars_{counterpoint_position}.mid"

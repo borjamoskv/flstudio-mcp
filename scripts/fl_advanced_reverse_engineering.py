@@ -4,8 +4,6 @@ FL Studio Deep Binary Protocol Decompiler & Event Decoder
 Decodes FLdt variable-length byte streams, event IDs, plugin strings, and parameter values.
 """
 
-import sys
-import os
 import struct
 
 # Known FL Studio Binary Event IDs

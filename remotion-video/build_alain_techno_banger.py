@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import json
 import shutil
 import numpy as np
@@ -284,7 +283,7 @@ print(f"✓ Master WAV saved: {OUT_WAV}")
 
 # Convert to MP3
 cmd_mp3 = ["ffmpeg", "-y", "-i", str(OUT_WAV), "-b:a", "320k", str(OUT_MP3)]
-import subprocess
+import subprocess  # noqa: E402
 subprocess.run(cmd_mp3, check=True)
 print(f"✓ Master MP3 saved: {OUT_MP3}")
 

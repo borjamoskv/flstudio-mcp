@@ -114,7 +114,7 @@ def render_dark_cyber_flamenco_wav(output_path: Path) -> Path:
         c_idx = bar // 4
         notes = chord_freqs[c_idx]
         bar_start = int((bar * BAR_DUR) * SAMPLE_RATE)
-        bar_samples = int(BAR_DUR * SAMPLE_RATE)
+        int(BAR_DUR * SAMPLE_RATE)
 
         # Arpeggiate notes across the bar
         for n_i, freq in enumerate(notes):
@@ -146,7 +146,7 @@ def render_dark_cyber_flamenco_wav(output_path: Path) -> Path:
     raw_frames = bytearray()
     for i in range(TOTAL_SAMPLES):
         # Apply tanh saturation soft clipping
-        l = math.tanh(left_channel[i] * gain)
+        l = math.tanh(left_channel[i] * gain)  # noqa: E741
         r = math.tanh(right_channel[i] * gain)
         int_l = int(max(-32768, min(32767, l * 32767.0)))
         int_r = int(max(-32768, min(32767, r * 32767.0)))
