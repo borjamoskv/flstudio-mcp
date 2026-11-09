@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+*.db-wal
+*.db-shm
+.DS_Store
+.audit/
+bounces/
+samples/**/*.wav
+samples/**/*.mp3
+samples/**/*.flac
+remotion-video/public/*.wav
+remotion-video/public/*.mp3
+remotion-video/out/
+
+# Local environment; retain a shareable template
+.env
+.env.*
+!.env.example
+
+# Binary audio and dist artifacts
+*.wav
+*.mp3
+*.flac
+*.flp
+*.fst
+*.png
+*.jpg
+dist/
+*.egg-info/

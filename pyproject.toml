@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flstudio-mcp"
+version = "1.0.0"
+description = "Real-Time Model Context Protocol (FastMCP) Server, MIDI Groove Generator, Microtonal Scala Tuning & Psychoacoustic Mixing Bridge for FL Studio"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Borja Fernández Angulo" }
+]
+keywords = ["fl-studio", "mcp", "fastmcp", "midi", "audio", "dsp", "daw", "microtonal"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: MIDI",
+]
+dependencies = [
+    "mcp>=1.2.0",
+    "mido>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+
+[project.scripts]
+flstudio-mcp = "mcp_server:main"
+
+[tool.setuptools]
+py-modules = ["mcp_server"]
+packages = ["scripts", "hardware", "swarm1000", "swarm1000.automix", "swarm1000.bridge", "swarm1000.cockpit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

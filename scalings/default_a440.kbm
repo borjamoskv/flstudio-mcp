@@ -1,0 +1,15 @@
+! Default Keyboard Mapping
+! Map size:
+0
+! First MIDI note number to retune:
+0
+! Last MIDI note number to retune:
+127
+! Middle note where 1/1 ratio is located:
+60
+! Reference note for given frequency:
+69
+! Reference frequency in Hz:
+440.0000
+! Scale degree for formal octave:
+0

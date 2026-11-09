@@ -1,0 +1,78 @@
+{
+  "patcher_version": "2025.1 SOTA",
+  "rig_name": "C5-REAL Satin-Maceo-AIR Xenarmoniic Master Rig",
+  "nodes": [
+    {
+      "id": "From_FL",
+      "type": "MIDI/Audio Input",
+      "outputs": [
+        "VFX_Key_Mapper",
+        "VFX_Script_Microtonal"
+      ]
+    },
+    {
+      "id": "VFX_Script_Microtonal",
+      "plugin": "VFX Script",
+      "script": "C5_24TET_Bayati_Remapper.py",
+      "outputs": [
+        "Sytrus_FM_Lead",
+        "Harmor_Additive"
+      ]
+    },
+    {
+      "id": "Sytrus_FM_Lead",
+      "plugin": "Sytrus",
+      "preset": "Maceo_303_Acid_Lead",
+      "outputs": [
+        "Fruity_Delay_3"
+      ]
+    },
+    {
+      "id": "Harmor_Additive",
+      "plugin": "Harmor",
+      "preset": "AIR_Solina_Space_Pad",
+      "outputs": [
+        "LuxeVerb_Shimmer"
+      ]
+    },
+    {
+      "id": "Fruity_Delay_3",
+      "plugin": "Fruity Delay 3",
+      "parameters": {
+        "time_mode": "3/16",
+        "tape_drift": 0.25,
+        "bitcrush": 12
+      },
+      "outputs": [
+        "Maximus_Master"
+      ]
+    },
+    {
+      "id": "LuxeVerb_Shimmer",
+      "plugin": "LuxeVerb",
+      "parameters": {
+        "shimmer_pitch": "+12 semitones",
+        "decay": "4.5s"
+      },
+      "outputs": [
+        "Maximus_Master"
+      ]
+    },
+    {
+      "id": "Maximus_Master",
+      "plugin": "Maximus",
+      "parameters": {
+        "low_cutoff": "100Hz",
+        "high_cutoff": "3000Hz",
+        "lookahead": "2.0ms"
+      },
+      "outputs": [
+        "To_FL_Master"
+      ]
+    },
+    {
+      "id": "To_FL_Master",
+      "type": "Audio Output"
+    }
+  ]
+}
