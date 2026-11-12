@@ -11,3 +11,8 @@
 ## 3. Exploration Restrictions (`INV_C5_ARGON_GOVERNANCE`)
 - Never read binary `.flp`, `.wav`, `.flac`, or `.mp3` files into LLM text context.
 - Restrict exploration to Python source modules and MCP tool schema definitions.
+
+## 4. Agent Configuration Governance
+- Any PR touching `AGENTS.md`, `.agents/`, or `.claude/` requires explicit human review of its content before merge.
+- Do not add project-level hooks or project-level MCP server configuration without human review of each entry.
+- Keep permission allowlists strict. Do not use `bypassPermissions` (or equivalent blanket-approval modes) in repositories not under the team's control.
