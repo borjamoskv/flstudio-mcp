@@ -25,6 +25,11 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-StemCompiler")
 
 DEFAULT_PPQ = 96
@@ -60,7 +65,7 @@ def compile_multitrack_stems_flp(
     - output_flp: target .flp path
     """
     if not stems_dir:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         default_dir = bounces_dir / "Stems" / "Dark_Cyber_Flamenco_Stems_16Bars"
         if not default_dir.exists() or not list(default_dir.glob("*.wav")):
             from scripts.fl_stems_generator import generate_flamenco_stems_pack
@@ -187,7 +192,7 @@ def compile_multitrack_stems_flp(
     flp_binary = flhd + fldt
 
     # Output directory
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Projects"
+    out_dir = resolve_bounces_dir() / "Projects"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_flp:
