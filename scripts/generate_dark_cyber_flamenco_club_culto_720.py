@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 Dark Cyber-Flamenco 7:20 Club de Culto Edition (Avant-Garde, Bailable, Palmas Protagonistas)
@@ -16,6 +15,7 @@ Métricas:
 - Master Stereo PCM 24-bit 44.1kHz + 10 Stems + Proyecto FL Studio (.flp).
 """
 
+import os
 import sys
 import time
 import numpy as np

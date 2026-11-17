@@ -24,8 +24,13 @@ import struct
 from pathlib import Path
 from typing import Dict, Any, List
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
-FL_USER_DIR = Path.home() / "Documents" / "Image-Line" / "FL Studio"
+try:
+    from scripts.bounces_paths import resolve_bounces_dir, resolve_fl_user_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir, resolve_fl_user_dir
+
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
+FL_USER_DIR = resolve_fl_user_dir()
 TUNING_DIR = FL_USER_DIR / "Settings" / "Tuning"
 SYTRUS_PRESETS_DIR = FL_USER_DIR / "Presets" / "Plugin presets" / "Generators" / "Sytrus"
 HARMOR_PRESETS_DIR = FL_USER_DIR / "Presets" / "Plugin presets" / "Generators" / "Harmor"

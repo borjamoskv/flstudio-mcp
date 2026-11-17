@@ -20,10 +20,35 @@ from __future__ import annotations
 import math
 import wave
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy import signal
+
+try:
+    from scripts.c5_real_assets_bridge import get_real_room_ir
+except ImportError:
+    try:
+        from c5_real_assets_bridge import get_real_room_ir  # type: ignore[no-redef]
+    except ImportError:
+        get_real_room_ir = None  # type: ignore[assignment]
+
+try:
+    from scripts.wave_digital_filter_analog_saturator import solve_wdf_diode_pair
+except ImportError:
+    try:
+        from wave_digital_filter_analog_saturator import solve_wdf_diode_pair  # type: ignore[no-redef]
+    except ImportError:
+        solve_wdf_diode_pair = None  # type: ignore[assignment]
+
+try:
+    from scripts.digital_waveguide_physical_modeler import DigitalWaveguideTube, midi_to_freq
+except ImportError:
+    try:
+        from digital_waveguide_physical_modeler import DigitalWaveguideTube, midi_to_freq  # type: ignore[no-redef]
+    except ImportError:
+        DigitalWaveguideTube = None  # type: ignore[assignment,misc]
+        midi_to_freq = None  # type: ignore[assignment]
 
 SAMPLE_RATE = 48000
 
@@ -498,63 +523,112 @@ def apply_coherent_shared_room(
     pre_delay_ms: float = 18.0,
     rt60_sec: float = 1.25,
     wet: float = 0.12,
+    room_style: str = "chamber_warm",
+    stereo_spread: float = 0.30,
+    use_real_ir: bool = True,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Shared Coherent Convolution Room (INV_C5_ACOUSTIC_GATE §3.1.5 & Rubin §3.2):
-      - 18 ms pre-delay preserving dry transient attack.
-      - 84% shared mono diffuse core + 16% orthogonal lateral tail -> LPC >= 0.96 & 100% mono-compatible.
+      - Prefers real studio hardware/room Impulse Responses (Patches/Impulses/*.wv)
+        for authentic 3D early reflections above 165 Hz while keeping <120 Hz mono.
+      - Falls back deterministically to Haas lateral early reflections + diffuse tail.
     """
-    n = len(left)
+    n = min(len(left), len(right))
     if n < 64 or wet <= 0.0:
         return left.copy(), right.copy()
 
-    ir_dur = min(1.8, max(0.35, rt60_sec * 0.85))
-    ir_len = int(round(ir_dur * sample_rate))
-    pre_samples = int(round((pre_delay_ms / 1000.0) * sample_rate))
-    if ir_len <= pre_samples + 16:
-        return left.copy(), right.copy()
+    pre_samples = max(16, int(round((pre_delay_ms / 1000.0) * sample_rate)))
+    spread = float(np.clip(stereo_spread, 0.0, 0.85))
+    ir_l: Optional[np.ndarray] = None
+    ir_r: Optional[np.ndarray] = None
 
-    rng = np.random.default_rng(140)
-    tail_len = ir_len - pre_samples
-    t_ir = freeze_array(make_time_axis(tail_len, sample_rate))
-    decay = freeze_array(np.exp(np.multiply(-6.9078 / max(0.15, rt60_sec), t_ir)))
-    # Smooth onset into diffuse tail
-    onset = freeze_array(0.5 * (1.0 - np.cos(np.pi * np.clip(np.divide(t_ir, 0.012), 0.0, 1.0))))
+    if use_real_ir and get_real_room_ir is not None:
+        loaded_ir = get_real_room_ir(
+            style=room_style,
+            sample_rate=sample_rate,
+            max_sec=min(2.2, max(0.75, rt60_sec * 1.25)),
+        )
+        if loaded_ir is not None:
+            ir_raw, _ir_name = loaded_ir
+            usable_tail = min(len(ir_raw), max(128, n - pre_samples))
+            if usable_tail >= 128 and pre_samples + usable_tail <= n:
+                mid_ir = freeze_array(0.5 * (ir_raw[:usable_tail, 0] + ir_raw[:usable_tail, 1]))
+                side_ir = freeze_array(0.5 * (ir_raw[:usable_tail, 0] - ir_raw[:usable_tail, 1]))
+                mid_w = 0.82 - 0.16 * spread
+                side_w = 0.42 + 0.88 * spread
+                ir_len = pre_samples + usable_tail
+                ir_l = np.zeros(ir_len, dtype=np.float64)
+                ir_r = np.zeros(ir_len, dtype=np.float64)
+                ir_l[pre_samples:] = mid_w * mid_ir + side_w * side_ir
+                ir_r[pre_samples:] = mid_w * mid_ir - side_w * side_ir
+                norm = math.sqrt(float(np.sum(np.square(ir_l)) + np.sum(np.square(ir_r))) * 0.5 + 1e-12)
+                ir_l = freeze_array(ir_l / norm)
+                ir_r = freeze_array(ir_r / norm)
 
-    core_noise = np.multiply(np.multiply(rng.normal(0.0, 1.0, tail_len), decay), onset)
-    side_noise = np.multiply(np.multiply(rng.normal(0.0, 1.0, tail_len), decay), onset)
+    if ir_l is None or ir_r is None:
+        ir_dur = min(1.8, max(0.35, rt60_sec * 0.85))
+        ir_len = min(n, int(round(ir_dur * sample_rate)))
+        if ir_len <= pre_samples + 16:
+            return left.copy(), right.copy()
 
-    nyq = sample_rate / 2.0
-    sos_room = signal.butter(
-        2,
-        [min(0.35, 220.0 / nyq), min(0.85, 5800.0 / nyq)],
-        btype="band",
-        output="sos",
-    )
-    core_filt = signal.sosfilt(sos_room, core_noise)
-    side_filt = signal.sosfilt(sos_room, side_noise)
-    core_filt.flags.writeable = False
-    side_filt.flags.writeable = False
+        rng = np.random.default_rng(140)
+        tail_len = ir_len - pre_samples
+        t_ir = freeze_array(make_time_axis(tail_len, sample_rate))
+        decay = freeze_array(np.exp(np.multiply(-6.9078 / max(0.15, rt60_sec), t_ir)))
+        onset = freeze_array(0.5 * (1.0 - np.cos(np.pi * np.clip(np.divide(t_ir, 0.012), 0.0, 1.0))))
 
-    ir_l = np.zeros(ir_len, dtype=np.float64)
-    ir_r = np.zeros(ir_len, dtype=np.float64)
-    # 84% mono core + 16% orthogonal side -> mono sum cancels side cleanly without comb filtering!
-    ir_l[pre_samples:] = 0.84 * core_filt + 0.16 * side_filt
-    ir_r[pre_samples:] = 0.84 * core_filt - 0.16 * side_filt
+        core_noise = np.multiply(np.multiply(rng.normal(0.0, 1.0, tail_len), decay), onset)
+        side_noise = np.multiply(np.multiply(rng.normal(0.0, 1.0, tail_len), decay), onset)
+        # Sculpted Haas lateral early reflections for spatial width
+        for tap_ms, tap_amp, pan in (
+            (3.4, 0.52, 0.48),
+            (8.1, 0.44, -0.58),
+            (13.7, 0.36, 0.66),
+            (20.5, 0.28, -0.50),
+            (28.9, 0.21, 0.38),
+        ):
+            idx = int(round((tap_ms / 1000.0) * sample_rate))
+            if idx < tail_len:
+                core_noise[idx] += tap_amp * (1.0 - abs(pan) * 0.25)
+                side_noise[idx] += tap_amp * pan * 1.45
 
-    norm = math.sqrt(float(np.sum(ir_l * ir_l)) + 1e-12)
-    ir_l /= norm
-    ir_r /= norm
+        nyq = sample_rate / 2.0
+        sos_room = signal.butter(
+            2,
+            [min(0.35, 175.0 / nyq), min(0.88, 8600.0 / nyq)],
+            btype="band",
+            output="sos",
+        )
+        core_filt = freeze_array(signal.sosfilt(sos_room, core_noise))
+        side_filt = freeze_array(signal.sosfilt(sos_room, side_noise))
 
-    mono_send = 0.5 * (left + right)
-    mono_send.flags.writeable = False
-    wet_l = signal.fftconvolve(0.75 * left + 0.25 * mono_send, ir_l, mode="full")[:n]
-    wet_r = signal.fftconvolve(0.75 * right + 0.25 * mono_send, ir_r, mode="full")[:n]
+        ir_l = np.zeros(ir_len, dtype=np.float64)
+        ir_r = np.zeros(ir_len, dtype=np.float64)
+        mid_w = 0.80 - 0.14 * spread
+        side_w = 0.22 + 0.38 * spread
+        ir_l[pre_samples:] = mid_w * core_filt + side_w * side_filt
+        ir_r[pre_samples:] = mid_w * core_filt - side_w * side_filt
+
+        norm = math.sqrt(float(np.sum(np.square(ir_l)) + np.sum(np.square(ir_r))) * 0.5 + 1e-12)
+        ir_l = freeze_array(ir_l / norm)
+        ir_r = freeze_array(ir_r / norm)
+
+    l_in = freeze_array(np.array(left[:n], dtype=np.float64, copy=True))
+    r_in = freeze_array(np.array(right[:n], dtype=np.float64, copy=True))
+    mono_send = freeze_array(0.5 * (l_in + r_in))
+    send_l = freeze_array(0.76 * l_in + 0.24 * mono_send)
+    send_r = freeze_array(0.76 * r_in + 0.24 * mono_send)
+    wet_l = signal.fftconvolve(send_l, ir_l, mode="full")[:n]
+    wet_r = signal.fftconvolve(send_r, ir_r, mode="full")[:n]
+
+    sos_wet_hp = signal.butter(2, min(0.45, 165.0 / (0.5 * sample_rate)), btype="high", output="sos")
+    wet_l = freeze_array(signal.sosfilt(sos_wet_hp, wet_l))
+    wet_r = freeze_array(signal.sosfilt(sos_wet_hp, wet_r))
 
     out_l = np.asarray(left, dtype=np.float64).copy()
     out_r = np.asarray(right, dtype=np.float64).copy()
-    out_l += wet * wet_l
-    out_r += wet * wet_r
+    out_l[:n] += wet * wet_l
+    out_r[:n] += wet * wet_r
     return out_l, out_r
 
 
@@ -655,3 +729,493 @@ def write_pcm_wav(
             wf.writeframes(i16.tobytes())
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# C5-REAL Nonlinear Circuit & Physical Instrument Models (Zero Naive Sines)
+# ---------------------------------------------------------------------------
+
+
+def zdf_moog_ladder_filter(
+    x: np.ndarray,
+    cutoff_hz: Union[float, np.ndarray],
+    resonance: float = 0.32,
+    drive: float = 1.35,
+    sample_rate: int = 48000,
+) -> np.ndarray:
+    """
+    Sample-exact 4-pole Zero-Delay Feedback (ZDF / TPT trapezoidal) nonlinear Moog
+    ladder filter with per-stage saturation and smooth time-varying cutoff support.
+    `resonance` in [0.0, 0.96] maps cleanly up to near self-oscillation (k <= 3.72).
+    """
+    arr = np.asarray(x, dtype=np.float64)
+    n = len(arr)
+    if n == 0:
+        return np.zeros(0, dtype=np.float64)
+
+    fc = np.broadcast_to(np.asarray(cutoff_hz, dtype=np.float64), (n,))
+    fc_safe = freeze_array(np.clip(fc, 28.0, min(18500.0, 0.42 * float(sample_rate))))
+    g_arr = freeze_array(np.tan(math.pi * fc_safe / float(sample_rate)))
+    denom = freeze_array(1.0 + g_arr)
+    G_arr = freeze_array(np.divide(g_arr, denom))
+
+    # Clamp resonance safely away from divergent blowup; add slight bass gain comp
+    k = float(np.clip(resonance, 0.0, 0.94)) * 3.72
+    drv = float(np.clip(drive, 0.2, 4.0))
+    comp = 1.0 + 0.35 * (k / 3.72)
+
+    x_list = (arr * drv).tolist()
+    g_list = G_arr.tolist()
+    y = np.empty(n, dtype=np.float64)
+
+    s1 = s2 = s3 = s4 = 0.0
+    tanh = math.tanh
+    inv_drv = 1.0 / max(1.0, 0.65 * drv + 0.35)
+    for i in range(n):
+        G = g_list[i]
+        G2 = G * G
+        G3 = G2 * G
+        G4 = G3 * G
+        S = G3 * s1 + G2 * s2 + G * s3 + s4
+        u = tanh((x_list[i] * comp - k * S) / (1.0 + k * G4))
+
+        v1 = (u - s1) * G
+        y1 = v1 + s1
+        s1 = y1 + v1
+
+        v2 = (y1 - s2) * G
+        y2 = v2 + s2
+        s2 = y2 + v2
+
+        v3 = (y2 - s3) * G
+        y3 = v3 + s3
+        s3 = y3 + v3
+
+        v4 = (y3 - s4) * G
+        y4 = v4 + s4
+        s4 = y4 + v4
+
+        y[i] = y4 * inv_drv
+
+    return y
+
+
+def synthesize_rhodes_electromechanical(
+    freq_hz: float,
+    n_samples: int,
+    velocity: float = 0.85,
+    sample_rate: int = 48000,
+    tremolo_hz: float = 4.2,
+    tremolo_depth: float = 0.22,
+    stereo_pan: float = 0.0,
+    seed: int = 1973,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Electromechanical Fender Rhodes Mk I synthesis:
+      1. Velocity-scaled neoprene hammer felt transient (1.2-4.2 kHz exciter burst).
+      2. Inharmonic steel tine bell overtones (fast exponential decay).
+      3. Warm coupled tonebar sustain (1f0, 2f0).
+      4. Asymmetric magnetic pickup displacement nonlinearity (even + odd bark).
+      5. Stereo suitcase autopan tremolo & strict zero-crackle boundary tapering.
+    """
+    if n_samples <= 0 or freq_hz <= 15.0:
+        z = np.zeros(max(0, n_samples), dtype=np.float64)
+        return z, z.copy()
+
+    vel = float(np.clip(velocity, 0.08, 1.25))
+    t = freeze_array(make_time_axis(n_samples, sample_rate))
+    nyq = 0.5 * float(sample_rate)
+
+    # Hammer felt mechanical thump (2.5-5 ms exciter filtered into mechanical bark band)
+    rng = np.random.default_rng(seed + int(round(freq_hz * 10.0)))
+    noise = rng.normal(0.0, 1.0, n_samples)
+    hammer_tau = 0.0028 + 0.0018 * (1.0 - min(1.0, vel))
+    hammer_env = freeze_array(np.exp(np.divide(-t, hammer_tau)))
+    hammer_raw = noise * hammer_env
+    band_lo = min(0.45, max(120.0, freq_hz * 1.8) / nyq)
+    band_hi = min(0.90, (1800.0 + 2800.0 * vel) / nyq)
+    sos_felt = signal.butter(2, [band_lo, max(band_lo + 0.04, band_hi)], btype="band", output="sos")
+    felt_transient = freeze_array(signal.sosfilt(sos_felt, hammer_raw)) * (0.28 * (vel ** 1.35))
+
+    # Coupled tonebar + steel tine assembly
+    pitch_scale = math.sqrt(max(0.25, 261.63 / freq_hz))
+    tau_f0 = min(3.4, 1.15 * pitch_scale)
+    tau_2f = tau_f0 * 0.62
+    tau_tine = min(0.42, 0.09 + 0.14 * pitch_scale)
+
+    phase0 = 2.0 * math.pi * freq_hz * t
+    phase0.flags.writeable = False
+
+    tonebar = (
+        1.00 * np.sin(phase0) * np.exp(np.divide(-t, tau_f0))
+        + 0.34 * np.sin(2.0 * phase0) * np.exp(np.divide(-t, tau_2f))
+        + 0.14 * np.sin(3.003 * phase0) * np.exp(np.divide(-t, tau_f0 * 0.40))
+    )
+    # Inharmonic tine partials (7th/10th modes stay audible as signature Fender chime)
+    tine_bright = 0.32 + 0.68 * vel
+    tine = np.zeros(n_samples, dtype=np.float64)
+    for mult, amp, dec_mul in (
+        (5.04, 0.18, 1.00),
+        (7.11, 0.12, 0.58),
+        (10.62, 0.075, 0.32),
+        (14.15, 0.045, 0.18),
+    ):
+        if freq_hz * mult < 0.44 * sample_rate:
+            tine += (amp * tine_bright) * np.sin(mult * phase0) * np.exp(np.divide(-t, tau_tine * dec_mul))
+
+    displacement = freeze_array(tonebar + tine + felt_transient)
+
+    # Asymmetric magnetic pickup nonlinearity (d/dt induced voltage through biased coil)
+    pickup_drive = 1.05 + 1.15 * vel
+    pickup_bias = 0.24 * vel
+    biased = freeze_array(displacement * pickup_drive + pickup_bias)
+    raw_pickup = np.tanh(biased) - math.tanh(pickup_bias)
+    if n_samples >= 24:
+        sos_ac = signal.butter(1, min(0.08, 28.0 / nyq), btype="high", output="sos")
+        raw_pickup = signal.sosfilt(sos_ac, raw_pickup)
+
+    # Smooth note onset + decay into zero-crackle window
+    voiced = apply_zero_crackle_envelope(
+        raw_pickup * (0.48 * vel),
+        sample_rate=sample_rate,
+        attack_ms=5.2,
+        release_ms=26.0,
+    )
+    voiced.flags.writeable = False
+
+    # Stereo suitcase tremolo autopan
+    pan = float(np.clip(stereo_pan, -0.75, 0.75))
+    depth = float(np.clip(tremolo_depth, 0.0, 0.45))
+    lfo = freeze_array(np.sin(2.0 * math.pi * tremolo_hz * t + pan * 0.7))
+    gain_l = (1.0 - pan * 0.35) * (1.0 + depth * lfo)
+    gain_r = (1.0 + pan * 0.35) * (1.0 - depth * lfo)
+    return voiced * gain_l, voiced * gain_r
+
+
+def synthesize_solina_bbd_ensemble(
+    left: np.ndarray,
+    right: Optional[np.ndarray] = None,
+    sample_rate: int = 48000,
+    depth_ms: float = 3.6,
+    rate_slow_hz: float = 0.62,
+    rate_fast_hz: float = 5.8,
+    mix: float = 0.72,
+    stereo_spread: float = 0.85,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Genuine 3-phase Bucket-Brigade Delay (BBD) analog Solina string ensemble chorus.
+    Modulates 3 delay lines spaced 120 deg apart with dual LFO (0.62 Hz wander + 5.8 Hz
+    vibrato), gentle BBD 10.5 kHz HF clock rolloff, and authentic M/S stereo dispersion.
+    """
+    l_in = np.asarray(left, dtype=np.float64)
+    r_in = np.asarray(left if right is None else right, dtype=np.float64)
+    n = min(len(l_in), len(r_in))
+    if n < 32:
+        return l_in.copy(), r_in.copy()
+
+    mono = freeze_array(0.5 * (l_in[:n] + r_in[:n]))
+    idx_base = freeze_array(np.arange(n, dtype=np.float64))
+    t = freeze_array(make_time_axis(n, sample_rate))
+
+    base_delay_samp = 0.0085 * float(sample_rate)
+    mod_samp = (max(0.4, depth_ms) / 1000.0) * float(sample_rate)
+
+    wet_l = np.zeros(n, dtype=np.float64)
+    wet_r = np.zeros(n, dtype=np.float64)
+    pan_weights = ((0.85, 0.25), (0.55, 0.55), (0.25, 0.85))
+    for v_idx in range(3):
+        phi = (2.0 * math.pi * v_idx) / 3.0
+        lfo_slow = freeze_array(np.sin(2.0 * math.pi * rate_slow_hz * t + phi))
+        lfo_fast = freeze_array(np.sin(2.0 * math.pi * rate_fast_hz * t + phi * 1.7))
+        lfo = freeze_array(0.70 * lfo_slow + 0.30 * lfo_fast)
+        read_pos = freeze_array(np.clip(idx_base - (base_delay_samp + mod_samp * (0.5 + 0.5 * lfo)), 0.0, float(n - 1)))
+        delayed = freeze_array(np.interp(read_pos, idx_base, mono))
+        wl, wr = pan_weights[v_idx]
+        wet_l = wet_l + wl * delayed
+        wet_r = wet_r + wr * delayed
+
+    wet_l = freeze_array(wet_l / 1.65)
+    wet_r = freeze_array(wet_r / 1.65)
+
+    # Gentle BBD clock filter (tames ultrasonic artifacts while keeping analog shimmer <= 10.8 kHz)
+    sos_bbd = signal.butter(2, min(0.88, 10800.0 / (0.5 * float(sample_rate))), btype="low", output="sos")
+    wet_l = freeze_array(signal.sosfilt(sos_bbd, wet_l))
+    wet_r = freeze_array(signal.sosfilt(sos_bbd, wet_r))
+
+    # Expand stereo image cleanly via stereo_spread without losing mono weight
+    mid = freeze_array(0.5 * (wet_l + wet_r))
+    side = freeze_array(0.5 * (wet_l - wet_r) * (0.65 + 0.85 * float(np.clip(stereo_spread, 0.0, 1.0))))
+    wet_l_sp = freeze_array(mid + side)
+    wet_r_sp = freeze_array(mid - side)
+
+    w = float(np.clip(mix, 0.0, 1.0))
+    l_ro = freeze_array(np.asarray(l_in[:n], dtype=np.float64).copy())
+    r_ro = freeze_array(np.asarray(r_in[:n], dtype=np.float64).copy())
+    out_l = (1.0 - w) * l_ro + w * wet_l_sp
+    out_r = (1.0 - w) * r_ro + w * wet_r_sp
+    return out_l, out_r
+
+
+def synthesize_string_ensemble_pad(
+    freqs_hz: Sequence[float],
+    n_samples: int,
+    velocity: float = 0.82,
+    sample_rate: int = 48000,
+    cutoff_curve: Optional[Union[float, np.ndarray]] = None,
+    seed: int = 1974,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    PolyBLEP bowed sawtooth + sub-pulse ensemble passed through nonlinear 4-pole
+    ZDF ladder filter and 3-phase Solina BBD ensemble chorus.
+    """
+    if n_samples <= 0 or not freqs_hz:
+        z = np.zeros(max(0, n_samples), dtype=np.float64)
+        return z, z.copy()
+
+    vel = float(np.clip(velocity, 0.1, 1.2))
+    raw_l = np.zeros(n_samples, dtype=np.float64)
+    raw_r = np.zeros(n_samples, dtype=np.float64)
+    scale = 1.0 / math.sqrt(float(len(freqs_hz)))
+    for i, f_hz in enumerate(freqs_hz):
+        if f_hz <= 20.0:
+            continue
+        p0 = ((seed + i * 37) % 100) / 100.0
+        saw_a = polyblep_saw(f_hz * 0.9978, n_samples, sample_rate, initial_phase=p0)
+        saw_b = polyblep_saw(f_hz * 1.0022, n_samples, sample_rate, initial_phase=(p0 + 0.37) % 1.0)
+        pulse_sub = polyblep_pulse(f_hz, n_samples, sample_rate, duty=0.38, initial_phase=(p0 + 0.61) % 1.0)
+        voice = (0.45 * saw_a + 0.45 * saw_b + 0.25 * pulse_sub) * scale
+        pan = -0.35 + 0.70 * ((i % max(1, len(freqs_hz) - 1)) / max(1, len(freqs_hz) - 1))
+        raw_l += voice * (0.58 - 0.18 * pan)
+        raw_r += voice * (0.58 + 0.18 * pan)
+
+    fc = (2200.0 + 2600.0 * vel) if cutoff_curve is None else cutoff_curve
+    filt_l = zdf_moog_ladder_filter(raw_l, cutoff_hz=fc, resonance=0.22, drive=1.18, sample_rate=sample_rate)
+    filt_r = zdf_moog_ladder_filter(raw_r, cutoff_hz=fc, resonance=0.22, drive=1.18, sample_rate=sample_rate)
+
+    ens_l, ens_r = synthesize_solina_bbd_ensemble(filt_l, filt_r, sample_rate=sample_rate, mix=0.74)
+    out_l = apply_zero_crackle_envelope(ens_l * (0.42 * vel), sample_rate=sample_rate, attack_ms=42.0, release_ms=65.0)
+    out_r = apply_zero_crackle_envelope(ens_r * (0.42 * vel), sample_rate=sample_rate, attack_ms=42.0, release_ms=65.0)
+    return out_l, out_r
+
+
+def synthesize_karplus_strong_pluck(
+    freq_hz: float,
+    n_samples: int,
+    velocity: float = 0.85,
+    brightness: float = 0.74,
+    body_resonance: float = 0.38,
+    sample_rate: int = 48000,
+    seed: int = 1995,
+) -> np.ndarray:
+    """
+    Extended Karplus-Strong physical plucked string waveguide with wooden body
+    formant resonators (115 Hz air mode, 285 Hz top plate, 2350 Hz pick presence).
+    """
+    if n_samples <= 0 or freq_hz <= 20.0:
+        return np.zeros(max(0, n_samples), dtype=np.float64)
+
+    vel = float(np.clip(velocity, 0.1, 1.25))
+    bright = float(np.clip(brightness * (0.55 + 0.45 * min(1.0, vel)), 0.18, 0.96))
+    period = max(2.2, float(sample_rate) / float(freq_hz))
+    n_delay = int(math.floor(period))
+    frac = period - n_delay
+
+    rng = np.random.default_rng(seed + int(round(freq_hz * 13.0)))
+    exc = rng.uniform(-1.0, 1.0, n_delay + 2)
+    # Pick-position comb notch + brightness tilt on initial string displacement
+    comb_len = max(2, int(round(n_delay * 0.24)))
+    if comb_len < len(exc):
+        exc_ro = freeze_array(exc.copy())
+        exc[comb_len:] -= 0.45 * exc_ro[:-comb_len]
+    b_lpf = signal.butter(1, min(0.90, (1400.0 + 7800.0 * bright) / (0.5 * sample_rate)), btype="low")
+    exc = signal.lfilter(b_lpf[0], b_lpf[1], exc)
+    exc = (exc / max(1e-6, float(np.max(np.abs(exc))))) * vel
+
+    # Frequency-dependent loop damping keeps sustained lows warm while fast highs decay naturally
+    decay_base = 0.9945 - 0.004 * min(1.0, freq_hz / 900.0)
+    blend_alpha = 0.35 + 0.35 * (1.0 - bright)
+
+    ring = np.zeros(n_delay + 2, dtype=np.float64)
+    ring[: len(exc)] = exc[: len(ring)]
+    y = np.zeros(n_samples, dtype=np.float64)
+
+    ring_len = len(ring)
+    r_idx = 0
+    prev_val = 0.0
+    for i in range(n_samples):
+        idx_a = r_idx % ring_len
+        idx_b = (r_idx + 1) % ring_len
+        samp = (1.0 - frac) * ring[idx_a] + frac * ring[idx_b]
+        y[i] = samp
+        lp = (1.0 - blend_alpha) * samp + blend_alpha * prev_val
+        prev_val = samp
+        ring[idx_a] = lp * decay_base
+        r_idx += 1
+
+    # Wooden guitar/charango body resonance parallel mix (keeps transient crispness)
+    if body_resonance > 0.01 and n_samples >= 32:
+        nyq = 0.5 * float(sample_rate)
+        sos_body_lo = signal.butter(2, [min(0.3, 95.0 / nyq), min(0.45, 290.0 / nyq)], btype="band", output="sos")
+        sos_body_hi = signal.butter(2, [min(0.4, 1650.0 / nyq), min(0.75, 4200.0 / nyq)], btype="band", output="sos")
+        body = 0.48 * signal.sosfilt(sos_body_lo, y) + 0.36 * signal.sosfilt(sos_body_hi, y)
+        y = y + float(np.clip(body_resonance, 0.0, 0.8)) * body
+
+    return apply_zero_crackle_envelope(y, sample_rate=sample_rate, attack_ms=1.8, release_ms=18.0)
+
+
+def synthesize_analog_hihat_cymbal(
+    n_samples: int,
+    is_open: bool = False,
+    velocity: float = 0.85,
+    pitch_scale: float = 1.0,
+    sample_rate: int = 48000,
+    seed: int = 808,
+) -> np.ndarray:
+    """
+    Deterministic Roland 808/606 6-oscillator inharmonic metallic hi-hat / cymbal
+    generator with high-pass resonance and air shimmer (never naive sine noise).
+    """
+    if n_samples <= 0:
+        return np.zeros(0, dtype=np.float64)
+
+    vel = float(np.clip(velocity, 0.05, 1.25))
+    t = freeze_array(make_time_axis(n_samples, sample_rate))
+    freqs = (205.3, 304.4, 369.6, 522.7, 540.0, 800.0)
+    rng = np.random.default_rng(seed)
+
+    # Sum 6 inharmonic square/Schmitt partials + ring-mod metallic shimmer
+    bank = np.zeros(n_samples, dtype=np.float64)
+    for f0 in freqs:
+        f = float(np.clip(f0 * pitch_scale, 80.0, 0.35 * sample_rate))
+        phase = (2.0 * math.pi * f) * t + float(rng.uniform(0.0, 2.0 * math.pi))
+        sq = np.tanh(3.2 * np.sin(phase))
+        bank += sq
+    bank = freeze_array(bank / 6.0)
+    metallic = np.tanh(2.4 * (bank * bank - 0.25)) + 0.35 * bank + 0.14 * rng.normal(0.0, 1.0, n_samples)
+
+    nyq = 0.5 * float(sample_rate)
+    sos_hp = signal.butter(4, min(0.85, 5800.0 / nyq), btype="high", output="sos")
+    sos_bp = signal.butter(2, [min(0.65, 7200.0 / nyq), min(0.92, 13800.0 / nyq)], btype="band", output="sos")
+    bright = 0.58 * signal.sosfilt(sos_hp, metallic) + 0.52 * signal.sosfilt(sos_bp, metallic)
+
+    tau = (0.24 if is_open else 0.036) * (0.78 + 0.35 * min(1.0, vel))
+    env = freeze_array(np.exp(np.divide(-t, tau)))
+    hit = apply_zero_crackle_envelope(bright * env * (0.65 * vel), sample_rate=sample_rate, attack_ms=0.6, release_ms=14.0)
+    peak = float(np.max(np.abs(hit)))
+    if peak > 1.0:
+        hit = hit / peak
+    return hit
+
+
+def apply_wdf_warm_saturator(
+    left: np.ndarray,
+    right: Optional[np.ndarray] = None,
+    sample_rate: int = 48000,
+    drive_db: float = 2.4,
+    tube_bias: float = 0.08,
+    mix: float = 0.45,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+    """
+    Applies Wave Digital Filter (Newton-Raphson antiparallel diode pair) harmonic
+    warmth above 140 Hz using 2x polyphase oversampling while preserving sub-bass
+    coherence below 140 Hz untouched.
+    """
+    is_mono = right is None
+    l_arr = np.asarray(left, dtype=np.float64)
+    r_arr = np.asarray(left if is_mono else right, dtype=np.float64)
+    n = min(len(l_arr), len(r_arr))
+    if n < 32 or mix <= 0.0:
+        return l_arr.copy() if is_mono else (l_arr.copy(), r_arr.copy())
+
+    def _process_ch(ch: np.ndarray) -> np.ndarray:
+        lo, hi = lr4_zero_phase_crossover(ch, 140.0, sample_rate)
+        lo_ro = freeze_array(lo)
+        hi_ro = freeze_array(hi)
+        if solve_wdf_diode_pair is not None and n <= sample_rate * 45:
+            drive_gain = 10.0 ** (drive_db / 20.0)
+            driven = hi_ro * (drive_gain * 0.42) + float(tube_bias) * 0.15
+            up = signal.resample_poly(driven, 2, 1)
+            a_waves = freeze_array(up * 2.0)
+            b_waves = freeze_array(solve_wdf_diode_pair(a_waves, R0=1200.0, Is=2.0e-9, Vt=0.026))
+            v_up = (a_waves + b_waves) * 0.5
+            sat_hi = signal.resample_poly(v_up, 1, 2)[:n]
+            sos_dc = signal.butter(1, min(0.1, 45.0 / (0.5 * sample_rate)), btype="high", output="sos")
+            sat_hi = signal.sosfilt(sos_dc, sat_hi) * (1.15 / max(0.35, drive_gain * 0.42))
+        else:
+            sat_hi = oversampled_soft_saturate(hi_ro, drive_db=drive_db, threshold_db=-3.0, asymmetry=0.05)
+
+        w = float(np.clip(mix, 0.0, 1.0))
+        return lo_ro + ((1.0 - w) * hi_ro + w * sat_hi)
+
+    out_l = _process_ch(l_arr[:n])
+    if is_mono:
+        return out_l
+    out_r = _process_ch(r_arr[:n])
+    return out_l, out_r
+
+
+def apply_spectral_balance_eq(
+    left: np.ndarray,
+    right: np.ndarray,
+    sample_rate: int = 48000,
+    sub_gain_db: float = -1.8,
+    mud_cut_db: float = -2.2,
+    presence_gain_db: float = 2.6,
+    air_gain_db: float = 2.2,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Linear/Zero-phase 4-band perceptual balance shelf (sub <= 115 Hz, low-mid 280 Hz,
+    presence 3.4 kHz, open air >= 8.5 kHz) eliminating <250 Hz blanket mud while
+    lifting human intelligibility and top-end air without high-Q ringing.
+    """
+    n = min(len(left), len(right))
+    if n < 64:
+        return left.copy(), right.copy()
+
+    def _peaking_biquad(fc: float, gain_db: float, q: float = 0.85) -> np.ndarray:
+        a = 10.0 ** (gain_db / 40.0)
+        w0 = 2.0 * math.pi * fc / float(sample_rate)
+        alpha = math.sin(w0) / (2.0 * q)
+        cos_w0 = math.cos(w0)
+        b0 = 1.0 + alpha * a
+        b1 = -2.0 * cos_w0
+        b2 = 1.0 - alpha * a
+        a0 = 1.0 + alpha / a
+        a1 = -2.0 * cos_w0
+        a2 = 1.0 - alpha / a
+        return np.array([[b0 / a0, b1 / a0, b2 / a0, 1.0, a1 / a0, a2 / a0]], dtype=np.float64)
+
+    def _shelf_biquad(fc: float, gain_db: float, high: bool) -> np.ndarray:
+        a = 10.0 ** (gain_db / 40.0)
+        w0 = 2.0 * math.pi * fc / float(sample_rate)
+        cos_w0 = math.cos(w0)
+        sin_w0 = math.sin(w0)
+        alpha = sin_w0 / 2.0 * math.sqrt(2.0)
+        sq_a = 2.0 * math.sqrt(a) * alpha
+        if not high:
+            b0 = a * ((a + 1.0) - (a - 1.0) * cos_w0 + sq_a)
+            b1 = 2.0 * a * ((a - 1.0) - (a + 1.0) * cos_w0)
+            b2 = a * ((a + 1.0) - (a - 1.0) * cos_w0 - sq_a)
+            a0 = (a + 1.0) + (a - 1.0) * cos_w0 + sq_a
+            a1 = -2.0 * ((a - 1.0) + (a + 1.0) * cos_w0)
+            a2 = (a + 1.0) + (a - 1.0) * cos_w0 - sq_a
+        else:
+            b0 = a * ((a + 1.0) + (a - 1.0) * cos_w0 + sq_a)
+            b1 = -2.0 * a * ((a - 1.0) + (a + 1.0) * cos_w0)
+            b2 = a * ((a + 1.0) + (a - 1.0) * cos_w0 - sq_a)
+            a0 = (a + 1.0) - (a - 1.0) * cos_w0 + sq_a
+            a1 = 2.0 * ((a - 1.0) - (a + 1.0) * cos_w0)
+            a2 = (a + 1.0) - (a - 1.0) * cos_w0 - sq_a
+        return np.array([[b0 / a0, b1 / a0, b2 / a0, 1.0, a1 / a0, a2 / a0]], dtype=np.float64)
+
+    sos_chain = np.vstack(
+        [
+            _shelf_biquad(95.0, sub_gain_db, high=False),
+            _peaking_biquad(280.0, mud_cut_db, q=0.75),
+            _peaking_biquad(3400.0, presence_gain_db, q=0.72),
+            _shelf_biquad(8500.0, air_gain_db, high=True),
+        ]
+    )
+    out_l = signal.sosfilt(sos_chain, np.asarray(left[:n], dtype=np.float64))
+    out_r = signal.sosfilt(sos_chain, np.asarray(right[:n], dtype=np.float64))
+    return out_l, out_r

@@ -16,6 +16,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-MIR")
 
 # Krumhansl-Schmuckler Key Profiles (12 pitch classes starting from C)
@@ -70,7 +75,7 @@ def extract_harmonic_perceptual_features(
 
     # Fallback to existing bounce if none provided
     if not target_path:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         candidates = list(bounces_dir.glob("**/*.wav"))
         if candidates:
             target_path = candidates[0]
@@ -190,7 +195,7 @@ def extract_harmonic_perceptual_features(
     chroma_dict = {PITCH_CLASSES[i]: round(float(chroma_profile[i]), 4) for i in range(12)}
     top_keys = [{"key": k, "correlation": round(s, 4)} for k, s in key_scores[:top_candidates]]
 
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "MIR_Analysis"
+    out_dir = resolve_bounces_dir() / "MIR_Analysis"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = Path(output_json).expanduser().resolve() if output_json else out_dir / f"MIR_Profile_{filename_tag}.json"
 

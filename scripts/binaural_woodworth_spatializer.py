@@ -20,6 +20,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Binaural3D")
 
 HEAD_RADIUS_M = 0.0875   # 8.75 cm
@@ -193,7 +198,7 @@ def spatialize_binaural_woodworth(
     int16_stereo = np.clip(stereo * 32767.0, -32768, 32767).astype(np.int16)
 
     if not output_wav:
-        out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Binaural_3D"
+        out_dir = resolve_bounces_dir() / "Binaural_3D"
         out_dir.mkdir(parents=True, exist_ok=True)
         stem_name = in_path.stem
         output_file = out_dir / f"{stem_name}_Binaural3D_Az{int(azimuth_deg)}_El{int(elevation_deg)}.wav"
@@ -224,7 +229,7 @@ def spatialize_binaural_woodworth(
 
 
 if __name__ == "__main__":
-    test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+    test_in = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = spatialize_binaural_woodworth(str(test_in), azimuth_deg=45.0, elevation_deg=20.0, distance_m=1.5)
         print("Binaural 3D Spatializer output:", res)

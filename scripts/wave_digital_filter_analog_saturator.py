@@ -19,6 +19,11 @@ from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-WDF")
 
 
@@ -56,19 +61,30 @@ def solve_wdf_diode_pair(a: np.ndarray, R0: float = 1000.0, Is: float = 2.5e-9, 
     f(b) = b - a + 2 * R0 * Is * sinh((a + b) / (2 * Vt)) = 0
     Converges in 4 iterations.
     """
-    b = np.copy(a) * 0.5  # Initial guess
+    a_ro = np.asarray(a, dtype=np.float64).copy()
+    a_ro.flags.writeable = False
+    b = (a_ro * 0.5).copy()  # Initial guess
     two_R0_Is = 2.0 * R0 * Is
     inv_2Vt = 1.0 / (2.0 * Vt)
 
     for _ in range(4):
-        v = (a + b) * inv_2Vt
+        b.flags.writeable = False
+        v = (a_ro + b) * inv_2Vt
+        v.flags.writeable = False
         v_clipped = np.clip(v, -30.0, 30.0)
+        v_clipped.flags.writeable = False
         sinh_v = np.sinh(v_clipped)
+        sinh_v.flags.writeable = False
         cosh_v = np.cosh(v_clipped)
+        cosh_v.flags.writeable = False
 
-        f = b - a + two_R0_Is * sinh_v
+        f = b - a_ro + two_R0_Is * sinh_v
+        f.flags.writeable = False
         df = 1.0 + two_R0_Is * inv_2Vt * cosh_v
-        b -= f / df
+        df.flags.writeable = False
+        step = f / df
+        step.flags.writeable = False
+        b = (b - step).copy()
 
     return b
 
@@ -134,7 +150,7 @@ def saturate_audio_wdf_analog(
     - mix_wet: dry/wet blend ratio (0.0 to 1.0)
     """
     if not input_wav:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         default_wav = bounces_dir / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
         if not default_wav.exists():
             from scripts.fl_headless_audio_synthesizer import render_headless_dark_cyber_flamenco
@@ -188,7 +204,7 @@ def saturate_audio_wdf_analog(
         blended = (blended / peak) * 0.95
 
     # Output directory
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Analog_WDF"
+    out_dir = resolve_bounces_dir() / "Analog_WDF"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

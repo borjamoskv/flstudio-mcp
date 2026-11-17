@@ -21,11 +21,16 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 
 
 def write_smf_cc_track(
@@ -115,6 +120,8 @@ def generate_flamenco_vibrato_bend(
         msb = (bend_val >> 7) & 0x7F
         events.append((tick, bytes([0xE0, lsb, msb])))
 
+    # Reset pitch wheel cleanly to exact center (8192 = 0x00 0x40)
+    events.append((total_ticks, bytes([0xE0, 0x00, 0x40])))
     return events
 
 
@@ -125,23 +132,31 @@ def generate_sidechain_ducking_curve(
     curve_steepness: float = 3.5
 ) -> List[Tuple[int, bytes]]:
     """
-    Generates 4-on-the-floor sidechain pumping ducking envelope on specified CC.
-    At beat start: 0, rapidly rises to 127 using inverse exponential curve.
+    Generates click-free 4-on-the-floor sidechain pumping ducking envelope on specified CC.
+    Uses a smooth raised-cosine pre-ducking attack ramp over 30 ticks (~13 ms) from 127 -> 0,
+    holds briefly over the kick transient, then recovers smoothly to 127.
     """
     ticks_per_beat = 480
     beats = bars * 4
     events: List[Tuple[int, bytes]] = []
     step_ticks = 15  # 32 samples per beat
+    attack_end = 30.0 / float(ticks_per_beat)
+    hold_end = 45.0 / float(ticks_per_beat)
+    denom_exp = max(1e-6, 1.0 - math.exp(-curve_steepness))
 
     for beat in range(beats):
         beat_start_tick = beat * ticks_per_beat
         for step in range(0, ticks_per_beat, step_ticks):
             tick = beat_start_tick + step
-            p = step / float(ticks_per_beat)  # 0.0 to 1.0
-            # Exponential ducking release curve: 1 - exp(-k * p)
-            val_norm = 1.0 - math.exp(-curve_steepness * p)
-            val_norm = max(0.0, min(1.0, val_norm / (1.0 - math.exp(-curve_steepness))))
-            cc_val = int(val_norm * 127)
+            p = step / float(ticks_per_beat)
+            if p < attack_end:
+                val_norm = 0.5 * (1.0 + math.cos(math.pi * (p / attack_end)))
+            elif p < hold_end:
+                val_norm = 0.0
+            else:
+                rel_p = (p - hold_end) / (1.0 - hold_end)
+                val_norm = max(0.0, min(1.0, (1.0 - math.exp(-curve_steepness * rel_p)) / denom_exp))
+            cc_val = int(round(val_norm * 127))
             events.append((tick, bytes([0xB0, cc_number, cc_val])))
 
     return events

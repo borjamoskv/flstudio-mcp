@@ -25,7 +25,9 @@ WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 DEFAULT_PPQ = 96
 
 
@@ -71,15 +73,23 @@ class FLPProjectBuilder:
         pitch: int,
         duration_ticks: int = 24,
         velocity: int = 100,
-        channel_index: int = 0
+        channel_index: int = 0,
+        pan: int = 64,
+        release: int = 128,
+        mod_x: int | None = None,
     ) -> "FLPProjectBuilder":
-        """Adds a note event to the project piano roll."""
+        """Adds a note event to the project piano roll with per-note expression."""
+        vel = max(0, min(127, int(velocity)))
+        coupled_mod_x = int(48 + 0.55 * vel) if mod_x is None else int(mod_x)
         self.notes.append({
             "pos": int(pos_ticks),
             "pitch": max(0, min(127, int(pitch))),
             "duration": max(1, int(duration_ticks)),
-            "vel": max(0, min(127, int(velocity))),
-            "flags": int(0x00400000 | (channel_index & 0xFF))
+            "vel": vel,
+            "pan": max(0, min(127, int(pan))),
+            "release": max(0, min(255, int(release))),
+            "mod_x": max(0, min(255, coupled_mod_x)),
+            "flags": int(0x00400000 | (channel_index & 0xFF)),
         })
         return self
 
@@ -139,10 +149,10 @@ class FLPProjectBuilder:
                     n["flags"],
                     n["duration"],
                     n["pitch"],
-                    64,            # pan center
-                    n["vel"],       # velocity
-                    128,           # release
-                    80             # mod/cutoff
+                    n.get("pan", 64),
+                    n["vel"],
+                    n.get("release", 128),
+                    n.get("mod_x", 80),
                 )
 
             dt_stream.append(0xE0)

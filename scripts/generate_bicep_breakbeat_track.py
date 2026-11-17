@@ -27,6 +27,7 @@ WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(WORKSPACE_DIR))
 sys.path.insert(0, str(WORKSPACE_DIR / "scripts"))
 
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
 from scripts.flp_multitrack_stem_compiler import compile_multitrack_stems_flp  # noqa: E402
 
 SR = 48000
@@ -38,7 +39,7 @@ BAR_DUR = BEAT_DUR * BEATS_PER_BAR  # 1.875s
 TOTAL_DUR = BAR_DUR * BARS  # 180.0s (3m 00s)
 TOTAL_SAMPLES = int(TOTAL_DUR * SR)
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 STEMS_DIR = MUSIC_BOUNCES_DIR / "Stems" / "Bicep_Breakbeat_Borja_Sample"
 PROJECTS_DIR = MUSIC_BOUNCES_DIR / "Projects"
 SLICES_DIR = WORKSPACE_DIR / "samples" / "recorded" / "user_recording_48k24b_slices"

@@ -1,10 +1,10 @@
-import os
 #!/usr/bin/env python3
 """
 Polirritmia Cavernosa 6:30 Master Engine (v2.0 Full Composition)
 Composed for Borja Moskv under C5-REAL Physical Acoustics & Invariants.
 """
 
+import os
 import sys
 import math
 import numpy as np

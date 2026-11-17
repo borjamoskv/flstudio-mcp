@@ -100,6 +100,8 @@ SCALE_CENTS_D4: Dict[str, float] = {
     "G3": -701.96,
     "Gs_11th3": -648.68,
     "A3": -498.04,
+    "Bb_neut3": -350.00,
+    "C_sept4": -231.17,
     "D4": 0.00,
     "Eb_sikah4": 150.00,
     "E4": 203.91,
@@ -126,6 +128,8 @@ NOTE_MAP: Dict[str, Tuple[int, int]] = {
     "G3": (55, -2),
     "Gs_11th3": (56, -49),
     "A3": (57, 2),
+    "Bb_neut3": (59, -50),
+    "C_sept4": (60, -31),
     "D4": (62, 0),
     "Eb_sikah4": (64, -50),
     "E4": (64, 4),
@@ -162,6 +166,22 @@ SECTIONS_PLAN: List[Tuple[str, int, int, int]] = [
     ("6/4", 6, 4, 4),
     ("12/8", 12, 8, 8),
 ]
+
+# Arreglo completo de club (64 compases = 200.0 s + 4.0 s Living Exit tail = 204.0 s / 3:24.0):
+#   - Acto I   (00..15): 16 compases en 3/2  (Intro hipnótica subterránea)
+#   - Acto II  (16..31): 16 compases en 6/4  (Breakdown ingrávido + Hemiola + Vacío Pre-Drop en c.31)
+#   - Acto III (32..55): 24 compases en 12/8 (Clímax progresivo Call & Response en 3 oleadas de 8 c.)
+#   - Acto IV  (56..63):  8 compases en 12/8 (Living Exit analógico sin fade-out de máster)
+SECTIONS_CLUB_64: List[Tuple[str, int, int, int]] = [
+    ("3/2", 3, 2, 16),
+    ("6/4", 6, 4, 16),
+    ("12/8", 12, 8, 32),
+]
+
+ARRANGEMENT_PLANS: Dict[str, List[Tuple[str, int, int, int]]] = {
+    "triptych16": SECTIONS_PLAN,
+    "club64": SECTIONS_CLUB_64,
+}
 
 SCALA_SCL_CONTENT = """! D_Maqam_Septimal_12.scl
 ! SIKAH-128: Microtonal Melodic Techno in D (Quarter-tones + 7-limit/11-limit JI)
@@ -378,6 +398,108 @@ def events_to_track(
     return track
 
 
+def _kick_grid_for_bar(label: str, bar: int, n_bars: int, club_mode: bool) -> List[int]:
+    """Coreografía métrica del bombo D1 por sección (soporta tríptico 16c y club 64c)."""
+    is_vacuum = label == "6/4" and bar == n_bars - 1
+    if label == "3/2":
+        return [0, 960, 1920]
+    if label == "6/4":
+        if is_vacuum:
+            return [0, 480, 960, 1440]
+        if club_mode and bar < 4:
+            # Breakdown ingrávido (c.16..19): latido cavernoso aislado en compases pares, silencio en impares
+            return [0] if bar in (0, 2) else []
+        return [0, 480, 960, 1440, 1920, 2400]
+    # 12/8
+    if club_mode and n_bars >= 16 and bar >= n_bars - 8:
+        exit_bar = bar - (n_bars - 8)
+        if exit_bar < 6:
+            return [0, 720, 1440, 2160]
+        if exit_bar == 6:
+            return [0, 1440]
+        return [0]  # Último golpe sísmico D1 en c.63 disipándose en la cola analógica
+    return [0, 720, 1440, 2160]
+
+
+def _plan_club64_lead_bar(
+    label: str, bar: int, n_bars: int
+) -> Tuple[List[int], float, float, bool]:
+    """
+    Plan dramatúrgico del solista microtonal para el arreglo de club de 64 compases.
+    Invariante constitucional: todo compás activo termina siempre en [..., 6, 7]
+    (n_7 = D4 tónica 0.00c anteúltima -> n_8 = Eb_sikah4 +150.00c última suspendida).
+    Retorna (active_indices, base_cutoff_hz, bar_expr, low_octave_touch).
+    """
+    is_vacuum = label == "6/4" and bar == n_bars - 1
+    if label == "3/2":
+        # Acto I (0..15): 8 compases de caverna pura + emergencia velada Call & Response (8..15)
+        if bar < 8 or bar % 2 == 0:
+            return [], 480.0 + 18.0 * bar, 0.0, False
+        if bar == 9:
+            return [6, 7], 540.0, 0.50, True
+        if bar == 11:
+            return [5, 6, 7], 620.0, 0.56, False
+        if bar == 13:
+            return [4, 5, 6, 7], 740.0, 0.64, False
+        return [2, 3, 4, 5, 6, 7], 890.0, 0.72, False
+
+    if label == "6/4":
+        # Acto II (16..31): Breakdown ingrávido (0..3) + Hemiola progresiva (4..14) + Vacío Pre-Drop (15)
+        if is_vacuum:
+            return [6, 7], 1380.0, 0.90, False
+        if bar == 0:
+            return [0, 1, 2, 3, 4, 5, 6, 7], 980.0, 0.74, False
+        if bar == 1:
+            return [6, 7], 760.0, 0.60, False
+        if bar == 2:
+            return [0, 2, 4, 5, 6, 7], 860.0, 0.68, True
+        if bar in (3, 7, 11):
+            return [], 880.0, 0.0, False
+        if bar in (4, 8, 12):
+            step = bar - 4
+            return [0, 1, 2, 3, 4, 5, 6, 7], 1080.0 + 48.0 * step, 0.78 + 0.015 * step, False
+        if bar in (5, 9):
+            return [5, 6, 7], 940.0 + 35.0 * (bar - 5), 0.70, False
+        if bar in (6, 10):
+            return [2, 3, 4, 5, 6, 7], 1180.0 + 40.0 * (bar - 6), 0.80, False
+        if bar == 13:
+            return [3, 4, 5, 6, 7], 1520.0, 0.86, False
+        return [0, 1, 2, 3, 4, 5, 6, 7], 1680.0, 0.92, False
+
+    # 12/8: Acto III Clímax en 3 oleadas (bar 0..23) + Acto IV Living Exit (bar 24..31)
+    if n_bars >= 16 and bar >= n_bars - 8:
+        exit_bar = bar - (n_bars - 8)
+        if exit_bar == 0:
+            return [4, 5, 6, 7], 1080.0, 0.76, False
+        if exit_bar == 2:
+            return [6, 7], 660.0, 0.58, True
+        return [], 520.0, 0.0, False
+
+    wave_idx = min(2, bar // 8)
+    pos = bar % 8
+    if pos == 0:
+        if wave_idx == 1:
+            return [], 1320.0, 0.0, False
+        return [0, 1, 2, 3, 4, 5, 6, 7], 1780.0 + 210.0 * wave_idx, 0.96 + 0.04 * wave_idx, False
+    if pos == 1:
+        return [4, 5, 6, 7], 1280.0 + 110.0 * wave_idx, 0.82, False
+    if pos == 2:
+        return [0, 2, 4, 5, 6, 7], 1040.0 + 120.0 * wave_idx, 0.80, (wave_idx == 0)
+    if pos == 3:
+        if wave_idx == 1:
+            return [], 1180.0, 0.0, False
+        return [3, 5, 6, 7], 1480.0 + 120.0 * wave_idx, 0.88, False
+    if pos == 4:
+        return [0, 1, 2, 3, 4, 5, 6, 7], 1920.0 + 180.0 * wave_idx, 1.00 + 0.03 * wave_idx, False
+    if pos == 5:
+        return [5, 6, 7], 1340.0 + 90.0 * wave_idx, 0.80, False
+    if pos == 6:
+        if wave_idx == 2:
+            return [0, 1, 2, 3, 4, 5, 6, 7], 2320.0, 1.05, False
+        return [2, 3, 4, 5, 6, 7], 1620.0 + 120.0 * wave_idx, 0.90, False
+    return [6, 7], 1420.0, 0.86, False
+
+
 def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SECTIONS_PLAN) -> Path:
     """Genera el archivo MIDI SMF Tipo 1 multimétrico (3/2 -> 6/4 -> 12/8) y microtonal."""
     mid = mido.MidiFile(type=1, ticks_per_beat=PPQ)
@@ -385,6 +507,10 @@ def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SE
     conductor.append(mido.MetaMessage("track_name", name="SIKAH128_Conductor", time=0))
     conductor.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(QUARTER_BPM), time=0))
 
+    total_bars = sum(nb for _, _, _, nb in sections)
+    club_mode = total_bars >= 32
+
+    conductor_ev: List[Tuple[int, int, mido.MetaMessage]] = []
     kick_ev: List[Tuple[int, mido.Message]] = []
     cast_ev: List[Tuple[int, mido.Message]] = []
     tromb_ev: List[Tuple[int, mido.Message]] = []
@@ -392,57 +518,81 @@ def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SE
     bass_ev: List[Tuple[int, mido.Message]] = []
 
     cur_tick = 0
-    prev_tick_sig = 0
 
     for label, num, den, n_bars in sections:
-        delta_sig = cur_tick - prev_tick_sig
         cpc = 48 if label == "3/2" else (24 if label == "6/4" else 36)
-        conductor.append(
-            mido.MetaMessage(
-                "time_signature",
-                numerator=num,
-                denominator=den,
-                clocks_per_click=cpc,
-                notated_32nd_notes_per_beat=8,
-                time=delta_sig,
+        conductor_ev.append(
+            (
+                cur_tick,
+                0,
+                mido.MetaMessage(
+                    "time_signature",
+                    numerator=num,
+                    denominator=den,
+                    clocks_per_click=cpc,
+                    notated_32nd_notes_per_beat=8,
+                    time=0,
+                ),
             )
         )
-        conductor.append(mido.MetaMessage("marker", text=f"Acto_{label}", time=0))
-        prev_tick_sig = cur_tick
+        if club_mode:
+            marker_name = (
+                "Acto_I_Intro_Hipnotica_3_2"
+                if label == "3/2"
+                else (
+                    "Acto_II_Breakdown_Hemiola_6_4"
+                    if label == "6/4"
+                    else "Acto_III_Climax_Call_Response_12_8"
+                )
+            )
+        else:
+            marker_name = f"Acto_{label}"
+        conductor_ev.append((cur_tick, 1, mido.MetaMessage("marker", text=marker_name, time=0)))
 
         for bar in range(n_bars):
             b0 = cur_tick
             is_pre_drop_vacuum = label == "6/4" and bar == n_bars - 1
+            is_living_exit = club_mode and label == "12/8" and n_bars >= 16 and bar >= n_bars - 8
+            exit_bar = bar - (n_bars - 8) if is_living_exit else -1
+
+            if club_mode and is_pre_drop_vacuum:
+                conductor_ev.append(
+                    (b0, 2, mido.MetaMessage("marker", text="Pre_Drop_Vacuum", time=0))
+                )
+            if is_living_exit and exit_bar == 0:
+                conductor_ev.append(
+                    (b0, 2, mido.MetaMessage("marker", text="Acto_IV_Living_Exit_Analogico", time=0))
+                )
 
             # 1. Bombo Techno (Canal 10 / index 9, nota 36)
-            if label == "3/2":
-                kick_grid = [0, 960, 1920]
-            elif label == "6/4":
-                kick_grid = (
-                    [0, 480, 960, 1440]
-                    if is_pre_drop_vacuum
-                    else [0, 480, 960, 1440, 1920, 2400]
-                )
-            else:
-                kick_grid = [0, 720, 1440, 2160]
-
+            kick_grid = _kick_grid_for_bar(label, bar, n_bars, club_mode=club_mode)
             for k_off in kick_grid:
                 t_k = b0 + k_off
-                kick_ev.append((t_k, mido.Message("note_on", channel=9, note=36, velocity=115)))
+                k_vel = 96 if (club_mode and label == "6/4" and bar < 4) else (90 if exit_bar >= 6 else 115)
+                kick_ev.append((t_k, mido.Message("note_on", channel=9, note=36, velocity=k_vel)))
                 kick_ev.append((t_k + 120, mido.Message("note_off", channel=9, note=36, velocity=0)))
 
             # 2. Sub-Bajo Techno D2 (Canal 3)
-            if not is_pre_drop_vacuum:
+            skip_bass_midi = is_pre_drop_vacuum or (club_mode and label == "6/4" and bar < 4) or (exit_bar >= 7)
+            if not skip_bass_midi:
                 bass_grid = [240, 1200, 2160] if label == "3/2" else [240, 960, 1680, 2400]
+                if exit_bar == 6:
+                    bass_grid = [240, 1680]
                 for b_off in bass_grid:
                     t_b = b0 + b_off
-                    bass_ev.append((t_b, mido.Message("note_on", channel=3, note=38, velocity=100)))
+                    bass_ev.append((t_b, mido.Message("note_on", channel=3, note=38, velocity=96)))
                     bass_ev.append(
                         (t_b + 180, mido.Message("note_off", channel=3, note=38, velocity=0))
                     )
 
             # 3. Castañuelas: Macho (76) y Hembra Carretilla (77)
-            if not is_pre_drop_vacuum:
+            skip_cast_midi = (
+                is_pre_drop_vacuum
+                or (club_mode and label == "3/2" and bar < 4)
+                or (club_mode and label == "6/4" and bar < 4)
+                or (exit_bar >= 4)
+            )
+            if not skip_cast_midi:
                 macho_offs = (
                     [960, 2400]
                     if label == "3/2"
@@ -450,33 +600,46 @@ def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SE
                 )
                 for m_off in macho_offs:
                     cast_ev.append(
-                        (b0 + m_off, mido.Message("note_on", channel=9, note=76, velocity=105))
+                        (b0 + m_off, mido.Message("note_on", channel=9, note=76, velocity=102))
                     )
                     cast_ev.append(
                         (b0 + m_off + 90, mido.Message("note_off", channel=9, note=76, velocity=0))
                     )
 
-                carretilla_anchor = 1920 if label in ("3/2", "6/4") else 1800
-                for dt, vel in [(0, 62), (75, 76), (140, 90), (200, 112)]:
-                    t_c = b0 + carretilla_anchor + dt
-                    cast_ev.append((t_c, mido.Message("note_on", channel=9, note=77, velocity=vel)))
-                    cast_ev.append(
-                        (t_c + 45, mido.Message("note_off", channel=9, note=77, velocity=0))
-                    )
+                if not is_living_exit and (not club_mode or not (label == "3/2" and bar < 12) or bar % 2 == 1):
+                    if not club_mode or bar % 2 == 1:
+                        carretilla_anchor = 1920 if label in ("3/2", "6/4") else 1800
+                        for dt, vel in [(0, 62), (75, 76), (140, 90), (200, 112)]:
+                            t_c = b0 + carretilla_anchor + dt
+                            cast_ev.append(
+                                (t_c, mido.Message("note_on", channel=9, note=77, velocity=vel))
+                            )
+                            cast_ev.append(
+                                (t_c + 45, mido.Message("note_off", channel=9, note=77, velocity=0))
+                            )
 
             # 4. Trombones / Cuerno Analógico (automatización CC #74/#11 + fraseo respirado)
-            bar_global = (cur_tick // BAR_TICKS)
-            cutoff_cc = min(127, max(28, int(round(36 + 5.2 * bar_global))))
+            bar_global = cur_tick // BAR_TICKS
+            cutoff_cc = (
+                max(26, 78 - 8 * exit_bar)
+                if is_living_exit
+                else min(127, max(28, int(round(34 + (90.0 * bar_global / max(1, total_bars - 1))))))
+            )
             tromb_ev.append((b0, mido.Message("control_change", channel=1, control=74, value=cutoff_cc)))
             tromb_ev.append((b0, mido.Message("control_change", channel=1, control=11, value=96)))
-            if bar % 2 == 0 and not is_pre_drop_vacuum:
+            skip_brass_midi = (
+                is_pre_drop_vacuum
+                or (club_mode and label == "3/2" and bar < 4)
+                or (exit_bar >= 6)
+            )
+            if bar % 2 == 0 and not skip_brass_midi:
                 tromb_ev.append((b0 + 6, mido.Message("pitchwheel", channel=1, pitch=0)))
                 tromb_ev.append((b0 + 8, mido.Message("note_on", channel=1, note=38, velocity=88)))
                 tromb_ev.append(
                     (b0 + BAR_TICKS - 120, mido.Message("note_off", channel=1, note=38, velocity=0))
                 )
 
-            if not is_pre_drop_vacuum and (bar % 2 == 1 or label == "6/4"):
+            if not skip_brass_midi and not is_living_exit and (bar % 2 == 1 or label == "6/4"):
                 t_tr = b0 + (1920 if label == "3/2" else 1440)
                 note_num, cents_off = NOTE_MAP["Gs_11th3"]
                 tromb_ev.append(
@@ -495,12 +658,23 @@ def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SE
                 )
 
             # 5. Estribillo Lead Melódico (n_7 = Tónica D4 anteúltima, n_8 = Eb_sikah4)
-            # Incluye automatización continua de filtro/expresión (CC #74, CC #1, CC #11) y legato
-            lead_cc74 = (
-                42 + 6 * bar
-                if label == "3/2"
-                else (68 + 10 * bar if label == "6/4" else (96 if bar % 2 == 0 else 76))
-            )
+            offsets = CHORUS_OFFSETS_TICKS[label]
+            vel_arc = [92, 74, 80, 86, 94, 84, 106, 112]
+            pocket_ticks = [0, 7, -4, 9, 5, -3, 4, 8]
+
+            if club_mode:
+                active_lead_idx, fc_plan, expr_plan, _low_oct = _plan_club64_lead_bar(label, bar, n_bars)
+                lead_cc74 = int(round(np.clip((fc_plan - 400.0) / 16.0 + 34.0, 24.0, 124.0)))
+                dyn_scale = max(0.45, expr_plan)
+            else:
+                active_lead_idx = [6, 7] if is_pre_drop_vacuum else list(range(8))
+                lead_cc74 = (
+                    42 + 6 * bar
+                    if label == "3/2"
+                    else (68 + 10 * bar if label == "6/4" else (96 if bar % 2 == 0 else 76))
+                )
+                dyn_scale = 0.68 if label == "3/2" else (0.85 if label == "6/4" else 1.0)
+
             lead_ev.append(
                 (b0, mido.Message("control_change", channel=2, control=74, value=min(124, lead_cc74)))
             )
@@ -511,28 +685,22 @@ def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SE
                         "control_change",
                         channel=2,
                         control=1,
-                        value=28 if label == "3/2" else (52 if label == "6/4" else 78),
+                        value=28 if label == "3/2" else (52 if label == "6/4" else (34 if is_living_exit else 78)),
                     ),
                 )
             )
-            offsets = CHORUS_OFFSETS_TICKS[label]
-            vel_arc = [92, 74, 80, 86, 94, 84, 106, 112]
-            pocket_ticks = [0, 7, -4, 9, 5, -3, 4, 8]
-            for idx_n, ((n_name, dur), off_t) in enumerate(zip(CHORUS_MELODY, offsets)):
-                if is_pre_drop_vacuum and idx_n < 6:
-                    continue
+            for idx_n in active_lead_idx:
+                n_name, dur = CHORUS_MELODY[idx_n]
+                off_t = offsets[idx_n]
                 midi_n, cents_off = NOTE_MAP[n_name]
-                # Mantener estrictamente dentro de [b0 + 4, b0 + BAR_TICKS - 24]
                 raw_on = b0 + off_t + pocket_ticks[idx_n]
                 t_on = max(b0 + (4 if idx_n > 0 else 0), min(b0 + BAR_TICKS - 60, raw_on))
                 next_off = offsets[idx_n + 1] if idx_n + 1 < len(offsets) else BAR_TICKS
                 legato_span = max(110, next_off - off_t - 12)
                 eff_dur = max(dur, int(round(legato_span * 0.90)))
                 eff_dur = min(eff_dur, max(80, (b0 + next_off - 8) - t_on))
-                dyn_scale = 0.68 if label == "3/2" else (0.85 if label == "6/4" else 1.0)
-                if label == "12/8" and bar % 2 == 1 and idx_n < 4:
-                    dyn_scale *= 0.62
-                vel = max(42, min(122, int(round(vel_arc[idx_n] * dyn_scale))))
+                note_scale = dyn_scale * (0.62 if (not club_mode and label == "12/8" and bar % 2 == 1 and idx_n < 4) else 1.0)
+                vel = max(42, min(122, int(round(vel_arc[idx_n] * note_scale))))
                 lead_ev.append(
                     (
                         max(0, t_on - 2),
@@ -550,6 +718,12 @@ def build_midi(out_mid: Path, sections: Sequence[Tuple[str, int, int, int]] = SE
 
             cur_tick += BAR_TICKS
 
+    conductor_ev.sort(key=lambda item: (item[0], item[1]))
+    last_cond_tick = 0
+    for abs_t, _ord, meta_msg in conductor_ev:
+        delta = max(0, abs_t - last_cond_tick)
+        conductor.append(meta_msg.copy(time=delta))
+        last_cond_tick = max(last_cond_tick, abs_t)
     conductor.append(mido.MetaMessage("end_of_track", time=0))
     mid.tracks.append(conductor)
     mid.tracks.append(events_to_track("Kick_Techno_D1", 9, kick_ev, include_rpn=False))
@@ -579,6 +753,8 @@ def export_fl_assets(
     scripts_dir.mkdir(parents=True, exist_ok=True)
 
     mid_path = build_midi(b_dir / "SIKAH_128_Triptych_3_2_6_4_12_8.mid", sections=sections)
+    if sum(nb for _, _, _, nb in sections) >= 32:
+        build_midi(b_dir / "SIKAH_128_Club64_3_2_6_4_12_8.mid", sections=sections)
 
     scl_path = tuning_dir / "D_Maqam_Septimal_12.scl"
     scl_path.write_text(SCALA_SCL_CONTENT, encoding="utf-8")
@@ -807,6 +983,8 @@ def _render_cavern_kick_rumble(
     sub_drone = 0.76 * np.sin(ph_d1) + 0.24 * np.sin(2.0 * ph_d1 + 0.35)
 
     # Envolvente macro por sección y evacuación estricta en el Pre-Drop Vacuum
+    total_bars_r = sum(nb for _, _, _, nb in sections)
+    club_mode_r = total_bars_r >= 32
     env_macro = np.zeros(n_total, dtype=np.float64)
     cur_tick = 0
     pocket_samp = int(round(0.0068 * sample_rate))
@@ -815,11 +993,33 @@ def _render_cavern_kick_rumble(
             s0 = min(n_total, tick_to_sample(cur_tick) + pocket_samp)
             s1 = min(n_total, tick_to_sample(cur_tick + BAR_TICKS) + pocket_samp)
             is_vacuum = label == "6/4" and bar == n_bars - 1
+            is_living_exit = club_mode_r and label == "12/8" and n_bars >= 16 and bar >= n_bars - 8
             if is_vacuum:
                 # Corta en seco en la segunda mitad del compás Pre-Drop
                 s_mid = min(n_total, tick_to_sample(cur_tick + 1440))
                 if s_mid > s0:
                     env_macro[s0:s_mid] = 0.72
+            elif club_mode_r:
+                if label == "3/2":
+                    lvl = 0.60 + 0.18 * (bar / max(1, n_bars - 1))
+                    env_macro[s0:s1] = lvl
+                elif label == "6/4":
+                    if bar < 4:
+                        # Breakdown ingrávido: presión subgrave contenida (-9 dB) sin barro
+                        env_macro[s0:s1] = 0.34
+                    else:
+                        env_macro[s0:s1] = 0.74 + 0.18 * ((bar - 4) / max(1, n_bars - 6))
+                elif is_living_exit:
+                    exit_bar = bar - (n_bars - 8)
+                    if exit_bar < 7:
+                        env_macro[s0:s1] = max(0.36, 0.94 - 0.095 * exit_bar)
+                    else:
+                        # Último golpe sísmico D1 en c.63 disipándose suavemente hacia la cola
+                        s_last = min(n_total, tick_to_sample(cur_tick + 1680))
+                        if s_last > s0:
+                            env_macro[s0:s_last] = 0.44
+                else:
+                    env_macro[s0:s1] = 1.0
             else:
                 lvl = 0.68 if label == "3/2" else (0.84 if label == "6/4" else 1.0)
                 env_macro[s0:s1] = lvl
@@ -963,6 +1163,7 @@ def _render_continuous_legato_lead(
     """
     total_bars = sum(nb for _, _, _, nb in sections)
     short_mode = total_bars <= 4
+    club_mode = total_bars >= 32
 
     # Planificar eventos (start_samp, end_samp, freq_hz, expr_gain, cutoff_target_hz, is_slurred)
     events: List[Tuple[int, int, float, float, float, bool]] = []
@@ -975,6 +1176,7 @@ def _render_continuous_legato_lead(
         for bar in range(n_bars):
             b0 = cur_tick
             is_vacuum = label == "6/4" and bar == n_bars - 1
+            low_oct_bar = False
 
             # Selección dramatúrgica de qué grados cantan realmente en este compás (anti-ringtone)
             if short_mode:
@@ -986,6 +1188,10 @@ def _render_continuous_legato_lead(
                     active_indices = list(range(8))
                 base_cutoff = 680.0 if label == "3/2" else (1150.0 if label == "6/4" else 1780.0)
                 bar_expr = 0.62 if label == "3/2" else (0.82 if label == "6/4" else 0.98)
+            elif club_mode:
+                active_indices, base_cutoff, bar_expr, low_oct_bar = _plan_club64_lead_bar(
+                    label, bar, n_bars
+                )
             else:
                 if label == "3/2":
                     # Acto I: compases 0 y 2 dejan respirar la caverna; 1 y 3 insinúan la cadencia Sikah
@@ -1032,6 +1238,7 @@ def _render_continuous_legato_lead(
                         active_indices = [0, 2, 4, 5, 6, 7]
                         base_cutoff = 960.0
                         bar_expr = 0.78
+                        low_oct_bar = True
                     elif bar == 3:
                         # Giro microtonal 11/8 hacia la suspensión Sikah
                         active_indices = [3, 5, 6, 7]
@@ -1050,6 +1257,7 @@ def _render_continuous_legato_lead(
 
             note_contour = [0.92, 0.76, 0.82, 0.88, 0.94, 0.85, 1.00, 1.05]
             prev_end_samp = -999999
+            is_living_farewell = club_mode and label == "12/8" and n_bars >= 16 and bar == n_bars - 6
             for idx_n in active_indices:
                 n_name, _dur_nom = CHORUS_MELODY[idx_n]
                 off_t = offsets[idx_n]
@@ -1057,12 +1265,16 @@ def _render_continuous_legato_lead(
 
                 # Micro-bolsillo humano (+4 a +11 ms laid-back sobre el grid matemático)
                 pocket_ms = rng.uniform(3.5, 10.5) if idx_n not in (0, 6) else rng.uniform(1.5, 5.5)
-                s_start = max(0, tick_to_sample(b0 + off_t) + int(round((pocket_ms / 1000.0) * sample_rate)))
+                s_start = max(
+                    0, tick_to_sample(b0 + off_t) + int(round((pocket_ms / 1000.0) * sample_rate))
+                )
 
                 # Articulación legato real: las notas internas se ligan (98% del intervalo);
                 # la última nota Eb_sikah4 (+150c) respira más larga en cierres de frase
                 span_ticks = max(160, next_off - off_t)
-                if idx_n == 7 and (bar == n_bars - 1 or bar % 2 == 0):
+                if idx_n == 7 and is_living_farewell:
+                    hold_ratio = 1.65
+                elif idx_n == 7 and (bar == n_bars - 1 or bar % 2 == 0):
                     hold_ratio = 1.45 if (label == "12/8" and bar == n_bars - 1) else 1.12
                 elif (idx_n + 1) in active_indices:
                     hold_ratio = 0.98
@@ -1075,8 +1287,7 @@ def _render_continuous_legato_lead(
                     continue
 
                 f_target = note_name_to_hz(n_name)
-                # Variación octava grave cálida en el compás íntimo del clímax (bar 2 de 12/8)
-                if not short_mode and label == "12/8" and bar == 2 and idx_n in (0, 2, 4):
+                if low_oct_bar and (idx_n in (0, 2, 4) or active_indices == [6, 7]):
                     f_target *= 0.5
 
                 expr = bar_expr * note_contour[idx_n] * rng.uniform(0.95, 1.05)
@@ -1095,6 +1306,7 @@ def _render_continuous_legato_lead(
     # Construir vectores continuos sobre toda la línea temporal (0 reinicios de fase)
     freq_target_arr = np.full(n_total, events[0][2], dtype=np.float64)
     gate_arr = np.zeros(n_total, dtype=np.float64)
+    air_att_arr = np.zeros(n_total, dtype=np.float64)
     cutoff_target_arr = np.full(n_total, 480.0, dtype=np.float64)
     vib_depth_cents = np.zeros(n_total, dtype=np.float64)
 
@@ -1107,42 +1319,44 @@ def _render_continuous_legato_lead(
         seg_len = s1 - s0
         t_seg = np.arange(seg_len, dtype=np.float64) / float(sample_rate)
         att_s = 0.008 if slurred else 0.022
-        rel_s = 0.045
+        rel_s = 0.048
         n_a = min(seg_len // 2, max(4, int(round(att_s * sample_rate))))
         n_r = min(seg_len - n_a, max(8, int(round(rel_s * sample_rate))))
         env_seg = np.ones(seg_len, dtype=np.float64) * expr
         if not slurred:
             env_seg[:n_a] *= 0.5 * (1.0 - np.cos(math.pi * np.arange(n_a) / max(1, n_a - 1)))
-        # Caída natural suave durante la nota sostenida
-        env_seg *= 0.72 + 0.28 * np.exp(-t_seg / 0.26)
+        # Sostenuto orgánico adaptado a tempo lento (420 ms)
+        env_seg *= 0.76 + 0.24 * np.exp(-t_seg / 0.42)
         # Si la siguiente nota NO está ligada, cerrar suavemente al final
         next_slurred = events[ev_i + 1][5] if ev_i + 1 < len(events) else False
         if not next_slurred and n_r > 2:
             env_seg[-n_r:] *= 0.5 * (1.0 + np.cos(math.pi * np.arange(n_r) / (n_r - 1)))
 
         gate_arr[s0:s1] = np.maximum(gate_arr[s0:s1], env_seg)
+        air_att_arr[s0:s1] = np.maximum(air_att_arr[s0:s1], expr * np.exp(-t_seg / 0.028))
 
-        # Vibrato diferido (entra solo tras 145 ms en notas largas sostenidas, 0 scoop caricaturesco)
-        if seg_len > int(0.20 * sample_rate):
-            v_env = np.clip((t_seg - 0.145) / 0.12, 0.0, 1.0) * 7.5
+        # Vibrato humano expresivo (entra a los 110 ms y florece en notas del estribillo)
+        if seg_len > int(0.16 * sample_rate):
+            v_env = np.clip((t_seg - 0.110) / 0.14, 0.0, 1.0) * 12.0
             vib_depth_cents[s0:s1] = np.maximum(vib_depth_cents[s0:s1], v_env)
 
-    # Portamento RC continuo sobre log-frecuencia (tau = 24 ms -> glissando sedoso analógico)
+    # Portamento RC continuo sobre log-frecuencia (tau = 26 ms -> glissando sedoso analógico)
     log_f = np.log2(np.maximum(freq_target_arr, 40.0))
-    tau_glide = 0.024
+    tau_glide = 0.026
     a_gl = math.exp(-1.0 / (tau_glide * sample_rate))
     log_f_smooth = signal.lfilter([1.0 - a_gl], [1.0, -a_gl], log_f, zi=[log_f[0]])[0]
 
     # Suavizado analógico de envolvente de aire/VCA y de cutoff
     a_env = math.exp(-1.0 / (0.012 * sample_rate))
     gate_smooth = freeze_array(signal.lfilter([1.0 - a_env], [1.0, -a_env], gate_arr))
+    air_att_smooth = freeze_array(signal.lfilter([1.0 - a_env], [1.0, -a_env], air_att_arr))
     a_fc = math.exp(-1.0 / (0.032 * sample_rate))
     fc_smooth = signal.lfilter([1.0 - a_fc], [1.0, -a_fc], cutoff_target_arr, zi=[cutoff_target_arr[0]])[0]
 
     t_full = make_time_axis(n_total, sample_rate)
     drift_1f = _voss_clarke_1f_drift(n_total, seed=8128)
-    vib_lfo = np.sin(2.0 * math.pi * 5.15 * t_full + 0.4 * drift_1f)
-    total_cents = freeze_array(3.4 * drift_1f + freeze_array(vib_depth_cents) * vib_lfo)
+    vib_lfo = np.sin(2.0 * math.pi * 5.25 * t_full + 0.55 * drift_1f)
+    total_cents = freeze_array(3.6 * drift_1f + freeze_array(vib_depth_cents) * vib_lfo)
     f_inst = freeze_array(np.power(2.0, log_f_smooth + total_cents / 1200.0))
 
     # Oscilador continuo híbrido: PolyBLEP saw + pulse simétrico + tubo/lengüeta cúbica (x - x^3/3)
@@ -1162,13 +1376,17 @@ def _render_continuous_legato_lead(
     p_drive = np.clip(exciter * (0.75 + 0.85 * gate_smooth), -1.35, 1.35)
     bore_sig = freeze_array(p_drive - (p_drive * p_drive * p_drive) / 3.0)
 
-    # Resonancias de cuerpo de madera cálida (sin estridencia nasal MIDI)
-    chest_res = _band_formant(bore_sig, 560.0, rel_width=0.30, sample_rate=sample_rate)
-    throat_res = _band_formant(bore_sig, 1180.0, rel_width=0.25, sample_rate=sample_rate)
-    raw_lead = freeze_array(0.74 * bore_sig + 0.22 * chest_res + 0.14 * throat_res)
+    # Resonancias de caña/madera + soplo real de embocadura (Duduk / Ney orgánico)
+    chest_res = _band_formant(bore_sig, 580.0, rel_width=0.30, sample_rate=sample_rate)
+    throat_res = _band_formant(bore_sig, 1220.0, rel_width=0.25, sample_rate=sample_rate)
+    breath_noise = _band_formant(
+        rng.normal(0.0, 1.0, n_total), 1750.0, rel_width=0.45, sample_rate=sample_rate
+    )
+    breath_stream = freeze_array(breath_noise * (0.032 * gate_smooth + 0.055 * air_att_smooth))
+    raw_lead = freeze_array(0.72 * bore_sig + 0.24 * chest_res + 0.20 * throat_res + breath_stream)
 
     # Filtro escalera resonante acoplado simultáneamente al arco de frase y a la presión de aire
-    dyn_fc = freeze_array(np.clip(fc_smooth * (0.42 + 0.68 * gate_smooth), 210.0, 3100.0))
+    dyn_fc = freeze_array(np.clip(fc_smooth * (0.44 + 0.70 * gate_smooth), 220.0, 3300.0))
     filtered = _dynamic_analog_ladder_filter(
         raw_lead, dyn_fc, resonance=0.48, sample_rate=sample_rate
     )
@@ -1178,7 +1396,7 @@ def _render_continuous_legato_lead(
     )
     peak = max(float(np.max(np.abs(shaped))), 1e-12)
     mono_lead = apply_zero_crackle_envelope(
-        np.multiply(shaped, 0.36 / peak), sample_rate=sample_rate, attack_ms=10.0, release_ms=40.0
+        np.multiply(shaped, 0.42 / peak), sample_rate=sample_rate, attack_ms=10.0, release_ms=42.0
     )
     return _apply_analog_bbd_chorus(
         mono_lead, sample_rate=sample_rate, depth_ms=1.7, rate_hz=0.52, mix=0.22
@@ -1233,55 +1451,55 @@ def _synth_granadillo_wood_strike(
     sample_rate: int = SAMPLE_RATE,
 ) -> np.ndarray:
     """
-    Golpe físico de madera hueca de granadillo (CERO osciladores sinusoidales puros):
-    impulso transitorio estocástico + fricción de contacto excitando un banco de resonadores
-    IIR ortotrópicos de cavidad (Helmholtz + concha) con rebote asimétrico de hojas.
+    Golpe físico de madera seca de granadillo (CERO osciladores sinusoidales puros):
+    impulso transitorio estocástico + fricción seca excitando un banco de resonadores
+    IIR ortotrópicos de cavidad (Helmholtz + concha) con rebote rápido de hojas.
     """
-    dur_sec = 0.046
+    dur_sec = 0.032
     n_samp = int(round(dur_sec * sample_rate))
     t = make_time_axis(n_samp, sample_rate)
     rng = np.random.default_rng(seed)
 
-    # Excitación física de choque sin una sola senoide estacionaria
-    impact_env = np.exp(-t / rng.uniform(0.0011, 0.0017))
-    scrape_env = np.exp(-t / rng.uniform(0.0042, 0.0062))
+    # Excitación física seca de choque sin una sola senoide estacionaria
+    impact_env = np.exp(-t / rng.uniform(0.0007, 0.0012))
+    scrape_env = np.exp(-t / rng.uniform(0.0024, 0.0038))
     exciter = (
         rng.normal(0.0, 1.0, n_samp) * impact_env
-        + 0.35 * rng.normal(0.0, 1.0, n_samp) * scrape_env
+        + 0.30 * rng.normal(0.0, 1.0, n_samp) * scrape_env
     )
 
-    f0 = cavity_hz * rng.uniform(0.955, 1.045)
+    f0 = cavity_hz * rng.uniform(0.96, 1.04)
     nyq = 0.5 * float(sample_rate)
-    # 3 resonancias físicas acopladas: cavidad hueca (0.61*f0), tabla principal (f0), borde (1.58*f0)
+    # 3 resonancias físicas secas: cavidad (0.65*f0), tabla principal (f0), borde nítido (1.62*f0)
     resonances = [
-        (max(340.0, f0 * 0.61), rng.uniform(5.5, 7.2), 0.48),
-        (min(nyq * 0.80, f0), rng.uniform(7.0, 9.5), 0.72),
-        (min(nyq * 0.85, f0 * 1.58), rng.uniform(4.5, 6.2), 0.30),
+        (max(420.0, f0 * 0.65), rng.uniform(6.5, 8.5), 0.36),
+        (min(nyq * 0.80, f0), rng.uniform(8.5, 11.5), 0.78),
+        (min(nyq * 0.85, f0 * 1.62), rng.uniform(5.5, 7.5), 0.34),
     ]
     shell = np.zeros(n_samp, dtype=np.float64)
     for r_hz, q_val, g_val in resonances:
         b_r, a_r = signal.iirpeak(r_hz, Q=q_val, fs=sample_rate)
         shell += g_val * signal.lfilter(b_r, a_r, exciter)
 
-    # Amortiguamiento por los dedos sobre la concha de madera
-    damping = np.exp(-t / rng.uniform(0.0075, 0.0115))
+    # Amortiguamiento seco de los dedos sobre granadillo
+    damping = np.exp(-t / rng.uniform(0.0042, 0.0068))
     body = shell * damping
 
-    # Micro-rebote mecánico entre las dos hojas
-    b_delay = int(round(rng.uniform(0.0036, 0.0058) * sample_rate))
-    b_gain = rng.uniform(0.24, 0.38)
+    # Micro-rebote mecánico rápido entre las dos hojas
+    b_delay = int(round(rng.uniform(0.0028, 0.0044) * sample_rate))
+    b_gain = rng.uniform(0.28, 0.42)
     full = body.copy()
     if 0 < b_delay < n_samp:
         full[b_delay:] += b_gain * body[: n_samp - b_delay]
 
-    sos_bp = signal.butter(2, [310.0 / nyq, min(0.88, 5200.0 / nyq)], btype="band", output="sos")
+    sos_bp = signal.butter(2, [460.0 / nyq, min(0.88, 6200.0 / nyq)], btype="band", output="sos")
     clean = signal.sosfilt(sos_bp, full)
     peak = max(float(np.max(np.abs(clean))), 1e-12)
     return apply_zero_crackle_envelope(
         np.multiply(clean, amplitude / peak),
         sample_rate=sample_rate,
-        attack_ms=0.8,
-        release_ms=10.0,
+        attack_ms=0.6,
+        release_ms=8.0,
     )
 
 
@@ -1380,7 +1598,7 @@ def _pan_gains(pan: float) -> Tuple[float, float]:
 def render_verification_maquette(
     bounces_dir: Optional[Path] = None,
     sections: Sequence[Tuple[str, int, int, int]] = SECTIONS_PLAN,
-    profile_name: str = "club_c5",
+    profile_name: str = "dub_techno",
     run_mastering: bool = True,
     run_linter_subprocess: bool = False,
     brass_stem_path: Optional[Path] = None,
@@ -1390,16 +1608,17 @@ def render_verification_maquette(
     """
     Compila la arquitectura DSP analógico-física SIKAH-128 (analog_waveguide_v3) a 48 kHz / 24-bit:
       - Rumble de caverna real derivado del Kick D1 (cero bajo oom-pah MIDI).
-      - Swells de cuerno analógico CS-80/Bodzin de 2 compases con filtro escalera de 24 dB/oct.
-      - Solista continuo legato en guía de ondas cúbica con fraseo Call & Response y Dub Auto-Ducking.
-      - Percusión física sin senoides (resonadores IIR de granadillo, palmas sordas y micro-shaker).
+      - Swells de cuerno analógico CS-80/Bodzin de 2 compases con formantes de bronce y ladder 24 dB/oct.
+      - Solista continuo legato en guía de ondas cúbica con aire de caña, vibrato humano y Dub Auto-Ducking.
+      - Percusión física seca sin senoides (resonadores IIR granadillo, palmas sordas y micro-shaker).
     """
     b_dir = Path(bounces_dir) if bounces_dir is not None else resolve_bounces_dir()
     stems_dir = b_dir / "SIKAH_128_Stems_48k24b"
     stems_dir.mkdir(parents=True, exist_ok=True)
 
     total_bars = sum(n_bars for _, _, _, n_bars in sections)
-    tail_sec = 2.0
+    club_mode = total_bars >= 32
+    tail_sec = 4.0 if club_mode else 2.4
     total_sec = total_bars * BAR_DURATION_SEC + tail_sec
     n_total = int(round(total_sec * SAMPLE_RATE))
 
@@ -1447,39 +1666,59 @@ def render_verification_maquette(
         for bar in range(n_bars):
             b0 = cur_tick
             is_pre_drop_vacuum = label == "6/4" and bar == n_bars - 1
-            if label == "3/2":
-                sec_gain = 0.84 + 0.035 * min(bar, 3)
-            elif label == "6/4":
-                sec_gain = 0.74 if is_pre_drop_vacuum else (0.90 + 0.04 * bar)
-            else:
-                sec_gain = 1.04
+            is_living_exit = club_mode and label == "12/8" and n_bars >= 16 and bar >= n_bars - 8
+            exit_bar = bar - (n_bars - 8) if is_living_exit else -1
 
-            # 1. Kick sísmico D1 con micro-dinámica de pulso
-            if label == "3/2":
-                kick_grid = [0, 960, 1920]
-            elif label == "6/4":
-                kick_grid = [0, 480, 960, 1440] if is_pre_drop_vacuum else [0, 480, 960, 1440, 1920, 2400]
+            if club_mode:
+                if label == "3/2":
+                    sec_gain = 0.80 + 0.14 * (bar / max(1, n_bars - 1))
+                elif label == "6/4":
+                    if is_pre_drop_vacuum:
+                        sec_gain = 0.74
+                    elif bar < 4:
+                        sec_gain = 0.68
+                    else:
+                        sec_gain = 0.78 + 0.18 * ((bar - 4) / max(1, n_bars - 6))
+                elif is_living_exit:
+                    sec_gain = max(0.70, 0.98 - 0.04 * exit_bar)
+                else:
+                    sec_gain = 1.02 + 0.025 * min(2, bar // 8)
             else:
-                kick_grid = [0, 720, 1440, 2160]
+                if label == "3/2":
+                    sec_gain = 0.84 + 0.035 * min(bar, 3)
+                elif label == "6/4":
+                    sec_gain = 0.74 if is_pre_drop_vacuum else (0.90 + 0.04 * bar)
+                else:
+                    sec_gain = 1.04
 
+            # 1. Kick sísmico D1 con micro-dinámica de pulso y coreografía por acto
+            kick_grid = _kick_grid_for_bar(label, bar, n_bars, club_mode=club_mode)
             for idx_k, k_off in enumerate(kick_grid):
                 k_jit = 0 if idx_k == 0 else _jitter_samp(0.9)
                 s_idx = max(0, tick_to_sample(b0 + k_off) + k_jit)
                 kick_onsets.append(s_idx)
-                accent_k = 0.62 if idx_k == 0 else (0.56 if idx_k % 2 == 0 else 0.52)
+                accent_k = 0.52 if idx_k == 0 else (0.46 if idx_k % 2 == 0 else 0.43)
                 k_vel = accent_k * sec_gain * rng.uniform(0.97, 1.03)
                 _place_stereo(kick_l, kick_r, s_idx, np.multiply(kick_proto, k_vel), 1.0, 1.0)
 
-            # 2. Percusión orgánica: Granadillo + Palmas Sordas + Shaker cepillado (evolución por acto)
-            if not is_pre_drop_vacuum and perc_stem_path is None:
+            # 2. Percusión orgánica: Granadillo seco + Palmas Sordas + Shaker cepillado
+            intro_silent_perc = club_mode and label == "3/2" and bar < 4
+            exit_silent_perc = is_living_exit and exit_bar >= 5
+            if not is_pre_drop_vacuum and not intro_silent_perc and not exit_silent_perc and perc_stem_path is None:
                 # Palmas sordas en apoyos estructurales de compás / hemiola
-                palma_offs = (
-                    [960] if (label == "3/2" and bar % 2 == 1)
-                    else ([720, 2160] if label == "6/4" else ([360, 1800] if bar % 2 == 0 else [1080]))
-                )
+                if is_living_exit:
+                    palma_offs = [1080] if exit_bar in (0, 2, 4) else []
+                elif label == "3/2":
+                    palma_offs = [960] if bar % 2 == 1 else []
+                elif label == "6/4":
+                    palma_offs = [720, 2160]
+                else:
+                    palma_offs = [360, 1800] if bar % 2 == 0 else [1080]
+
+                palma_fade = max(0.38, 1.0 - 0.14 * exit_bar) if is_living_exit else 1.0
                 for idx_p, p_off in enumerate(palma_offs):
                     p_hit = _synth_palma_sorda(
-                        amplitude=0.095 * sec_gain * rng.uniform(0.85, 1.12),
+                        amplitude=0.135 * sec_gain * palma_fade * rng.uniform(0.86, 1.12),
                         seed=7000 + bar_idx * 16 + idx_p,
                         sample_rate=SAMPLE_RATE,
                     )
@@ -1493,55 +1732,73 @@ def render_verification_maquette(
                         p_gr,
                     )
 
-                # Castañuela macho espaciada (no en todos los compases del intro)
-                if not (label == "3/2" and bar == 0):
+                # Castañuela macho seca (descansa en Breakdown c.16..19, intro temprana y Living Exit avanzado)
+                allow_macho = (
+                    not (not club_mode and label == "3/2" and bar == 0)
+                    and not (club_mode and label == "3/2" and bar < 8)
+                    and not (club_mode and label == "6/4" and bar < 4)
+                    and not (is_living_exit and exit_bar >= 2)
+                )
+                if allow_macho:
                     macho_offs = [2400] if label == "3/2" else ([1440] if label == "6/4" else [1080, 2520])
+                    if is_living_exit:
+                        macho_offs = [1080]
                     for idx_m, m_off in enumerate(macho_offs):
                         m_hit = _synth_granadillo_wood_strike(
-                            1040.0,
-                            amplitude=0.105 * sec_gain * rng.uniform(0.84, 1.10),
+                            1280.0,
+                            amplitude=0.22 * sec_gain * rng.uniform(0.86, 1.10),
                             seed=1000 + bar_idx * 32 + idx_m,
                             sample_rate=SAMPLE_RATE,
                         )
                         _place_stereo(
                             cast_l,
                             cast_r,
-                            tick_to_sample(b0 + m_off) + _jitter_samp(4.2),
+                            tick_to_sample(b0 + m_off) + _jitter_samp(4.0),
                             m_hit,
                             macho_gl,
                             macho_gr,
                         )
 
-                # Carretilla humana de hembra solo en cierres de semifrase (cada 2 compases, 0 ametralladora)
-                if bar % 2 == 1 or n_bars == 1:
+                # Carretilla humana de hembra en cierres de semifrase (retirada completa en Living Exit)
+                allow_carretilla = (
+                    (bar % 2 == 1 or n_bars == 1 or (club_mode and label == "6/4" and bar == n_bars - 2))
+                    and not (club_mode and label == "3/2" and bar < 12)
+                    and not (club_mode and label == "6/4" and bar < 4)
+                    and not is_living_exit
+                )
+                if allow_carretilla:
                     carretilla_anchor = 1920 if label in ("3/2", "6/4") else 1820
-                    # Aceleración inercial humana de los 4 dedos (meñique -> anular -> corazón -> índice)
                     for idx_c, (dt, scale_v) in enumerate(
-                        [(0, 0.42), (78, 0.58), (144, 0.78), (198, 1.00)]
+                        [(0, 0.48), (68, 0.64), (126, 0.82), (174, 1.00)]
                     ):
                         h_hit = _synth_granadillo_wood_strike(
-                            1580.0,
-                            amplitude=0.092 * scale_v * sec_gain,
+                            1960.0,
+                            amplitude=0.19 * scale_v * sec_gain,
                             seed=2000 + bar_idx * 32 + idx_c,
                             sample_rate=SAMPLE_RATE,
                         )
                         _place_stereo(
                             cast_l,
                             cast_r,
-                            tick_to_sample(b0 + carretilla_anchor + dt) + _jitter_samp(3.1),
+                            tick_to_sample(b0 + carretilla_anchor + dt) + _jitter_samp(2.8),
                             h_hit,
                             hembra_gl,
                             hembra_gr,
                         )
 
-                # Pulso sutil de shaker cepillado off-grid en el clímax 12/8 (Decay Morphing Ley RAE #9)
-                if label == "12/8":
-                    morph = 0.016 + 0.022 * ((bar % 4) / 3.0)
+                # Pulso sutil de shaker cepillado off-grid en 12/8 (se cierra y retira en Living Exit c.56..59)
+                if label == "12/8" and (not is_living_exit or exit_bar < 4):
+                    if is_living_exit:
+                        morph = max(0.011, 0.026 - 0.004 * exit_bar)
+                        sh_scale = max(0.32, 0.85 - 0.16 * exit_bar)
+                    else:
+                        morph = 0.016 + 0.022 * ((bar % 4) / 3.0)
+                        sh_scale = 1.0
                     for sub_i, sh_off in enumerate([240, 480, 960, 1200, 1680, 1920, 2400, 2640]):
                         swing_t = 18 if sub_i % 2 == 0 else 0
                         sh_hit = _synth_brushed_shaker(
                             decay_sec=morph,
-                            amplitude=0.036 * (1.15 if sub_i % 2 == 0 else 0.72),
+                            amplitude=0.042 * sh_scale * (1.15 if sub_i % 2 == 0 else 0.72),
                             seed=9000 + bar_idx * 32 + sub_i,
                             sample_rate=SAMPLE_RATE,
                         )
@@ -1555,10 +1812,15 @@ def render_verification_maquette(
                             sh_gr,
                         )
 
-            # 3. Cuerno / Brass analógico CS-80 en swells largos de 2 compases (cero blat MIDI por compás)
-            if brass_stem_path is None and (bar % 2 == 0 or n_bars == 1):
+            # 3. Cuerno / Trombón analógico CS-80 en swells largos de 2 compases
+            allow_brass_bar = (
+                brass_stem_path is None
+                and (bar % 2 == 0 or n_bars == 1)
+                and not (club_mode and label == "3/2" and bar < 4)
+                and not (is_living_exit and exit_bar >= 6)
+            )
+            if allow_brass_bar:
                 span_bars = 1 if (bar == n_bars - 1) else 2
-                # Si el par incluye el compás Pre-Drop Vacuum, cortar limpio antes del vacío
                 includes_vacuum = (label == "6/4") and (bar + span_bars - 1 == n_bars - 1)
                 if includes_vacuum:
                     swell_dur = (span_bars - 0.48) * BAR_DURATION_SEC
@@ -1567,34 +1829,79 @@ def render_verification_maquette(
 
                 f_d2 = note_name_to_hz("D2")
                 f_a2 = note_name_to_hz("A2")
+                f_fneut3 = note_name_to_hz("F_neut3")
                 f_g3 = note_name_to_hz("G3")
                 f_gs11 = note_name_to_hz("Gs_11th3")
-                f_fneut3 = note_name_to_hz("F_neut3")
+                f_a3 = note_name_to_hz("A3")
+                f_bbneut3 = note_name_to_hz("Bb_neut3")
+                f_csept4 = note_name_to_hz("C_sept4")
 
                 if label == "3/2":
-                    voices = (
-                        [(f_d2, f_d2, 0.0), (f_a2, f_a2, 0.0)]
-                        if bar == 0
-                        else [(f_d2, f_d2, 0.0), (f_g3, f_gs11, 0.42)]
-                    )
-                    c0, cp, c1 = 170.0, 680.0, 210.0
-                    b_amp = 0.23 * sec_gain
+                    if club_mode:
+                        if bar < 8:
+                            voices = [(f_d2, f_d2, 0.0), (f_a2, f_a2, 0.0)]
+                            c0, cp, c1 = 180.0, 620.0, 210.0
+                        elif bar < 12:
+                            voices = [(f_d2, f_d2, 0.0), (f_g3, f_gs11, 0.42)]
+                            c0, cp, c1 = 200.0, 860.0, 240.0
+                        else:
+                            voices = [(f_d2, f_d2, 0.0), (f_fneut3, f_g3, 0.38), (f_a3, f_a3, 0.0)]
+                            c0, cp, c1 = 220.0, 1080.0, 270.0
+                    else:
+                        voices = (
+                            [(f_d2, f_d2, 0.0), (f_a2, f_a2, 0.0)]
+                            if bar == 0
+                            else [(f_d2, f_d2, 0.0), (f_g3, f_gs11, 0.42)]
+                        )
+                        c0, cp, c1 = 210.0, 920.0, 260.0
+                    b_amp = 0.35 * sec_gain
                 elif label == "6/4":
-                    voices = (
-                        [(f_d2, f_d2, 0.0), (f_fneut3, f_a2 * 2.0, 0.35)]
-                        if bar == 0
-                        else [(f_d2, f_d2, 0.0), (f_g3, f_gs11, 0.50)]
-                    )
-                    c0, cp, c1 = 230.0, (1480.0 if includes_vacuum else 1080.0), 310.0
-                    b_amp = 0.27 * sec_gain
+                    if club_mode and bar < 4:
+                        # Breakdown Satin/AIR con séptima armónica natural 7/4 (C_sept4)
+                        voices = [
+                            (f_d2, f_d2, 0.0),
+                            (f_fneut3, f_g3, 0.42),
+                            (f_csept4, f_a3, 0.46),
+                        ]
+                        c0, cp, c1 = 240.0, 1420.0, 340.0
+                    elif club_mode and (bar // 2) % 2 == 1 and not includes_vacuum:
+                        voices = [
+                            (f_d2, f_d2, 0.0),
+                            (f_bbneut3, f_a3, 0.40),
+                            (f_csept4, f_a3, 0.44),
+                        ]
+                        c0, cp, c1 = 250.0, 1460.0, 330.0
+                    else:
+                        voices = (
+                            [(f_d2, f_d2, 0.0), (f_fneut3, f_a2 * 2.0, 0.35)]
+                            if bar == 0
+                            else [(f_d2, f_d2, 0.0), (f_g3, f_gs11, 0.50)]
+                        )
+                        c0, cp, c1 = 260.0, (1760.0 if includes_vacuum else 1380.0), 340.0
+                    b_amp = 0.41 * sec_gain
+                elif is_living_exit:
+                    # Living Exit: el cuerno analógico cierra el pabellón hasta apagarse en c.61
+                    voices = [(f_d2, f_d2, 0.0), (f_a2, f_a2, 0.0)]
+                    c0 = max(185.0, 240.0 - 12.0 * exit_bar)
+                    cp = max(420.0, 980.0 - 135.0 * exit_bar)
+                    c1 = 190.0
+                    b_amp = 0.34 * sec_gain * max(0.45, 0.92 - 0.11 * exit_bar)
                 else:
-                    if (bar // 2) % 2 == 0:
+                    wave_b = club_mode and (8 <= bar < 16)
+                    if wave_b and (bar // 2) % 2 == 0:
+                        voices = [
+                            (f_d2, f_d2, 0.0),
+                            (f_fneut3, f_g3, 0.38),
+                            (f_csept4, f_a3, 0.44),
+                        ]
+                        c0, cp, c1 = 270.0, 1620.0, 320.0
+                    elif (bar // 2) % 2 == 0:
                         voices = [(f_d2, f_d2, 0.0), (f_a2, f_a2, 0.0), (f_g3, f_gs11, 0.38)]
-                        c0, cp, c1 = 240.0, 1280.0, 260.0
+                        c0, cp, c1 = 280.0, (1740.0 if (club_mode and bar >= 16) else 1580.0), 310.0
                     else:
                         voices = [(f_d2, f_d2, 0.0), (f_fneut3, f_g3, 0.40), (f_gs11, f_g3, 0.45)]
-                        c0, cp, c1 = 220.0, 1050.0, 230.0
-                    b_amp = 0.28 * sec_gain
+                        c0, cp, c1 = 250.0, (1520.0 if (club_mode and bar >= 16) else 1360.0), 290.0
+                    b_amp = 0.43 * sec_gain
 
                 sw_l, sw_r = _synth_cs80_brass_swell(
                     voices_hz=voices,
@@ -1662,18 +1969,18 @@ def render_verification_maquette(
     bass_r = bass_l.copy()
 
     tromb_l, tromb_r = carve_polyphonic_mud(
-        tromb_l, tromb_r, sample_rate=SAMPLE_RATE, hpf_hz=82.0, mud_hz=265.0, mud_cut_blend=0.40
+        tromb_l, tromb_r, sample_rate=SAMPLE_RATE, hpf_hz=76.0, mud_hz=250.0, mud_cut_blend=0.25
     )
     tromb_l, tromb_r = _apply_multiband_sc(tromb_l, tromb_r)
 
     lead_l, lead_r = carve_polyphonic_mud(
-        lead_l, lead_r, sample_rate=SAMPLE_RATE, hpf_hz=190.0, mud_hz=375.0, mud_cut_blend=0.42
+        lead_l, lead_r, sample_rate=SAMPLE_RATE, hpf_hz=185.0, mud_hz=370.0, mud_cut_blend=0.38
     )
     lead_l, lead_r = _apply_ducked_dub_echo(
         lead_l,
         lead_r,
         sample_rate=SAMPLE_RATE,
-        delay_sec=0.3125,  # 2 corcheas exactas @ 384 corcheas/min
+        delay_sec=BAR_DURATION_SEC / 6.0,  # 2 corcheas exactas ligadas al tempo actual
         feedback=0.44,
         wet=0.34,
     )
@@ -1691,9 +1998,9 @@ def render_verification_maquette(
     cast_l = freeze_array(cast_l)
     cast_r = freeze_array(cast_r)
 
-    # Sala oscura coherente (18 ms pre-delay, 84% núcleo mono difuso)
-    room_in_l = tromb_l * 0.48 + lead_l * 0.44 + cast_l * 0.34
-    room_in_r = tromb_r * 0.48 + lead_r * 0.44 + cast_r * 0.34
+    # Sala oscura coherente: trombón y caña respiran en madera; castañuelas más secas al frente
+    room_in_l = tromb_l * 0.50 + lead_l * 0.46 + cast_l * 0.22
+    room_in_r = tromb_r * 0.50 + lead_r * 0.46 + cast_r * 0.22
     room_l, room_r = apply_coherent_shared_room(
         room_in_l, room_in_r, sample_rate=SAMPLE_RATE, pre_delay_ms=18.0, rt60_sec=1.35, wet=0.16
     )
@@ -1715,12 +2022,13 @@ def render_verification_maquette(
     # Mono sub-bass DESPUÉS de saturar para garantizar LPC == 1.000 sin intermodulación lateral
     pre_l, pre_r = enforce_low_end_mono(pre_l, pre_r, cutoff_hz=120.0, sample_rate=SAMPLE_RATE)
 
-    # Envolvente final sin clicks en apertura/cierre de archivo
+    # Envolvente final sin clicks en apertura/cierre de archivo (Living Exit suave a cero exacto)
+    final_rel_ms = 420.0 if club_mode else 180.0
     pre_l = apply_zero_crackle_envelope(
-        pre_l, sample_rate=SAMPLE_RATE, attack_ms=15.0, release_ms=180.0
+        pre_l, sample_rate=SAMPLE_RATE, attack_ms=15.0, release_ms=final_rel_ms
     )
     pre_r = apply_zero_crackle_envelope(
-        pre_r, sample_rate=SAMPLE_RATE, attack_ms=15.0, release_ms=180.0
+        pre_r, sample_rate=SAMPLE_RATE, attack_ms=15.0, release_ms=final_rel_ms
     )
 
     peak_pre = float(max(np.max(np.abs(pre_l)), np.max(np.abs(pre_r)), 1e-12))
@@ -1796,13 +2104,22 @@ def render_verification_maquette(
         if any(p is not None for p in (brass_stem_path, lead_stem_path, perc_stem_path))
         else "AUTÓMATA_SINTÉTICO_ESTRUCTURAL"
     )
+    arrangement_label = (
+        "club64" if club_mode else ("short_test" if total_bars <= 4 else "triptych16")
+    )
     audit_summary = {
         "project": "SIKAH-128",
+        "arrangement": arrangement_label,
+        "total_bars": total_bars,
         "engine_version": "analog_waveguide_v3",
+        "mix_revision": "organic_v3.1_tempo_0.60x",
+        "quarter_bpm": QUARTER_BPM,
+        "climax_12_8_bpm": round(QUARTER_BPM * 2.0 / 3.0, 2),
         "classification": classification,
         "gate_notice": (
-            "Síntesis analógico-física continua v3 (Cavern Kick-Rumble + CS-80 Ladder Swell + "
-            "Legato Cubic Waveguide + Auto-Ducked Dub Echo, 48 kHz / 24-bit). "
+            f"Síntesis analógico-física continua v3.1 ({arrangement_label}, {total_bars} compases; "
+            "40% más lento: 12/8 a 76.8 BPM; Cavern Kick-Rumble + CS-80 Brass Flare + "
+            "Legato Reed Breath + Dry Granadillo + Living Exit, 48k/24b). "
             "Admite stems acústicos reales vía --brass-stem / --lead-stem / --perc-stem."
         ),
         "sample_rate": SAMPLE_RATE,
@@ -1827,6 +2144,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generador SIKAH-128 (3/2 -> 6/4 -> 12/8).")
     parser.add_argument("--bounces-dir", type=Path, default=None, help="Directorio de bounces.")
     parser.add_argument("--fl-user-dir", type=Path, default=None, help="Directorio FL Studio User.")
+    parser.add_argument(
+        "--arrangement",
+        type=str,
+        choices=sorted(ARRANGEMENT_PLANS.keys()),
+        default="club64",
+        help="Estructura temporal: club64 (64 compases, 4 actos + Living Exit) o triptych16 (16 c.).",
+    )
     parser.add_argument(
         "--render-maquette",
         action="store_true",
@@ -1863,12 +2187,16 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    assets = export_fl_assets(bounces_dir=args.bounces_dir, fl_user_dir=args.fl_user_dir)
+    selected_sections = ARRANGEMENT_PLANS[args.arrangement]
+    assets = export_fl_assets(
+        bounces_dir=args.bounces_dir, fl_user_dir=args.fl_user_dir, sections=selected_sections
+    )
     print(json.dumps({"exported_assets": {k: str(v) for k, v in assets.items()}}, indent=2))
 
     if args.render_maquette:
         render_out = render_verification_maquette(
             bounces_dir=args.bounces_dir,
+            sections=selected_sections,
             profile_name=args.profile,
             run_mastering=True,
             run_linter_subprocess=args.run_linter,

@@ -18,6 +18,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-ConvolutionReverb")
 
 ROOM_PROFILES = {
@@ -195,7 +200,7 @@ def convolve_acoustic_space(
         out_stereo *= (0.92 / peak)
 
     # Destination paths
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Reverb_Acoustics"
+    out_dir = resolve_bounces_dir() / "Reverb_Acoustics"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:
@@ -240,7 +245,7 @@ def convolve_acoustic_space(
 
 
 if __name__ == "__main__":
-    test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+    test_in = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = convolve_acoustic_space(str(test_in), room_profile="alhambra_flamenco_cave", wet_mix=0.30)
         print("Convolution Reverb output:", res)

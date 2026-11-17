@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 SOTA Bare-Metal Master Production Session Compiler for FL Studio 2025
@@ -16,6 +15,7 @@ Compiles a native binary FL Studio project (.flp) directly linking:
 - Seamless drag-and-drop replacement with native .fst synth presets
 """
 
+import os
 import struct
 import json
 from pathlib import Path

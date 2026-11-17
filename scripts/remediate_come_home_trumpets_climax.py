@@ -33,10 +33,14 @@ import pyloudnorm as pln
 
 
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+
 FLAC_PATH = WORKSPACE_DIR / "bounces/damon_jee_curses_microtonal/Borja Moskv -  Come Home for the Trumpets.flac"
 BACKUP_FLAC = WORKSPACE_DIR / "bounces/damon_jee_curses_microtonal/Borja Moskv -  Come Home for the Trumpets.orig.flac"
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music/FL Studio Bounces"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 OUTPUT_MASTER_WAV = MUSIC_BOUNCES_DIR / "Borja Moskv - Come home for the trumpets (C5 Apex Remaster -1dBTP).wav"
 OUTPUT_MASTER_FLAC = MUSIC_BOUNCES_DIR / "Borja Moskv - Come home for the trumpets (C5 Apex Remaster -1dBTP).flac"
 

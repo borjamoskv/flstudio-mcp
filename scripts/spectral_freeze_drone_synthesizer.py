@@ -21,6 +21,11 @@ from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-SpectralFreeze")
 
 
@@ -68,7 +73,7 @@ def synthesize_spectral_freeze_drone(
     - phase_diffusion: stochastic phase jitter variance preventing metallic comb filtering
     """
     if not input_wav:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         default_wav = bounces_dir / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
         if not default_wav.exists():
             from scripts.fl_headless_audio_synthesizer import render_headless_dark_cyber_flamenco
@@ -153,7 +158,7 @@ def synthesize_spectral_freeze_drone(
         drone_audio = (drone_audio / peak) * 0.88
 
     # Output directory
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Drones_Freeze"
+    out_dir = resolve_bounces_dir() / "Drones_Freeze"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

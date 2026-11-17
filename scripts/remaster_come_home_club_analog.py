@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 DSP Remastering Engine C5-REAL & FL Studio Project Compiler
@@ -15,6 +14,7 @@ Architecture:
 7. Autopoietic FL Studio Project (.flp) compilation linking all stems.
 """
 
+import os
 import sys
 import math
 import argparse
@@ -31,7 +31,9 @@ import librosa
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
-BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+
+BOUNCES_DIR = resolve_bounces_dir()
 STEMS_DIR = BOUNCES_DIR / "Stems" / "Come_Home_Club_Remaster"
 
 INPUT_WAV = Path(os.path.expanduser("~/Downloads/Borja Moskv - Come home for the trumpets (Remix).wav"))

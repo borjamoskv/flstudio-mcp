@@ -24,6 +24,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Dither")
 
 # Lipshitz-Vanderkooy 5th-order Psychoacoustic F-Weighting Noise-Shaping Filter Coefficients
@@ -84,7 +89,7 @@ def apply_psychoacoustic_noise_shaping_dither(
             target_path = p
 
     if not target_path:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         candidates = list(bounces_dir.glob("**/*.wav"))
         if candidates:
             target_path = candidates[0]
@@ -152,7 +157,7 @@ def apply_psychoacoustic_noise_shaping_dither(
     theoretical_snr_db = round(target_bit_depth * 6.02 + 1.76, 1)
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Dither_NoiseShaping"
+    out_dir = resolve_bounces_dir() / "Dither_NoiseShaping"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     mode_str = "NoiseShaped" if noise_shaping else "FlatTPDF"

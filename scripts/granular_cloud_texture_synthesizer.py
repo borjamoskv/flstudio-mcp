@@ -20,6 +20,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-GranularCloud")
 
 
@@ -170,7 +175,7 @@ def synthesize_granular_cloud(
 
     # Target file
     if not output_wav:
-        out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Granular"
+        out_dir = resolve_bounces_dir() / "Granular"
         out_dir.mkdir(parents=True, exist_ok=True)
         stem_name = in_path.stem
         output_file = out_dir / f"{stem_name}_Granular_Cloud_{int(output_duration_sec)}s.wav"
@@ -202,7 +207,7 @@ def synthesize_granular_cloud(
 
 
 if __name__ == "__main__":
-    test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+    test_in = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = synthesize_granular_cloud(str(test_in), output_duration_sec=4.0)
         print("Granular Cloud output:", res)

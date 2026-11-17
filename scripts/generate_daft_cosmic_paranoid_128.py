@@ -32,6 +32,7 @@ WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
 from scripts.flp_multitrack_stem_compiler import compile_multitrack_stems_flp  # noqa: E402
 
 SAMPLE_RATE = 48000
@@ -43,7 +44,7 @@ TOTAL_BARS = 128
 DURATION_SEC = TOTAL_BARS * BAR_SEC
 TOTAL_SAMPLES = int(round(SAMPLE_RATE * DURATION_SEC))
 
-BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+BOUNCES_DIR = resolve_bounces_dir()
 STEMS_DIR = BOUNCES_DIR / "DAFT_COSMIC_PARANOID_128_STEMS"
 MASTER_WAV_PATH = BOUNCES_DIR / "DAFT_COSMIC_PARANOID_128_MASTER_48k_24b.wav"
 MASTER_MP3_PATH = BOUNCES_DIR / "DAFT_COSMIC_PARANOID_128_MASTER_320k.mp3"

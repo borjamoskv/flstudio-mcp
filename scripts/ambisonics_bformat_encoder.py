@@ -18,6 +18,11 @@ from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Ambisonics")
 
 
@@ -129,7 +134,7 @@ def encode_to_ambisonics_bformat(
 
     # Target path setup
     if not output_wav:
-        out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Ambisonics"
+        out_dir = resolve_bounces_dir() / "Ambisonics"
         out_dir.mkdir(parents=True, exist_ok=True)
         stem_name = in_path.stem
         output_file = out_dir / f"{stem_name}_Ambisonics_BFormat_ACN.wav"
@@ -165,7 +170,7 @@ def encode_to_ambisonics_bformat(
 
 
 if __name__ == "__main__":
-    test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+    test_in = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = encode_to_ambisonics_bformat(str(test_in), azimuth_deg=45.0, elevation_deg=15.0)
         print("Ambisonics B-Format Encoder output:", res)

@@ -19,6 +19,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-AmbisonicsDecorrelator")
 
 # Mutually prime delay lengths (in samples at 44.1 kHz)
@@ -121,7 +126,7 @@ def decorrelate_spatial_ambisonics(
         out_audio *= (0.92 / peak)
 
     # Destination paths
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Diffuse_Fields"
+    out_dir = resolve_bounces_dir() / "Diffuse_Fields"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:
@@ -151,7 +156,7 @@ def decorrelate_spatial_ambisonics(
 
 
 if __name__ == "__main__":
-    bounces = Path.home() / "Music/FL Studio Bounces"
+    bounces = resolve_bounces_dir()
     test_amb = bounces / "Ambisonics/Dark_Cyber_Flamenco_Audio_Preview_16Bars_Ambisonics_BFormat_ACN.wav"
     if test_amb.exists():
         res = decorrelate_spatial_ambisonics(str(test_amb), diffuse_amount=0.35)

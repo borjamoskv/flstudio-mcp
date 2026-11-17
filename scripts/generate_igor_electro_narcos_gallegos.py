@@ -37,8 +37,13 @@ TOTAL_BARS = 64
 TOTAL_DURATION = BAR_DUR * TOTAL_BARS     # ~118.15 seg (1:58 min)
 TOTAL_SAMPLES = int(SAMPLE_RATE * TOTAL_DURATION)
 
+WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+
 # Rutas Centralizadas de Producción
-BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+BOUNCES_DIR = resolve_bounces_dir()
 STEMS_DIR = BOUNCES_DIR / "IGOR_ELECTRO_STEMS"
 PROJECTS_DIR = BOUNCES_DIR / "Projects"
 VOCALS_DIR_V2 = Path("/tmp/igor_narcos_v2")

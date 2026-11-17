@@ -25,6 +25,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 import sys
+
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
 sys.path.append(str(Path(__file__).resolve().parent))
 from fl_fsc_score_builder import FLScoreBuilder
 
@@ -276,7 +281,7 @@ def compose_algorithmic_modal_counterpoint(
         vertical_intervals.append(abs(cp[i] - cf[i]))
 
     # Export paths
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Scores"
+    out_dir = resolve_bounces_dir() / "Scores"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fsc_file = Path(output_fsc).expanduser().resolve() if output_fsc else out_dir / f"Fuxian_Counterpoint_{mode_clean.capitalize()}_{bars}bars_{counterpoint_position}.fsc"

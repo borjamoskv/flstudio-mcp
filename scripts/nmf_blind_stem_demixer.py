@@ -23,6 +23,11 @@ from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-NMFDemixer")
 
 
@@ -99,7 +104,7 @@ def demix_multitrack_nmf_blind(
     - Air / Atmosphere
     """
     if not input_wav:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         default_wav = bounces_dir / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
         if not default_wav.exists():
             from scripts.fl_headless_audio_synthesizer import render_headless_dark_cyber_flamenco
@@ -181,7 +186,7 @@ def demix_multitrack_nmf_blind(
 
     # Output directory
     if not output_dir:
-        out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Demixed" / in_file.stem
+        out_dir = resolve_bounces_dir() / "Demixed" / in_file.stem
     else:
         out_dir = Path(output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)

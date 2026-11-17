@@ -17,12 +17,17 @@ import json
 from pathlib import Path
 from typing import Dict, Any
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir, resolve_fl_user_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir, resolve_fl_user_dir
+
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
-TUNING_DIR = Path.home() / "Documents" / "Image-Line" / "FL Studio" / "Settings" / "Tuning"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
+TUNING_DIR = resolve_fl_user_dir() / "Settings" / "Tuning"
 
 
 # 12-TET nominal cents

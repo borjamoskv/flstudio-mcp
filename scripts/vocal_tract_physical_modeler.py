@@ -16,6 +16,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-VocalTract")
 
 # Vowel Formants (F1, F2, F3, F4 in Hz) and Bandwidths (BW1, BW2, BW3, BW4 in Hz)
@@ -142,7 +147,7 @@ def synthesize_formant_vocal_tract(
         right_chan = (right_chan / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Vocal_Tract"
+    out_dir = resolve_bounces_dir() / "Vocal_Tract"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = Path(output_wav).expanduser().resolve() if output_wav else out_dir / f"Vocal_Tract_Vowel_{vowel_key}_{int(duration_sec)}s_MIDI_{int(pitch_midi)}.wav"
 

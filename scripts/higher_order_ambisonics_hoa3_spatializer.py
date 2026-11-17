@@ -25,6 +25,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-HOA3")
 
 
@@ -136,7 +141,7 @@ def encode_higher_order_ambisonics_hoa3(
         if p.exists():
             target_path = p
 
-    bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+    bounces_dir = resolve_bounces_dir()
 
     if not target_path:
         candidates = list(bounces_dir.glob("**/*.wav"))
@@ -223,7 +228,7 @@ def encode_higher_order_ambisonics_hoa3(
         right_ear = (right_ear / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Ambisonics_HOA3"
+    out_dir = resolve_bounces_dir() / "Ambisonics_HOA3"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

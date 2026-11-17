@@ -20,6 +20,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Waveguide")
 
 
@@ -174,7 +179,7 @@ def synthesize_waveguide_flute(
     output_signal = np.tanh(output_signal)
 
     # Centralized destination
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Physical_Modeling"
+    out_dir = resolve_bounces_dir() / "Physical_Modeling"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

@@ -22,6 +22,11 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 import itertools
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Tonnetz")
 
 # Pitch Class Mapping
@@ -231,7 +236,7 @@ def optimize_neo_riemannian_progression(
             )
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Tonnetz_Harmonies"
+    out_dir = resolve_bounces_dir() / "Tonnetz_Harmonies"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_fsc:

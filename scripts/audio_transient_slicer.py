@@ -21,12 +21,17 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 # Ensure workspace is in sys.path
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 
 
 def read_wav_samples(wav_path: Path) -> Tuple[List[float], int, int]:

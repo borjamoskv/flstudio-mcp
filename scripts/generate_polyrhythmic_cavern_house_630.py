@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 Polirritmia Cavernosa (Club House Avant-Garde Edition 6:30)
@@ -27,6 +26,7 @@ Synthesizes a high-energy dancefloor House version without losing the avant-gard
 5. Deterministic C5 Rubin Acoustic Linter verification (Crest Factor >= 12 dB, Coherence >= 0.95).
 """
 
+import os
 import sys
 import math
 import numpy as np

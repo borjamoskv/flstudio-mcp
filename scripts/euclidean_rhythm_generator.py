@@ -9,6 +9,11 @@ from pathlib import Path
 from typing import List
 import mido
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 
 def bjorklund(k: int, n: int) -> List[int]:
     """Distributes k pulses as evenly as possible over n steps using Bjorklund's algorithm."""
@@ -45,7 +50,7 @@ def generate_euclidean_midi_clip(
     track_name: str = "Euclidean Groove"
 ) -> Path:
     if output_path is None:
-        output_path = Path.home() / f"Music/FL Studio Bounces/Euclidean_E_{pulses}_{steps}_{int(bpm)}BPM.mid"
+        output_path = resolve_bounces_dir() / f"Euclidean_E_{pulses}_{steps}_{int(bpm)}BPM.mid"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     pattern = bjorklund(pulses, steps)
@@ -95,6 +100,6 @@ def generate_euclidean_midi_clip(
 
 
 if __name__ == "__main__":
-    out = Path.home() / "Music/FL Studio Bounces/Euclidean_E_7_12_Bulerias.mid"
+    out = resolve_bounces_dir() / "Euclidean_E_7_12_Bulerias.mid"
     generate_euclidean_midi_clip(pulses=7, steps=12, bars=8, bpm=112.0, note_number=69, swing_percent=62.0, output_path=out, track_name="Palmas Bulerías")
     print(f"✅ Generated Euclidean MIDI: {out}")

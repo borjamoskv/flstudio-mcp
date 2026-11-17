@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 Polirritmia Cavernosa (Apex Master Edition · 6:30)
@@ -28,6 +27,7 @@ The Ultimate Avant-Garde Club House Synthesis:
 8. Deterministic C5 Rubin Acoustic Linter verification (Crest Factor >= 12 dB, Coherence >= 0.95).
 """
 
+import os
 import sys
 import math
 import numpy as np

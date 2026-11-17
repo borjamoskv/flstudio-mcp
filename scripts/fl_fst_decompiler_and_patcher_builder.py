@@ -15,10 +15,15 @@ import struct
 import json
 from typing import Dict, Any
 
+try:
+    from scripts.bounces_paths import resolve_fl_user_dir
+except ImportError:
+    from bounces_paths import resolve_fl_user_dir
+
 WORKSPACE_DIR = os.path.expanduser("~/10_PROJECTS/flstudio-mcp")
 SAMPLES_DIR = os.path.join(WORKSPACE_DIR, "samples")
 PATCHER_JSON_PATH = os.path.join(SAMPLES_DIR, "patcher_sota_master_graph.json")
-VFX_SCRIPT_PATH = os.path.expanduser("~/Documents/Image-Line/FL Studio/Settings/VFX Script/C5_24TET_Bayati_Remapper.py")
+VFX_SCRIPT_PATH = str(resolve_fl_user_dir() / "Settings" / "VFX Script" / "C5_24TET_Bayati_Remapper.py")
 
 os.makedirs(SAMPLES_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(VFX_SCRIPT_PATH), exist_ok=True)

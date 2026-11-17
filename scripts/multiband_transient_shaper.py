@@ -22,6 +22,11 @@ from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-TransientShaper")
 
 
@@ -143,7 +148,7 @@ def shape_multiband_transients(
     - high: > 3000 Hz (e.g. hi-hat crack vs cymbal wash)
     """
     if not input_wav:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         default_wav = bounces_dir / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
         if not default_wav.exists():
             from scripts.fl_headless_audio_synthesizer import render_headless_dark_cyber_flamenco
@@ -187,7 +192,7 @@ def shape_multiband_transients(
         recombined = (recombined / peak) * 0.95
 
     # Export to centralized vault
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Transient_Shaper"
+    out_dir = resolve_bounces_dir() / "Transient_Shaper"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

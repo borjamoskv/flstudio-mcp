@@ -33,11 +33,16 @@ from scipy import signal
 from pathlib import Path
 import sys
 
+WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+
 MUSIC_DIR = Path.home() / "Music"
 OUTPUT_WAV = MUSIC_DIR / "MINIMAL_MICROTONAL_SOUL_LOCRIAN_7MIN.wav"
 OUTPUT_MP3 = MUSIC_DIR / "MINIMAL_MICROTONAL_SOUL_LOCRIAN_7MIN.mp3"
 STEMS_DIR = MUSIC_DIR / "Synthesized_Stems" / "Minimal_Microtonal_Soul_Locrian"
-PROJECTS_DIR = MUSIC_DIR / "FL Studio Bounces" / "Projects"
+PROJECTS_DIR = resolve_bounces_dir() / "Projects"
 OUTPUT_FLP = PROJECTS_DIR / "Minimal_Microtonal_Soul_Locrian_Session.flp"
 
 SAMPLES_BASE = MUSIC_DIR / "LIBRARY" / "04-Stems" / "Samples" / "SAMPLES"

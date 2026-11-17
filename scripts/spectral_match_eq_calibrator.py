@@ -19,6 +19,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-SpectralMatchEQ")
 
 
@@ -145,7 +150,7 @@ def calibrate_spectral_match_eq(
         matched_audio *= (0.92 / peak)
 
     # Output paths
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Match_EQ"
+    out_dir = resolve_bounces_dir() / "Match_EQ"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:
@@ -178,7 +183,7 @@ def calibrate_spectral_match_eq(
 
 
 if __name__ == "__main__":
-    test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+    test_in = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = calibrate_spectral_match_eq(str(test_in), target_curve="pink_noise_1overf")
         print("Match EQ Calibrator output:", res)

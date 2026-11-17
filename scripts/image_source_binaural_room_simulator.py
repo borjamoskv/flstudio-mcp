@@ -22,6 +22,11 @@ from typing import Dict, Any, Optional, Tuple
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-BRIR")
 
 SPEED_OF_SOUND = 343.0  # m/s in air at 20°C
@@ -162,7 +167,7 @@ def simulate_binaural_room_acoustics(
     and convolves dry audio with the synthesized stereo BRIR.
     """
     if not input_wav:
-        bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+        bounces_dir = resolve_bounces_dir()
         default_wav = bounces_dir / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
         if not default_wav.exists():
             from scripts.fl_headless_audio_synthesizer import render_headless_dark_cyber_flamenco
@@ -187,7 +192,7 @@ def simulate_binaural_room_acoustics(
     )
 
     # Save BRIR stereo impulse response file
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "BRIR_Acoustics"
+    out_dir = resolve_bounces_dir() / "BRIR_Acoustics"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     brir_file = out_dir / f"BRIR_Shoebox_{room_dims[0]}x{room_dims[1]}x{room_dims[2]}m_{total_images}Rays.wav"

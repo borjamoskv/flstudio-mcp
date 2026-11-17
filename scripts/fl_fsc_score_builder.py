@@ -25,6 +25,11 @@ import struct
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 PPQ_DEFAULT = 96  # Standard FL Studio Score PPQ
 
 
@@ -162,7 +167,7 @@ class FLScoreBuilder:
 def generate_dark_cyber_flamenco_fsc(output_path: Optional[str] = None, root_pitch: int = 50) -> Dict[str, Any]:
     """Generates a Dark Cyber-Flamenco compás score in native .fsc format."""
     if output_path is None:
-        bounces = Path.home() / "Music" / "FL Studio Bounces" / "Scores"
+        bounces = resolve_bounces_dir() / "Scores"
         output_path = str(bounces / "Dark_Cyber_Flamenco_Score.fsc")
     builder = FLScoreBuilder(ppq=96)
     builder.add_flamenco_compas(root_pitch=root_pitch, bars=4)

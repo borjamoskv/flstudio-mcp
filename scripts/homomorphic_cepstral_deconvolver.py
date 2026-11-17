@@ -27,6 +27,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Cepstrum")
 
 
@@ -75,7 +80,7 @@ def deconvolve_homomorphic_cepstrum(
         if p.exists():
             target_path = p
 
-    bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+    bounces_dir = resolve_bounces_dir()
 
     if not target_path:
         candidates = list(bounces_dir.glob("**/*.wav"))
@@ -183,7 +188,7 @@ def deconvolve_homomorphic_cepstrum(
         out_signal = (out_signal / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Cepstral_Deconvolved"
+    out_dir = resolve_bounces_dir() / "Cepstral_Deconvolved"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     mode_label = "Transplanted" if res_path else "Reshaped"

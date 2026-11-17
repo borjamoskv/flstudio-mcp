@@ -21,6 +21,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Volterra")
 
 
@@ -74,7 +79,7 @@ def saturate_volterra_kernel_analog(
         if p.exists():
             target_path = p
 
-    bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+    bounces_dir = resolve_bounces_dir()
 
     if not target_path:
         candidates = list(bounces_dir.glob("**/*.wav"))
@@ -144,7 +149,7 @@ def saturate_volterra_kernel_analog(
         out_audio = (out_audio / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Volterra_Analog"
+    out_dir = resolve_bounces_dir() / "Volterra_Analog"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

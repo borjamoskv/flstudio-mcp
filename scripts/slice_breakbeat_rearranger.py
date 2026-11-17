@@ -18,11 +18,16 @@ import json
 from pathlib import Path
 from typing import Dict, Any
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 
 
 def generate_slice_arrangement(

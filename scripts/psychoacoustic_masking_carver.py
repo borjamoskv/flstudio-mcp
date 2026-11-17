@@ -27,6 +27,11 @@ from pathlib import Path
 from typing import Dict, List, Any, Tuple, Optional
 
 try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
+try:
     import numpy as np
     import soundfile as sf
     HAS_NUMPY_SF = True
@@ -37,7 +42,7 @@ WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-MUSIC_BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 
 # 24 Bark Critical Band Center Frequencies (Hz) and Bandwidths (Hz)
 BARK_BANDS = [

@@ -18,6 +18,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-ShepardRisset")
 
 
@@ -89,7 +94,7 @@ def synthesize_shepard_risset_glissando(
         right_channel = (right_channel / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Shepard_Risset"
+    out_dir = resolve_bounces_dir() / "Shepard_Risset"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

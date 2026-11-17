@@ -19,6 +19,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal, ndimage
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-HPSS")
 
 
@@ -126,7 +131,7 @@ def separate_harmonic_percussive(
 
     # Output paths
     if not output_dir:
-        out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Demixed"
+        out_dir = resolve_bounces_dir() / "Demixed"
     else:
         out_dir = Path(output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -163,7 +168,7 @@ def separate_harmonic_percussive(
 
 
 if __name__ == "__main__":
-    test_in = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
+    test_in = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     if test_in.exists():
         res = separate_harmonic_percussive(str(test_in))
         print("HPSS Demixer output:", res)

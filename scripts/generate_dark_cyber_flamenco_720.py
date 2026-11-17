@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 Dark Cyber-Flamenco 7:20 Zenith Engine (v5 - Pure Acoustic Nylon & Cypress Wood Physics)
@@ -24,10 +23,16 @@ Deconstrucción y erradicación del timbre sintético/eléctrico en la guitarra:
 """
 
 import math
+import sys
 import numpy as np
 import soundfile as sf
 from pathlib import Path
 import scipy.signal as signal
+
+WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
 
 SAMPLE_RATE = 44100
 DURATION_SEC = 440.0  # 7:20 exactos
@@ -555,7 +560,7 @@ def render_dark_cyber_flamenco_v5():
         right *= gain
         
     stereo = np.vstack((left, right)).T
-    out_dir = Path(os.path.expanduser("~/Music/FL Studio Bounces"))
+    out_dir = resolve_bounces_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "Dark_Cyber_Flamenco_Buleria_720.wav"
     

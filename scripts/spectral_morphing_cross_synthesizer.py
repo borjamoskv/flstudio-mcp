@@ -18,6 +18,11 @@ from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from scipy import signal
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-SpectralMorph")
 
 
@@ -139,7 +144,7 @@ def morph_spectral_cross_synthesis(
         audio_out = audio_out * (0.92 / peak)
 
     # Destination paths
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Spectral_Morphs"
+    out_dir = resolve_bounces_dir() / "Spectral_Morphs"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:
@@ -170,7 +175,7 @@ def morph_spectral_cross_synthesis(
 
 
 if __name__ == "__main__":
-    bounces = Path.home() / "Music/FL Studio Bounces"
+    bounces = resolve_bounces_dir()
     c_test = bounces / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav"
     m_test = bounces / "Neuroacoustics/Neuroacoustic_gamma_40hz_146Hz_Carrier.wav"
     if c_test.exists() and m_test.exists():

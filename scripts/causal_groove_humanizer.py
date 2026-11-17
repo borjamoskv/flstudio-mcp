@@ -22,6 +22,11 @@ import numpy as np
 
 from scripts.fl_fsc_score_builder import FLScoreBuilder
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-GrooveHumanizer")
 
 
@@ -111,7 +116,7 @@ def humanize_groove_causal(
 
     # If no input FSC is provided, find one in centralized bounces or generate baseline
     if not input_fsc:
-        bounces = Path.home() / "Music" / "FL Studio Bounces" / "Scores"
+        bounces = resolve_bounces_dir() / "Scores"
         default_fsc = bounces / "Dark_Cyber_Flamenco_Score.fsc"
         if not default_fsc.exists():
             from scripts.fl_fsc_score_builder import generate_dark_cyber_flamenco_score
@@ -191,7 +196,7 @@ def humanize_groove_causal(
         humanized_notes.append({"pitch": n["pitch"], "old_pos": orig_pos, "new_pos": new_pos, "vel": new_vel})
 
     # Export paths
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Groove_Humanized"
+    out_dir = resolve_bounces_dir() / "Groove_Humanized"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_fsc:

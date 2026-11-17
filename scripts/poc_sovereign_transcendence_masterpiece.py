@@ -55,6 +55,7 @@ from mastering_chain_ebu_r128 import master_audio_ebu_r128  # noqa: E402
 from stochastic_resonance_dither_engine import apply_psychoacoustic_noise_shaping_dither  # noqa: E402
 from psychoacoustic_mir_extractor import extract_harmonic_perceptual_features  # noqa: E402
 from flp_multitrack_stem_compiler import compile_multitrack_stems_flp  # noqa: E402
+from bounces_paths import resolve_bounces_dir  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("POC-SovereignTranscendence")
@@ -65,7 +66,7 @@ def run_sovereign_transcendence_poc() -> Dict[str, Any]:
     logger.info("═══ Launching POC: Sovereign Transcendence End-to-End Masterpiece ═══")
 
     # Establish centralized vault directory
-    poc_dir = Path.home() / "Music" / "FL Studio Bounces" / "POC_Sovereign_Transcendence"
+    poc_dir = resolve_bounces_dir() / "POC_Sovereign_Transcendence"
     stems_dir = poc_dir / "Stems"
     scores_dir = poc_dir / "Scores"
     master_dir = poc_dir / "Master"

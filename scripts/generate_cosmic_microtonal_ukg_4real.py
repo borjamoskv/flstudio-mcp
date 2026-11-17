@@ -43,13 +43,16 @@ from pathlib import Path
 import sys
 
 # Add scripts directory for FLP compiler
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
+
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
 
 MUSIC_DIR = Path.home() / "Music"
 OUTPUT_WAV = MUSIC_DIR / "COSMIC_MICROTONAL_UKG_4REAL.wav"
 OUTPUT_MP3 = MUSIC_DIR / "COSMIC_MICROTONAL_UKG_4REAL.mp3"
 STEMS_DIR = MUSIC_DIR / "Synthesized_Stems" / "Cosmic_Microtonal_UKG_4Real"
-PROJECTS_DIR = MUSIC_DIR / "FL Studio Bounces" / "Projects"
+PROJECTS_DIR = resolve_bounces_dir() / "Projects"
 OUTPUT_FLP = PROJECTS_DIR / "Cosmic_Microtonal_UKG_4Real_Session.flp"
 
 SAMPLES_BASE = MUSIC_DIR / "LIBRARY" / "04-Stems" / "Samples" / "SAMPLES"

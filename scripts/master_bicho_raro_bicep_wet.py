@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 WET BICEP EDIT DSP ENGINE C5-REAL ("MÁS HUMEDAD")
@@ -11,6 +10,7 @@ Inyección de Humedad / Densidad Ambiental Líquida (Lush Wet Reverb & Delay Spa
 - Target: -12.0 LUFS / -1.0 dBFS True Peak.
 """
 
+import os
 import numpy as np
 import soundfile as sf
 from scipy import signal

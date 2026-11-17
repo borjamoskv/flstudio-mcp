@@ -27,6 +27,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Chaos")
 
 
@@ -169,7 +174,7 @@ def synthesize_chaotic_attractor_oscillator(
         right_chan = (right_chan / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Chaotic_Attractors"
+    out_dir = resolve_bounces_dir() / "Chaotic_Attractors"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

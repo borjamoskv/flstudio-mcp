@@ -25,6 +25,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-PhaseAlign")
 
 
@@ -94,7 +99,7 @@ def align_multitrack_stems_phase(
     """
     Measures and aligns acoustic phase between two multitrack stems to eliminate comb filtering.
     """
-    bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+    bounces_dir = resolve_bounces_dir()
 
     # Resolve reference WAV
     ref_path = None
@@ -209,7 +214,7 @@ def align_multitrack_stems_phase(
         sum_mix = (sum_mix / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Phase_Aligned"
+    out_dir = resolve_bounces_dir() / "Phase_Aligned"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out_file = Path(output_wav).expanduser().resolve() if output_wav else out_dir / f"Aligned_Sum_{ref_tag}_x_{sec_tag}.wav"

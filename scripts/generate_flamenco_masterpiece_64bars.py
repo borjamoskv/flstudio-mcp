@@ -1,7 +1,11 @@
 import mido
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 import random
-from pathlib import Path
+
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
 
 PPQ = 480
 BPM = 112
@@ -364,7 +368,7 @@ midi.tracks.append(build_track(lead_events, 'Dark Phrygian Lead Solo', channel=4
 midi.tracks.append(build_track(drum_events, 'Synthwave Linndrum Kit', channel=9))
 midi.tracks.append(build_track(palmas_cajon_events, 'Palmas & Cajon Flamenco', channel=10))
 
-out_file = Path.home() / "Music/FL Studio Bounces/Dark_Cyber_Flamenco_Masterpiece_64Bars.mid"
+out_file = resolve_bounces_dir() / "Dark_Cyber_Flamenco_Masterpiece_64Bars.mid"
 out_file.parent.mkdir(parents=True, exist_ok=True)
 midi.save(str(out_file))
 print(f"[✓] 64-Bar Masterpiece MIDI successfully saved to: {out_file}")

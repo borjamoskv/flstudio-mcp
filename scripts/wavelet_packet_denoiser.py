@@ -27,6 +27,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
 import numpy as np
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 logger = logging.getLogger("FLStudio-Wavelet")
 
 # Daubechies 4 (db4) Quadrature Mirror Scaling Filter Coefficients
@@ -124,7 +129,7 @@ def denoise_wavelet_packet_transform(
         if p.exists():
             target_path = p
 
-    bounces_dir = Path.home() / "Music" / "FL Studio Bounces"
+    bounces_dir = resolve_bounces_dir()
 
     if not target_path:
         candidates = list(bounces_dir.glob("**/*.wav"))
@@ -202,7 +207,7 @@ def denoise_wavelet_packet_transform(
         denoised_audio = (denoised_audio / peak) * 0.88
 
     # Centralized export
-    out_dir = Path.home() / "Music" / "FL Studio Bounces" / "Wavelet_Denoised"
+    out_dir = resolve_bounces_dir() / "Wavelet_Denoised"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not output_wav:

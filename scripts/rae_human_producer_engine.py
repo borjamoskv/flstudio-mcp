@@ -26,7 +26,6 @@ sintetice y mezcle música indistinguible de un productor e intérprete humano:
 import json
 import math
 import sys
-import wave
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -37,15 +36,104 @@ WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+from scripts.c5_dsp_core import (  # noqa: E402
+    apply_coherent_shared_room,
+    apply_noncommutative_dub_echo,
+    apply_spectral_balance_eq,
+    apply_wdf_warm_saturator,
+    apply_zero_crackle_envelope,
+    carve_polyphonic_mud,
+    enforce_low_end_mono,
+    generate_warm_analog_tape_bed,
+    lr4_zero_phase_crossover,
+    make_time_axis,
+    oversampled_soft_saturate,
+    polyblep_pulse,
+    polyblep_saw,
+    synthesize_analog_hihat_cymbal,
+    synthesize_karplus_strong_pluck,
+    synthesize_phase_locked_kick,
+    synthesize_rhodes_electromechanical,
+    synthesize_string_ensemble_pad,
+    write_pcm_wav,
+    zdf_moog_ladder_filter,
+)
+from scripts.c5_real_assets_bridge import (  # noqa: E402
+    get_round_robin_drum_pool,
+    shape_velocity_sample,
+)
 from scripts.fl_fsc_score_builder import FLScoreBuilder  # noqa: E402
 from scripts.fl_native_plugin_reverse_engine import inspect_plugin_rae  # noqa: E402
+
+
+def _mix_drum_hit(
+    buf_l: np.ndarray,
+    buf_r: np.ndarray,
+    start_idx: int,
+    sample: np.ndarray,
+    gain: float = 1.0,
+    pan: float = 0.0,
+    choke_range: Optional[tuple] = None,
+    sample_rate: int = 48000,
+) -> tuple:
+    """
+    Places a mono (N,) or stereo (N, 2) drum sample into `buf_l, buf_r` with optional
+    stereo panning and smooth 6 ms choke damping of any active preceding hit.
+    """
+    n_total = len(buf_l)
+    if start_idx >= n_total or start_idx < 0 or len(sample) == 0:
+        return choke_range
+
+    if choke_range is not None:
+        prev_start, prev_end = choke_range
+        if prev_start <= start_idx < prev_end:
+            choke_n = min(prev_end - start_idx, max(16, int(round(0.006 * sample_rate))))
+            ramp = 0.5 * (1.0 + np.cos(np.pi * np.arange(choke_n, dtype=np.float64) / max(1, choke_n - 1)))
+            buf_l[start_idx : start_idx + choke_n] *= ramp
+            buf_r[start_idx : start_idx + choke_n] *= ramp
+            if start_idx + choke_n < prev_end:
+                buf_l[start_idx + choke_n : prev_end] *= 0.05
+                buf_r[start_idx + choke_n : prev_end] *= 0.05
+
+    n_copy = min(len(sample), n_total - start_idx)
+    if n_copy <= 0:
+        return choke_range
+
+    p = float(np.clip(pan, -0.85, 0.85))
+    gl = float(gain) * math.sqrt(max(0.05, 0.5 * (1.0 - p))) * 1.4142
+    gr = float(gain) * math.sqrt(max(0.05, 0.5 * (1.0 + p))) * 1.4142
+    if sample.ndim == 2 and sample.shape[1] >= 2:
+        buf_l[start_idx : start_idx + n_copy] += sample[:n_copy, 0] * gl
+        buf_r[start_idx : start_idx + n_copy] += sample[:n_copy, 1] * gr
+    else:
+        mono = sample[:n_copy] if sample.ndim == 1 else sample[:n_copy, 0]
+        buf_l[start_idx : start_idx + n_copy] += mono * gl
+        buf_r[start_idx : start_idx + n_copy] += mono * gr
+
+    return (start_idx, start_idx + n_copy)
+
+
+def _voice_lead_frequencies(freqs_hz: List[float], phrase_pos: int) -> List[float]:
+    """Smooth chord voice-leading across 4-bar phrases to prevent robotic block jumps."""
+    if len(freqs_hz) < 3 or phrase_pos % 4 == 0:
+        return list(freqs_hz)
+    res = list(freqs_hz)
+    p = phrase_pos % 4
+    if p == 1:
+        res[0] = res[0] * 2.0
+    elif p == 2:
+        res[-1] = res[-1] * 0.5
+    elif p == 3 and len(res) >= 4:
+        res[1] = res[1] * 2.0
+    return sorted(res)
 from scripts.mastering_reverse_engine_fl import (  # noqa: E402
     compute_integrated_lufs,
     compute_rubin_metrics,
     compute_true_peak_dbtp,
 )
 
-BOUNCES_DIR = Path.home() / "Music/FL Studio Bounces/RAE_Human_Engine"
+BOUNCES_DIR = resolve_bounces_dir() / "RAE_Human_Engine"
 DOC_GUIDE_PATH = WORKSPACE_DIR / "docs/fl_studio_rae_human_production_protocol.md"
 
 
@@ -169,19 +257,19 @@ def synthesize_human_kick_and_coupled_sidechain(
     total_sec = bar_sec * bars
     n_samples = int(total_sec * sample_rate)
 
-    # Parámetros del Kick según estilo
+    # Parámetros del Kick según estilo (calibrados C5 para punch dinámico con Crest Factor >= 9.5 dB)
     if kick_style == "deep_warm_analog":
         f_click, f_punch = 2400.0, 135.0
-        tau_click, tau_punch, tau_body = 0.005, 0.032, 0.240
-        drive = 1.65
+        tau_click, tau_punch, tau_body = 0.0045, 0.028, 0.165
+        drive_db = 1.6
     elif kick_style == "industrial_techno":
-        f_click, f_punch = 4200.0, 175.0
-        tau_click, tau_punch, tau_body = 0.004, 0.024, 0.210
-        drive = 2.25
+        f_click, f_punch = 3200.0, 165.0
+        tau_click, tau_punch, tau_body = 0.0035, 0.022, 0.145
+        drive_db = 2.1
     else:  # punchy_club_human
-        f_click, f_punch = 3200.0, 150.0
-        tau_click, tau_punch, tau_body = 0.0045, 0.028, 0.220
-        drive = 1.85
+        f_click, f_punch = 2850.0, 150.0
+        tau_click, tau_punch, tau_body = 0.0040, 0.024, 0.155
+        drive_db = 1.8
 
     kick_track = np.zeros(n_samples, dtype=np.float64)
     sidechain_env_sub = np.ones(n_samples, dtype=np.float64)
@@ -192,8 +280,7 @@ def synthesize_human_kick_and_coupled_sidechain(
     beat_click_human = [1.05, 0.90, 0.98, 0.93]
 
     kick_len = int(min(beat_sec * 0.92, 0.42) * sample_rate)
-    t_k = np.arange(kick_len, dtype=np.float64) / sample_rate
-
+    t_k = make_time_axis(kick_len, sample_rate)
     for bar in range(bars):
         for beat in range(4):
             # Tiempo exacto del pulso (el Kick en música de club humana tiene jitter < 0.4 ms para anclar el groove)
@@ -207,26 +294,23 @@ def synthesize_human_kick_and_coupled_sidechain(
             v_hum = beat_vel_human[beat]
             c_hum = beat_click_human[beat]
 
-            # Barrido exponencial doble de frecuencia instantánea f(t)
-            f_inst = (
-                key_root_hz
-                + (f_punch - key_root_hz) * np.exp(-t_local / tau_punch)
-                + (f_click * c_hum - f_punch) * np.exp(-t_local / tau_click)
-            )
-            # Fase acumulada bloqueada en 0 radianes en t=0
-            phase = 2.0 * math.pi * np.cumsum(f_inst) / sample_rate
-
-            # Envolvente de amplitud con ataque de 0.8 ms libre de clics DC y caída exponencial
-            amp_env = (1.0 - np.exp(-t_local / 0.0008)) * np.exp(-t_local / tau_body)
-
-            # Transitorio de piel/maza (Click en 2.8 kHz amortiguado en 2.2 ms)
-            click_burst = 0.22 * c_hum * np.exp(-t_local / 0.0022) * np.sin(2.0 * math.pi * 2800.0 * t_local)
-
-            raw_kick = v_hum * (np.sin(phase) * amp_env + click_burst)
-
-            # Saturación tangencial Fruity Soft Clipper
-            clipped_kick = np.tanh(raw_kick * drive) / math.tanh(drive)
-            kick_track[idx_0 : idx_0 + avail] += clipped_kick
+            # Síntesis C5 con bloqueo exacto de fase, saturación 4x asimétrica y transitorio dinámico sin aplastamiento
+            hit_wave = synthesize_phase_locked_kick(
+                sample_rate=sample_rate,
+                duration_sec=avail / float(sample_rate),
+                root_hz=key_root_hz,
+                punch_hz=f_punch,
+                click_hz=f_click * c_hum,
+                tau_click=tau_click,
+                tau_punch=tau_punch,
+                tau_body=tau_body,
+                drive_db=drive_db,
+                pultec_sub_gain=0.14,
+                mud_notch_hz=195.0,
+                beater_gain=0.25 * c_hum,
+                beater_hz=2400.0,
+            )[:avail]
+            kick_track[idx_0 : idx_0 + avail] += v_hum * hit_wave
 
             # Curva de Sidechain acoplada exactamente a la energía del Kick:
             # Mientras el Kick tiene energía subgrave, la ganancia del bajo se agacha y recupera con curva sigmoidal
@@ -277,10 +361,15 @@ def synthesize_human_kick_and_coupled_sidechain(
 
     for bar in range(bars):
         f_bass_bar = bass_roots[bar % len(bass_roots)]
-        # Notas de bajo sincopadas en semicorcheas con ligaduras y acentos humanos
-        pattern_steps = [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15]
-        for step in pattern_steps:
-            # Swing humano en semicorcheas impares (+11 ms)
+        phrase_pos = bar % 4
+        # Varied 4-bar groove pocket with negative space breath on bar 3 beats 3-4
+        step_patterns = {
+            0: [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15],
+            1: [2, 3, 6, 7, 9, 10, 11, 14, 15],
+            2: [1, 2, 3, 5, 6, 7, 10, 11],
+            3: [2, 3, 6, 7, 9, 11, 13, 14, 15],
+        }
+        for step in step_patterns[phrase_pos]:
             swing_sec = 0.011 if (step % 2 == 1) else 0.0
             t_note = bar * bar_sec + step * sixteenth_sec + laid_back_sec + swing_sec
             i0 = int(t_note * sample_rate)
@@ -289,120 +378,131 @@ def synthesize_human_kick_and_coupled_sidechain(
             if n_len <= 0:
                 continue
 
-            tn = np.arange(n_len, dtype=np.float64) / sample_rate
+            tn = make_time_axis(n_len, sample_rate)
             is_accent = step in (2, 7, 11, 14)
             vel_factor = 1.0 if is_accent else 0.72
             oct_mult = 2.0 if step in (3, 11) else 1.0
             f_note = f_bass_bar * oct_mult
 
-            # Síntesis Transistor Bass (Sierra + Sub cuadrada + filtro resonante modulado por velocidad)
-            ph = 2.0 * math.pi * f_note * tn
-            saw = 0.55 * (2.0 * ((f_note * tn) % 1.0) - 1.0)
-            sub_sq = 0.45 * np.tanh(3.0 * np.sin(ph))
-            env_b = (1.0 - np.exp(-tn / 0.003)) * np.exp(-tn / (0.16 if is_accent else 0.11))
-            sig_b = vel_factor * env_b * (saw + sub_sq)
+            # Dual PolyBLEP saw + sub-pulse filtered through real nonlinear 4-pole ZDF Moog ladder
+            saw_a = 0.48 * polyblep_saw(f_note * 0.9985, n_len, sample_rate=sample_rate)
+            saw_b = 0.34 * polyblep_saw(f_note * 1.0015, n_len, sample_rate=sample_rate)
+            sub_p = 0.38 * polyblep_pulse(f_note, n_len, sample_rate=sample_rate, duty=0.45)
+            fc_env = 240.0 + (1180.0 if is_accent else 560.0) * np.exp(-tn / 0.065)
+            filt_b = zdf_moog_ladder_filter(saw_a + saw_b + sub_p, cutoff_hz=fc_env, resonance=0.34, drive=1.42, sample_rate=sample_rate)
+            env_b = np.exp(-tn / (0.16 if is_accent else 0.11))
+            sig_b = apply_zero_crackle_envelope(
+                vel_factor * env_b * filt_b * 1.15,
+                sample_rate=sample_rate,
+                attack_ms=5.0,
+                release_ms=10.0,
+            )
 
             bass_L[i0 : i0 + n_len] += sig_b
             bass_R[i0 : i0 + n_len] += sig_b
 
-        # Acordes FLEX con Micro-Strumming humano (12 ms entre cada voz del acorde)
+        # Electromechanical Rhodes MK-I voice-led chords with micro-strummed articulation
         intervals = chord_intervals[bar % len(chord_intervals)]
-        for v_idx, semitone in enumerate(intervals):
-            strum_offset_sec = v_idx * 0.012  # 12 ms de rasgueo ascendente por voz
+        base_freqs = [(key_root_hz * 4.0) * (2.0 ** (semitone / 12.0)) for semitone in intervals]
+        voiced_freqs = _voice_lead_frequencies(base_freqs, phrase_pos)
+        for v_idx, f_v in enumerate(voiced_freqs):
+            strum_offset_sec = v_idx * 0.012
             t_chord = bar * bar_sec + strum_offset_sec
             ic0 = int(t_chord * sample_rate)
-            c_len = min(int((bar_sec - strum_offset_sec) * sample_rate), n_samples - ic0)
+            c_len = min(int((bar_sec * (0.76 if phrase_pos == 2 else 0.92) - strum_offset_sec) * sample_rate), n_samples - ic0)
             if c_len <= 0:
                 continue
 
-            tc = np.arange(c_len, dtype=np.float64) / sample_rate
-            f_v = (key_root_hz * 4.0) * (2.0 ** (semitone / 12.0))
-            # Respiración del Macro 1 de FLEX (arco de brillo a lo largo del compás)
-            macro1_arc = 0.45 + 0.45 * np.sin(math.pi * tc / bar_sec)
-            env_c = (1.0 - np.exp(-tc / 0.035)) * np.exp(-tc / (bar_sec * 0.85))
-            # Par estéreo ligeramente desafinado (Macro 5 Analog Detune + Chorus BBD)
-            voice_L = (
-                np.sin(2.0 * math.pi * f_v * 0.9992 * tc)
-                + 0.35 * macro1_arc * np.sin(2.0 * math.pi * (f_v * 2.0) * tc)
-            ) * env_c * 0.14
-            voice_R = (
-                np.sin(2.0 * math.pi * f_v * 1.0008 * tc + 0.3)
-                + 0.35 * macro1_arc * np.sin(2.0 * math.pi * (f_v * 2.0) * tc + 0.6)
-            ) * env_c * 0.14
+            is_top = v_idx == len(voiced_freqs) - 1
+            vel_r = 0.96 if is_top else (0.82 if v_idx == 0 else 0.68)
+            pan_r = -0.32 + 0.64 * (v_idx / max(1, len(voiced_freqs) - 1))
+            r_l, r_r = synthesize_rhodes_electromechanical(
+                f_v,
+                c_len,
+                velocity=vel_r,
+                sample_rate=sample_rate,
+                tremolo_hz=3.8,
+                tremolo_depth=0.18,
+                stereo_pan=pan_r,
+                seed=1973 + bar * 17 + v_idx,
+            )
+            flex_L[ic0 : ic0 + c_len] += r_l * 0.30
+            flex_R[ic0 : ic0 + c_len] += r_r * 0.30
 
-            flex_L[ic0 : ic0 + c_len] += voice_L
-            flex_R[ic0 : ic0 + c_len] += voice_R
-
-    # Filtrado de los instrumentos acompañantes + División Multibanda en 140 Hz (Frequency Splitter)
-    nyq = sample_rate / 2.0
-    b_lp_bass, a_lp_bass = signal.butter(3, min(0.45, 650.0 / nyq), btype="low")
-    bass_L = signal.lfilter(b_lp_bass, a_lp_bass, bass_L)
-    bass_R = signal.lfilter(b_lp_bass, a_lp_bass, bass_R)
+    # Filtrado de los instrumentos acompañantes + División Multibanda LR4 Zero-Phase en 140 Hz
+    flex_L, flex_R = carve_polyphonic_mud(flex_L, flex_R, sample_rate=sample_rate, hpf_hz=170.0, mud_hz=320.0)
 
     inst_L = bass_L + flex_L
     inst_R = bass_R + flex_R
 
-    b_split_low, a_split_low = signal.butter(2, min(0.45, 140.0 / nyq), btype="low")
-    b_split_high, a_split_high = signal.butter(2, min(0.45, 140.0 / nyq), btype="high")
+    inst_low_L, high_L_raw = lr4_zero_phase_crossover(inst_L, 140.0, sample_rate=sample_rate)
+    inst_low_R, high_R_raw = lr4_zero_phase_crossover(inst_R, 140.0, sample_rate=sample_rate)
 
-    # Banda Sub (<140 Hz, 100% mono + Sidechain profundo acoplado al Kick)
-    inst_mono = 0.5 * (inst_L + inst_R)
-    sub_band = signal.lfilter(b_split_low, a_split_low, inst_mono) * sidechain_env_sub
+    # Banda Sub (<140 Hz, 100% mono fase coherente + Sidechain profundo acoplado al Kick)
+    sub_band = 0.5 * (inst_low_L + inst_low_R) * sidechain_env_sub
 
     # Banda Media/Aguda (>=140 Hz, estéreo preservado + Sidechain suave musical)
-    high_L = signal.lfilter(b_split_high, a_split_high, inst_L) * sidechain_env_high
-    high_R = signal.lfilter(b_split_high, a_split_high, inst_R) * sidechain_env_high
+    high_L = high_L_raw * sidechain_env_high
+    high_R = high_R_raw * sidechain_env_high
 
-    # Hi-hat offbeat humano y textura de aire para balance espectral natural (Wiener SFM óptimo)
-    rng = np.random.default_rng(108)
+    # Round-Robin ModeAudio Hi-Hats & Shaker (with open->closed choke group + TR-808 physical fallback)
     hat_L = np.zeros(n_samples, dtype=np.float64)
     hat_R = np.zeros(n_samples, dtype=np.float64)
-    b_hat, a_hat = signal.butter(2, [min(0.42, 5500.0 / nyq), min(0.48, 13500.0 / nyq)], btype="band")
-    noise_white = rng.normal(0.0, 1.0, n_samples)
-    noise_hat = signal.lfilter(b_hat, a_hat, noise_white)
+    ch_pool = get_round_robin_drum_pool("closed_hat", count=6, sample_rate=sample_rate, max_sec=0.35)
+    oh_pool = get_round_robin_drum_pool("open_hat", count=6, sample_rate=sample_rate, max_sec=0.55)
+    open_choke = None
 
     for bar in range(bars):
         for step16 in range(16):
             t_h = bar * bar_sec + step16 * sixteenth_sec + (0.008 if step16 % 2 == 1 else 0.0)
             ih = int(t_h * sample_rate)
-            h_len = min(int(0.065 * sample_rate), n_samples - ih)
-            if h_len <= 0:
+            if ih >= n_samples:
                 continue
-            th = np.arange(h_len, dtype=np.float64) / sample_rate
             is_open = (step16 % 4 == 2)
-            h_amp = (0.16 if is_open else 0.055) * np.exp(-th / (0.032 if is_open else 0.009))
-            hat_L[ih : ih + h_len] += noise_hat[ih : ih + h_len] * h_amp * 0.96
-            hat_R[ih : ih + h_len] += noise_hat[ih : ih + h_len] * h_amp * 1.04
+            vel_h = 0.88 if is_open else (0.58 if step16 % 2 == 0 else 0.42)
+            rr_i = bar * 16 + step16
+            if is_open and oh_pool:
+                hit = shape_velocity_sample(oh_pool[rr_i % len(oh_pool)], vel_h, sample_rate)
+                open_choke = _mix_drum_hit(hat_L, hat_R, ih, hit, gain=0.19, pan=0.14, sample_rate=sample_rate)
+            elif (not is_open) and ch_pool:
+                hit = shape_velocity_sample(ch_pool[rr_i % len(ch_pool)], vel_h, sample_rate)
+                _mix_drum_hit(hat_L, hat_R, ih, hit, gain=0.11, pan=-0.12, choke_range=open_choke, sample_rate=sample_rate)
+                open_choke = None
+            else:
+                h_len = min(int((0.18 if is_open else 0.055) * sample_rate), n_samples - ih)
+                hit = synthesize_analog_hihat_cymbal(h_len, is_open=is_open, velocity=vel_h, sample_rate=sample_rate, seed=808 + rr_i)
+                res_c = _mix_drum_hit(hat_L, hat_R, ih, hit, gain=0.22 if is_open else 0.12, pan=0.12 if is_open else -0.10, choke_range=None if is_open else open_choke, sample_rate=sample_rate)
+                open_choke = res_c if is_open else None
 
-    # Suma en Bus Maestro + Fruity Soft Clipper (-2.2 dBFS)
-    mix_L = 0.82 * kick_clean + 0.55 * sub_band + 0.60 * high_L + hat_L
-    mix_R = 0.82 * kick_clean + 0.55 * sub_band + 0.60 * high_R + hat_R
+    # Suma en Bus Maestro + Shared Studio Chamber IR + Monofónico estricto < 120 Hz + 4x Oversampled Soft Clipper
+    mix_L = 0.88 * kick_clean + 0.44 * sub_band + 0.56 * high_L + hat_L
+    mix_R = 0.88 * kick_clean + 0.44 * sub_band + 0.56 * high_R + hat_R
+    mix_L, mix_R = apply_coherent_shared_room(mix_L, mix_R, sample_rate=sample_rate, rt60_sec=0.65, wet=0.09, room_style="small_room")
+    mix_L, mix_R = enforce_low_end_mono(mix_L, mix_R, cutoff_hz=120.0, sample_rate=sample_rate)
 
-    # Normalización de cresta con Fruity Soft Clipper tangencial
+    # Normalización con preservación de Crest Factor >= 9.5 dB via 4x Oversampled Soft Saturator
     peak_raw = max(float(np.max(np.abs(mix_L))), float(np.max(np.abs(mix_R))), 1e-6)
-    mix_L = (mix_L / peak_raw) * 0.92
-    mix_R = (mix_R / peak_raw) * 0.92
-
-    thresh = 0.77  # ~ -2.2 dBFS
-    for arr in (mix_L, mix_R):
-        mask = np.abs(arr) > thresh
-        if np.any(mask):
-            sgn = np.sign(arr[mask])
-            exc = np.abs(arr[mask]) - thresh
-            arr[mask] = sgn * (thresh + (1.0 - thresh) * np.tanh(exc / (1.0 - thresh)))
+    mix_L = oversampled_soft_saturate(
+        (mix_L / peak_raw) * 0.86,
+        drive_db=0.6,
+        threshold_db=-1.8,
+        asymmetry=0.01,
+        oversample=4,
+    )
+    mix_R = oversampled_soft_saturate(
+        (mix_R / peak_raw) * 0.86,
+        drive_db=0.6,
+        threshold_db=-1.8,
+        asymmetry=0.01,
+        oversample=4,
+    )
 
     # Exportar WAVs (Kick aislado + Mix con Sidechain Multibanda Humano)
     kick_wav_path = target_dir / f"RAE_Human_Kick_{kick_style}_{int(bpm)}BPM.wav"
     mix_wav_path = target_dir / f"RAE_Human_Kick_Bass_FLEX_Sidechain_Mix_{int(bpm)}BPM.wav"
 
     def _write_stereo_wav(path: Path, left: np.ndarray, right: np.ndarray) -> None:
-        stereo = np.column_stack((left, right))
-        pcm16 = np.clip(stereo * 32767.0, -32768, 32767).astype("<i2")
-        with wave.open(str(path), "wb") as wf:
-            wf.setnchannels(2)
-            wf.setsampwidth(2)
-            wf.setframerate(sample_rate)
-            wf.writeframes(pcm16.tobytes())
+        write_pcm_wav(path, left, right, sample_rate=sample_rate, bit_depth=16, dither=True)
 
     _write_stereo_wav(kick_wav_path, kick_clean * 0.90, kick_clean * 0.90)
     _write_stereo_wav(mix_wav_path, mix_L, mix_R)
@@ -410,7 +510,7 @@ def synthesize_human_kick_and_coupled_sidechain(
     stereo_mix = np.column_stack((mix_L, mix_R))
     lufs = compute_integrated_lufs(stereo_mix, sample_rate)
     dbtp = compute_true_peak_dbtp(stereo_mix)
-    rubin = compute_rubin_metrics(mix_L, mix_R)
+    rubin = compute_rubin_metrics(mix_L, mix_R, sample_rate=sample_rate)
 
     return {
         "status": "SUCCESS",
@@ -636,7 +736,7 @@ def synthesize_complex_arrangement_and_long_buildup(
     vacuum_start_idx = int(vacuum_start_sec * sample_rate)
 
     # 1. Síntesis de la transición Build-Up Largo + Vacuum + Drop
-    t = np.arange(n_samples, dtype=np.float64) / sample_rate
+    t = make_time_axis(n_samples, sample_rate)
     mix_L = np.zeros(n_samples, dtype=np.float64)
     mix_R = np.zeros(n_samples, dtype=np.float64)
 
@@ -663,7 +763,7 @@ def synthesize_complex_arrangement_and_long_buildup(
         seg_len = b_end - b_start
         if seg_len <= 0:
             continue
-        tb = np.arange(seg_len, dtype=np.float64) / sample_rate
+        tb = make_time_axis(seg_len, sample_rate)
         env_bar = np.clip(tb / 0.05, 0.0, 1.0) * np.exp(-tb / (bar_sec * 1.3))
         for v_idx, vf in enumerate(c_freqs):
             strum_s = int(v_idx * 0.011 * sample_rate)
@@ -709,7 +809,7 @@ def synthesize_complex_arrangement_and_long_buildup(
         hit_dur_s = min(0.14, subdiv_beats * beat_sec * 0.85)
         hit_len = int(hit_dur_s * sample_rate)
         if idx0 + hit_len < vacuum_start_idx:
-            th = np.arange(hit_len, dtype=np.float64) / sample_rate
+            th = make_time_axis(hit_len, sample_rate)
             # Cuerpo tonal + transitorio de caja con velocidad ascendente y acento cada 4 golpes
             accent = 1.15 if (step_idx % 4 == 0) else 0.92
             vel_env = (0.22 + 0.78 * (prog ** 1.35)) * accent
@@ -724,7 +824,7 @@ def synthesize_complex_arrangement_and_long_buildup(
     # Impacto Seco Pre-Drop al inicio del Vacuum (reverb tail cut + respiración cálida)
     if vacuum_start_idx + int(0.18 * sample_rate) < buildup_samples:
         elen = int(0.18 * sample_rate)
-        tvac = np.arange(elen, dtype=np.float64) / sample_rate
+        tvac = make_time_axis(elen, sample_rate)
         pre_drop_clap = (
             0.5 * np.sin(2.0 * math.pi * 240.0 * tvac) * np.exp(-tvac / 0.035)
             + 0.5 * rng.normal(0.0, 1.0, elen) * np.exp(-tvac / 0.04)
@@ -749,7 +849,7 @@ def synthesize_complex_arrangement_and_long_buildup(
         k_len = min(int(beat_sec * 0.92 * sample_rate), n_samples - b_idx)
         if k_len <= 0:
             continue
-        tk = np.arange(k_len, dtype=np.float64) / sample_rate
+        tk = make_time_axis(k_len, sample_rate)
         f_inst = (
             key_root_hz
             + (155.0 - key_root_hz) * np.exp(-tk / 0.036)
@@ -763,13 +863,19 @@ def synthesize_complex_arrangement_and_long_buildup(
             sub_atten = max(0.18, 1.0 - 0.80 * (u_b ** 1.4))
         else:
             sub_atten = 1.0
-        k_wave = np.tanh(np.sin(phase_k) * env_k * sub_atten * 1.45) / math.tanh(1.45)
+        k_wave = apply_zero_crackle_envelope(
+            oversampled_soft_saturate(np.sin(phase_k) * env_k * sub_atten, drive_db=3.2),
+            sample_rate=sample_rate,
+            attack_ms=1.0,
+            release_ms=10.0,
+        )
         kick_bus[b_idx : b_idx + k_len] += k_wave
 
-        # Envolvente de Sidechain Multibanda en el Drop
+        # Envolvente de Sidechain Multibanda en el Drop (con rampa coseno >= 5 ms)
         if beat_time >= buildup_sec:
-            duck_s = 0.92 * np.exp(-((tk / (0.21 * 0.85)) ** 1.35))
-            duck_h = 0.22 * np.exp(-((tk / 0.045) ** 1.5))
+            sc_att = 0.5 * (1.0 - np.cos(np.pi * np.clip(tk / 0.006, 0.0, 1.0)))
+            duck_s = 0.92 * sc_att * np.exp(-((tk / (0.21 * 0.85)) ** 1.35))
+            duck_h = 0.22 * sc_att * np.exp(-((tk / 0.045) ** 1.5))
             sc_sub[b_idx : b_idx + k_len] = np.minimum(sc_sub[b_idx : b_idx + k_len], 1.0 - duck_s)
             sc_high[b_idx : b_idx + k_len] = np.minimum(sc_high[b_idx : b_idx + k_len], 1.0 - duck_h)
 
@@ -784,9 +890,9 @@ def synthesize_complex_arrangement_and_long_buildup(
         s_len = min(int(step16_sec * 0.82 * sample_rate), n_samples - s_idx)
         if s_len <= 0:
             continue
-        ts = np.arange(s_len, dtype=np.float64) / sample_rate
+        ts = make_time_axis(s_len, sample_rate)
         fb = key_root_hz * (2.0 ** (bass_semitones[s16 % 16] / 12.0))
-        env_b = (1.0 - np.exp(-ts / 0.003)) * np.exp(-ts / 0.11)
+        env_b = np.exp(-ts / 0.11)
         if s_time < buildup_sec:
             # En el Build-Up se atenúa la fundamental (HPF washout) y sube el armónico ácido superior
             ub = s_time / max(1e-6, buildup_sec)
@@ -795,35 +901,51 @@ def synthesize_complex_arrangement_and_long_buildup(
         else:
             sub_w = 1.0
             acid_w = 0.52
-        note_b = (
-            sub_w * 0.68 * np.sin(2.0 * math.pi * fb * ts)
-            + acid_w * 0.32 * np.tanh(2.4 * np.sin(2.0 * math.pi * (fb * 2.0) * ts))
-        ) * env_b
+        raw_acid = polyblep_saw(fb, s_len, sample_rate=sample_rate)
+        note_b = apply_zero_crackle_envelope(
+            (sub_w * 0.68 * np.sin(2.0 * math.pi * fb * ts) + acid_w * 0.32 * raw_acid) * env_b,
+            sample_rate=sample_rate,
+            attack_ms=5.0,
+            release_ms=10.0,
+        )
         bass_bus[s_idx : s_idx + s_len] += note_b * 0.58
 
-    # Aplicar Sidechain Multibanda (140 Hz), Vacuum Gate y expansión en el Drop al Pad FLEX
+    # Suavizado Hanning en curvas de sidechain + Limpieza de barro en pads + LR4 140 Hz en bajo
+    sc_kern = np.hanning(max(3, int(0.0045 * sample_rate)))
+    sc_kern /= np.sum(sc_kern)
+    sc_sub = np.convolve(sc_sub, sc_kern, mode="same")
+    sc_high = np.convolve(sc_high, sc_kern, mode="same")
+
+    pad_L, pad_R = carve_polyphonic_mud(pad_L, pad_R, sample_rate=sample_rate)
     pad_L_shaped = pad_L * (1.0 - 0.92 * is_vacuum) * (1.0 + 0.15 * is_drop) * sc_high
     pad_R_shaped = pad_R * (1.0 - 0.92 * is_vacuum) * (1.0 + 0.15 * is_drop) * sc_high
-    bass_shaped = bass_bus * sc_sub
+    b_low, b_high = lr4_zero_phase_crossover(bass_bus, 140.0, sample_rate=sample_rate)
+    bass_shaped = b_low * sc_sub + b_high * sc_high
 
     mix_L = kick_bus * 0.78 + bass_shaped * 0.56 + pad_L_shaped + riser_L + snare_roll * 0.55
     mix_R = kick_bus * 0.78 + bass_shaped * 0.56 + pad_R_shaped + riser_R + snare_roll * 0.55
 
-    # Soft Clipper Maestro
+    mix_L, mix_R = apply_coherent_shared_room(
+        mix_L, mix_R, sample_rate=sample_rate, rt60_sec=0.55, pre_delay_ms=18.0, wet=0.09
+    )
+    tape_l, tape_r = generate_warm_analog_tape_bed(
+        n_samples, sample_rate=sample_rate, level_dbfs=-57.0, seed=880
+    )
+    mix_L += tape_l
+    mix_R += tape_r
+
+    mix_L, mix_R = enforce_low_end_mono(mix_L, mix_R, cutoff_hz=120.0, sample_rate=sample_rate)
+
+    # Soft Clipper Maestro con 4x oversampling
     peak = max(float(np.max(np.abs(mix_L))), float(np.max(np.abs(mix_R))), 1e-6)
-    mix_L = np.tanh((mix_L / peak) * 1.18) / math.tanh(1.18) * 0.89
-    mix_R = np.tanh((mix_R / peak) * 1.18) / math.tanh(1.18) * 0.89
+    mix_L = oversampled_soft_saturate(mix_L / peak, drive_db=1.4, threshold_db=-2.2, asymmetry=0.01) * 0.89
+    mix_R = oversampled_soft_saturate(mix_R / peak, drive_db=1.4, threshold_db=-2.2, asymmetry=0.01) * 0.89
 
     wav_path = BOUNCES_DIR / f"RAE_Complex_Long_Buildup_To_Drop_{int(bpm)}BPM.wav"
-    stereo_out = np.column_stack((mix_L, mix_R))
-    pcm16 = np.clip(stereo_out * 32767.0, -32768, 32767).astype("<i2")
-    with wave.open(str(wav_path), "wb") as wf:
-        wf.setnchannels(2)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(pcm16.tobytes())
+    write_pcm_wav(wav_path, mix_L, mix_R, sample_rate=sample_rate, bit_depth=16, dither=True)
 
-    rubin = compute_rubin_metrics(mix_L, mix_R)
+    stereo_out = np.column_stack((mix_L, mix_R))
+    rubin = compute_rubin_metrics(mix_L, mix_R, sample_rate=sample_rate)
     lufs = compute_integrated_lufs(stereo_out, sample_rate)
     dbtp = compute_true_peak_dbtp(stereo_out)
 
@@ -1040,13 +1162,10 @@ def synthesize_full_human_producer_masterpiece(
 
     rng = np.random.default_rng(2026)
 
-    # Ley 7: Cama orgánica analógica cálida (-44 dBFS) para evitar el "cero digital muerto"
-    white = rng.normal(0.0, 1.0, n_samples)
-    spec_w = np.fft.rfft(white)
-    freqs_w = np.fft.rfftfreq(n_samples, d=1.0 / sample_rate)
-    freqs_w[0] = 1.0
-    pink_bed = np.fft.irfft(spec_w / np.sqrt(freqs_w), n=n_samples)
-    pink_bed = pink_bed / (np.max(np.abs(pink_bed)) + 1e-9) * 0.006  # ~ -44 dBFS
+    # Ley 7: Cama orgánica analógica cálida filtrada en banda (-57 dBFS 1/f sin zumbido estacionario)
+    tape_bed_L, tape_bed_R = generate_warm_analog_tape_bed(
+        n_samples, sample_rate=sample_rate, level_dbfs=-57.0, seed=2026
+    )
 
     kick_bus = np.zeros(n_samples, dtype=np.float64)
     perc_L = np.zeros(n_samples, dtype=np.float64)
@@ -1067,32 +1186,52 @@ def synthesize_full_human_producer_masterpiece(
     reverse_swells_count = 0
     drum_fills_count = 0
 
-    # Ley 1 y Ley 4: Kick de Fase Bloqueada + Clap Flam (-11 ms) + Ghost Snares + Hi-Hats con Swing 58%
+    kick_pool = get_round_robin_drum_pool("kick", count=6, sample_rate=sample_rate, max_sec=0.6)
+    clap_pool = get_round_robin_drum_pool("clap", count=6, sample_rate=sample_rate, max_sec=0.5)
+    ch_pool = get_round_robin_drum_pool("closed_hat", count=6, sample_rate=sample_rate, max_sec=0.3)
+    oh_pool = get_round_robin_drum_pool("open_hat", count=6, sample_rate=sample_rate, max_sec=0.5)
+    snare_pool = get_round_robin_drum_pool("snare", count=6, sample_rate=sample_rate, max_sec=0.35)
+    cymbal_pool = get_round_robin_drum_pool("cymbal", count=4, sample_rate=sample_rate, max_sec=1.2)
+    open_choke = None
+
+    # Ley 1 y Ley 4: Kick de Fase Bloqueada + Round-Robin ModeAudio Kick Top + Clap Flam (-11 ms)
     total_beats = bars * 4
     for beat in range(total_beats):
         bar_idx = beat // 4
         beat_in_bar = beat % 4
         b_time = beat * beat_sec
-        # En la segunda mitad del último compás (4-bar/8-bar turnaround) hacemos un dropout de Kick para el Drum Fill
         is_turnaround_fill = (bar_idx == bars - 1) and (beat_in_bar >= 2)
         if not is_turnaround_fill:
             idx0 = int(b_time * sample_rate)
-            k_len = min(int(beat_sec * 0.90 * sample_rate), n_samples - idx0)
+            k_len = min(int(beat_sec * 0.88 * sample_rate), n_samples - idx0)
             if k_len > 0:
-                tk = np.arange(k_len, dtype=np.float64) / sample_rate
+                tk = make_time_axis(k_len, sample_rate)
                 f_k = (
                     key_root_hz
-                    + (150.0 - key_root_hz) * np.exp(-tk / 0.038)
-                    + (1150.0 - 150.0) * np.exp(-tk / 0.0042)
+                    + (150.0 - key_root_hz) * np.exp(-tk / 0.036)
+                    + (1250.0 - 150.0) * np.exp(-tk / 0.0040)
                 )
                 ph_k = 2.0 * math.pi * np.cumsum(f_k) / sample_rate
-                env_k = (1.0 - np.exp(-tk / 0.0008)) * np.exp(-tk / 0.22)
+                env_k = (1.0 - np.exp(-tk / 0.0007)) * np.exp(-tk / 0.21)
                 vel_k = [1.0, 0.93, 0.96, 0.94][beat_in_bar]
-                k_sig = np.tanh(np.sin(ph_k) * env_k * vel_k * 1.42) / math.tanh(1.42)
+                k_sig = apply_zero_crackle_envelope(
+                    oversampled_soft_saturate(np.sin(ph_k) * env_k * vel_k, drive_db=2.8),
+                    sample_rate=sample_rate,
+                    attack_ms=0.8,
+                    release_ms=10.0,
+                )
+                if kick_pool:
+                    rr_k = kick_pool[beat % len(kick_pool)]
+                    k_top = shape_velocity_sample(rr_k, vel_k, sample_rate)
+                    sos_k_hp = signal.butter(2, min(0.45, 95.0 / (0.5 * sample_rate)), btype="high", output="sos")
+                    k_top_hi = signal.sosfilt(sos_k_hp, 0.5 * (k_top[:, 0] + k_top[:, 1]))
+                    n_k = min(len(k_top_hi), k_len)
+                    k_sig[:n_k] = 0.62 * k_sig[:n_k] + 0.52 * k_top_hi[:n_k]
                 kick_bus[idx0 : idx0 + k_len] += k_sig
 
-                duck_s = 0.92 * np.exp(-((tk / (0.22 * 0.85)) ** 1.35))
-                duck_h = 0.20 * np.exp(-((tk / 0.045) ** 1.5))
+                sc_att = 0.5 * (1.0 - np.cos(np.pi * np.clip(tk / 0.006, 0.0, 1.0)))
+                duck_s = 0.92 * sc_att * np.exp(-((tk / (0.22 * 0.85)) ** 1.35))
+                duck_h = 0.20 * sc_att * np.exp(-((tk / 0.045) ** 1.5))
                 sc_sub[idx0 : idx0 + k_len] = np.minimum(sc_sub[idx0 : idx0 + k_len], 1.0 - duck_s)
                 sc_high[idx0 : idx0 + k_len] = np.minimum(sc_high[idx0 : idx0 + k_len], 1.0 - duck_h)
 
@@ -1101,87 +1240,120 @@ def synthesize_full_human_producer_masterpiece(
             flam_time = max(0.0, b_time - 0.011)
             f_idx = int(flam_time * sample_rate)
             c_idx = int(b_time * sample_rate)
-            c_len = min(int(0.16 * sample_rate), n_samples - c_idx)
-            if c_len > 0 and f_idx + c_len < n_samples:
-                tc = np.arange(c_len, dtype=np.float64) / sample_rate
-                pre_snap = rng.normal(0.0, 1.0, c_len) * np.exp(-tc / 0.012) * 0.16
-                main_clap = (
-                    0.35 * np.sin(2.0 * math.pi * 230.0 * tc) * np.exp(-tc / 0.032)
-                    + 0.65 * rng.normal(0.0, 1.0, c_len) * np.exp(-tc / 0.055)
-                ) * 0.34
-                perc_L[f_idx : f_idx + c_len] += pre_snap * 0.65
-                perc_R[f_idx : f_idx + c_len] += pre_snap * 0.35
-                perc_L[c_idx : c_idx + c_len] += main_clap * 0.48
-                perc_R[c_idx : c_idx + c_len] += main_clap * 0.52
+            if clap_pool:
+                hit_flam = shape_velocity_sample(clap_pool[(beat + 2) % len(clap_pool)], 0.42, sample_rate)
+                hit_main = shape_velocity_sample(clap_pool[beat % len(clap_pool)], 0.92, sample_rate)
+                _mix_drum_hit(perc_L, perc_R, f_idx, hit_flam, gain=0.14, pan=-0.18, sample_rate=sample_rate)
+                _mix_drum_hit(perc_L, perc_R, c_idx, hit_main, gain=0.34, pan=0.06, sample_rate=sample_rate)
                 clap_flams_count += 1
+            else:
+                c_len = min(int(0.16 * sample_rate), n_samples - c_idx)
+                if c_len > 0 and f_idx + c_len < n_samples:
+                    tc = make_time_axis(c_len, sample_rate)
+                    pre_snap = rng.normal(0.0, 1.0, c_len) * np.exp(-tc / 0.012) * 0.16
+                    sos_c = signal.butter(2, [min(0.35, 850.0 / (0.5 * sample_rate)), min(0.85, 7200.0 / (0.5 * sample_rate))], btype="band", output="sos")
+                    main_clap = signal.sosfilt(sos_c, rng.normal(0.0, 1.0, c_len)) * np.exp(-tc / 0.055) * 0.42
+                    perc_L[f_idx : f_idx + c_len] += pre_snap * 0.65
+                    perc_R[f_idx : f_idx + c_len] += pre_snap * 0.35
+                    perc_L[c_idx : c_idx + c_len] += main_clap * 0.48
+                    perc_R[c_idx : c_idx + c_len] += main_clap * 0.52
+                    clap_flams_count += 1
 
-    # Semicorcheas: Hi-Hats con Swing 58%, Ghost Snares y 8-Bar Turnaround Fill
+    # Semicorcheas: Hi-Hats Round-Robin + Choke Group, Ghost Snares, Turnaround & ZDF Moog Bass
     for s16 in range(bars * 16):
         bar_i = s16 // 16
         step_in_bar = s16 % 16
+        phrase_pos = bar_i % 4
         swing_sec = 0.013 if (s16 % 2 == 1) else 0.0
         st_time = s16 * step16_sec + swing_sec
         st_idx = int(st_time * sample_rate)
+        if st_idx >= n_samples:
+            continue
 
-        # Hi-Hat humano (acentuado en off-beats 2, 6, 10, 14)
-        h_len = min(int(0.065 * sample_rate), n_samples - st_idx)
-        if h_len > 0:
-            th = np.arange(h_len, dtype=np.float64) / sample_rate
-            is_open_hat = step_in_bar in (2, 6, 10, 14)
-            tau_h = 0.042 if is_open_hat else 0.011
-            gain_h = 0.16 if is_open_hat else 0.065
-            hat_sig = (
-                np.sin(2.0 * math.pi * 6840.0 * th) * 0.4
-                + np.sin(2.0 * math.pi * 9420.0 * th) * 0.35
-                + rng.normal(0.0, 1.0, h_len) * 0.25
-            ) * np.exp(-th / tau_h) * gain_h
-            perc_L[st_idx : st_idx + h_len] += hat_sig * 0.56
-            perc_R[st_idx : st_idx + h_len] += hat_sig * 0.44
+        # Hi-Hat humano (acentuado en off-beats 2, 6, 10, 14 con Choke Group)
+        is_open_hat = step_in_bar in (2, 6, 10, 14)
+        vel_h = 0.88 if is_open_hat else (0.56 if step_in_bar % 2 == 0 else 0.40)
+        if is_open_hat and oh_pool:
+            hit = shape_velocity_sample(oh_pool[s16 % len(oh_pool)], vel_h, sample_rate)
+            open_choke = _mix_drum_hit(perc_L, perc_R, st_idx, hit, gain=0.18, pan=0.12, sample_rate=sample_rate)
+        elif (not is_open_hat) and ch_pool:
+            hit = shape_velocity_sample(ch_pool[s16 % len(ch_pool)], vel_h, sample_rate)
+            _mix_drum_hit(perc_L, perc_R, st_idx, hit, gain=0.11, pan=-0.10, choke_range=open_choke, sample_rate=sample_rate)
+            open_choke = None
+        else:
+            h_len = min(int((0.18 if is_open_hat else 0.055) * sample_rate), n_samples - st_idx)
+            if h_len > 0:
+                hat_sig = synthesize_analog_hihat_cymbal(h_len, is_open=is_open_hat, velocity=vel_h, sample_rate=sample_rate, seed=900 + s16)
+                res_c = _mix_drum_hit(
+                    perc_L, perc_R, st_idx, hat_sig,
+                    gain=0.19 if is_open_hat else 0.11,
+                    pan=0.12 if is_open_hat else -0.10,
+                    choke_range=None if is_open_hat else open_choke,
+                    sample_rate=sample_rate,
+                )
+                open_choke = res_c if is_open_hat else None
 
         # Ghost Notes de caja en semicorcheas sincopadas (pasos 7, 9, 15)
         if step_in_bar in (7, 9, 15) and bar_i < bars - 1:
-            g_len = min(int(0.055 * sample_rate), n_samples - st_idx)
-            if g_len > 0:
-                tg = np.arange(g_len, dtype=np.float64) / sample_rate
-                ghost_sig = (
-                    0.5 * np.sin(2.0 * math.pi * 195.0 * tg) * np.exp(-tg / 0.022)
-                    + 0.5 * rng.normal(0.0, 1.0, g_len) * np.exp(-tg / 0.018)
-                ) * 0.11  # Velocidad suave de nota fantasma (v ~ 36)
-                perc_L[st_idx : st_idx + g_len] += ghost_sig * 0.45
-                perc_R[st_idx : st_idx + g_len] += ghost_sig * 0.55
+            if snare_pool:
+                hit_g = shape_velocity_sample(snare_pool[s16 % len(snare_pool)], 0.34, sample_rate)
+                _mix_drum_hit(perc_L, perc_R, st_idx, hit_g, gain=0.14, pan=0.15, sample_rate=sample_rate)
                 ghost_notes_count += 1
+            else:
+                g_len = min(int(0.055 * sample_rate), n_samples - st_idx)
+                if g_len > 0:
+                    tg = make_time_axis(g_len, sample_rate)
+                    ghost_sig = (
+                        0.5 * np.sin(2.0 * math.pi * 195.0 * tg) * np.exp(-tg / 0.022)
+                        + 0.5 * rng.normal(0.0, 1.0, g_len) * np.exp(-tg / 0.018)
+                    ) * 0.11
+                    perc_L[st_idx : st_idx + g_len] += ghost_sig * 0.45
+                    perc_R[st_idx : st_idx + g_len] += ghost_sig * 0.55
+                    ghost_notes_count += 1
 
         # Ley 5: Turnaround Drum Fill en las últimas 8 semicorcheas del compás final (Toms descendentes)
         if bar_i == bars - 1 and step_in_bar >= 8:
             f_len = min(int(0.11 * sample_rate), n_samples - st_idx)
             if f_len > 0:
-                tf = np.arange(f_len, dtype=np.float64) / sample_rate
-                tom_f0 = 165.0 - (step_in_bar - 8) * 11.5  # Toms descendentes de 165 Hz a 84 Hz
+                tf = make_time_axis(f_len, sample_rate)
+                tom_f0 = 165.0 - (step_in_bar - 8) * 11.5
                 tom_f = tom_f0 + 90.0 * np.exp(-tf / 0.012)
-                tom_sig = np.sin(2.0 * math.pi * np.cumsum(tom_f) / sample_rate) * np.exp(-tf / 0.065) * 0.36
-                pan_pos = (step_in_bar - 8) / 7.0  # Paneo de izquierda a derecha durante el fill
+                tom_sig = apply_zero_crackle_envelope(
+                    np.sin(2.0 * math.pi * np.cumsum(tom_f) / sample_rate) * np.exp(-tf / 0.065) * 0.36,
+                    sample_rate=sample_rate,
+                    attack_ms=1.0,
+                    release_ms=12.0,
+                )
+                pan_pos = (step_in_bar - 8) / 7.0
                 perc_L[st_idx : st_idx + f_len] += tom_sig * (1.0 - 0.6 * pan_pos)
                 perc_R[st_idx : st_idx + f_len] += tom_sig * (0.4 + 0.6 * pan_pos)
                 drum_fills_count += 1
 
-        # Bajo Transistor Bass en Laid-Back Pocket (+6.8 ms detrás del pulso)
-        if step_in_bar in (1, 2, 3, 6, 7, 10, 11, 14):
+        # Bajo Minimoog ZDF Ladder en Laid-Back Pocket (+6.8 ms) con variación de frase & espacio negativo
+        bass_active = (
+            step_in_bar in (1, 2, 3, 6, 7, 10, 11, 14)
+            if phrase_pos != 2
+            else step_in_bar in (1, 2, 6, 7, 14, 15)
+        )
+        if bass_active:
             b_pos = int((s16 * step16_sec + 0.0068 + swing_sec * 0.4) * sample_rate)
             b_len = min(int(step16_sec * 0.84 * sample_rate), n_samples - b_pos)
             if b_len > 0:
-                tb = np.arange(b_len, dtype=np.float64) / sample_rate
-                semitone = [0, 0, 12, 3, 7, 10, 0, 5][step_in_bar % 8]
+                tb = make_time_axis(b_len, sample_rate)
+                semitone = [0, 0, 12, 3, 7, 10, 0, 5][(step_in_bar + bar_i) % 8]
                 fb = key_root_hz * (2.0 ** (semitone / 12.0))
-                env_b = (1.0 - np.exp(-tb / 0.003)) * np.exp(-tb / 0.11)
-                # Deriva de filtro ácido
-                cutoff_mod = 0.35 + 0.45 * math.sin(math.pi * (s16 / max(1, bars * 16 - 1)))
-                b_wave = (
-                    0.68 * np.sin(2.0 * math.pi * fb * tb)
-                    + cutoff_mod * 0.32 * np.tanh(2.3 * np.sin(2.0 * math.pi * (fb * 2.0) * tb))
-                ) * env_b
-                bass_bus[b_pos : b_pos + b_len] += b_wave * 0.56
+                raw_acid = 0.58 * polyblep_saw(fb, b_len, sample_rate=sample_rate) + 0.42 * polyblep_pulse(fb, b_len, sample_rate=sample_rate, duty=0.45)
+                cutoff_mod = 280.0 + (750.0 + 950.0 * math.sin(math.pi * (s16 / max(1, bars * 16 - 1)))) * np.exp(-tb / 0.065)
+                filt_acid = zdf_moog_ladder_filter(raw_acid, cutoff_hz=cutoff_mod, resonance=0.35, drive=1.40, sample_rate=sample_rate)
+                b_wave = apply_zero_crackle_envelope(
+                    filt_acid * np.exp(-tb / 0.12),
+                    sample_rate=sample_rate,
+                    attack_ms=5.0,
+                    release_ms=10.0,
+                )
+                bass_bus[b_pos : b_pos + b_len] += b_wave * 0.62
 
-    # Ley 2, Ley 3 y Ley 5: Acordes FLEX con Micro-Strumming + Top-Note Voicing + Reverse Reverb Swell + Call & Response Lead
+    # Ley 2, Ley 3 y Ley 5: Rhodes MK-I Micro-Strummed + Reverse Cymbal Swell + Karplus-Strong Call & Response
     chords_hz = [
         [key_root_hz * 4.0, key_root_hz * 4.7568, key_root_hz * 5.9932, key_root_hz * 7.1272],  # Gm9
         [key_root_hz * 3.1748, key_root_hz * 4.0, key_root_hz * 4.7568, key_root_hz * 5.9932],  # Ebmaj9
@@ -1190,91 +1362,107 @@ def synthesize_full_human_producer_masterpiece(
     ]
 
     for b in range(bars):
-        c_freqs = chords_hz[b % len(chords_hz)]
+        c_freqs = _voice_lead_frequencies(chords_hz[b % len(chords_hz)], b)
         b_start = int(b * bar_sec * sample_rate)
         b_end = min(n_samples, int((b + 1) * bar_sec * sample_rate))
         seg_len = b_end - b_start
         if seg_len <= 0:
             continue
-        tb = np.arange(seg_len, dtype=np.float64) / sample_rate
-        env_c = np.clip(tb / 0.04, 0.0, 1.0) * np.exp(-tb / (bar_sec * 1.25))
 
-        # Reverse Reverb Swell antes del inicio del compás 0 y del compás 4 (aspiración humana de transición)
-        if b in (0, 4) and b > 0:
+        # Reverse Cymbal / Reverb Swell antes del inicio del compás 4
+        if b == 4 and b_start > 0:
             swell_dur = min(int(beat_sec * 1.5 * sample_rate), b_start)
-            if swell_dur > 0:
-                tsw = np.arange(swell_dur, dtype=np.float64) / sample_rate
-                # Envolvente exponencial creciente que corta exactamente en b_start
-                env_sw = np.exp(4.2 * (tsw / (swell_dur / sample_rate) - 1.0))
-                sw_wave = (
-                    0.5 * np.sin(2.0 * math.pi * c_freqs[0] * tsw)
-                    + 0.5 * np.sin(2.0 * math.pi * c_freqs[-1] * tsw + 0.7)
-                ) * env_sw * 0.20
-                reverse_swell_L[b_start - swell_dur : b_start] += sw_wave * 0.6
-                reverse_swell_R[b_start - swell_dur : b_start] += sw_wave * 0.4
+            if swell_dur > 64:
+                if cymbal_pool:
+                    cym = cymbal_pool[0]
+                    cym_slice = cym[: min(len(cym), swell_dur), :]
+                    rev_cym = cym_slice[::-1].copy()
+                    t_sw = np.linspace(0.0, 1.0, len(rev_cym), dtype=np.float64)
+                    env_sw = np.sin(0.5 * math.pi * t_sw) ** 2
+                    rev_l = apply_zero_crackle_envelope(rev_cym[:, 0] * env_sw * 0.28, sample_rate=sample_rate, attack_ms=25.0, release_ms=8.0)
+                    rev_r = apply_zero_crackle_envelope(rev_cym[:, 1] * env_sw * 0.28, sample_rate=sample_rate, attack_ms=25.0, release_ms=8.0)
+                    reverse_swell_L[b_start - len(rev_l) : b_start] += rev_l
+                    reverse_swell_R[b_start - len(rev_r) : b_start] += rev_r
+                else:
+                    tsw = make_time_axis(swell_dur, sample_rate)
+                    env_sw = np.exp(4.2 * (tsw / (swell_dur / sample_rate) - 1.0))
+                    sw_wave = 0.5 * synthesize_analog_hihat_cymbal(swell_dur, is_open=True, velocity=0.9, sample_rate=sample_rate)[::-1] * env_sw
+                    reverse_swell_L[b_start - swell_dur : b_start] += sw_wave * 0.6
+                    reverse_swell_R[b_start - swell_dur : b_start] += sw_wave * 0.4
                 reverse_swells_count += 1
 
-        # Acordes FLEX con Micro-Strumming (12 ms/voz), Deriva Analógica (+-3.5 cents) y Top-Note Voicing
+        # Acordes Fender Rhodes con Micro-Strumming (12 ms/voz) y Top-Note Voicing
         for v_i, vf in enumerate(c_freqs):
             strum_offset = int(v_i * 0.012 * sample_rate)
             if strum_offset < seg_len:
-                tv = tb[: seg_len - strum_offset]
-                detune_ratio = 2.0 ** (rng.uniform(-3.5, 3.5) / 1200.0)
-                vf_det = vf * detune_ratio
-                # Top-Note Voicing: la nota más aguda (melodía del acorde) suena +35% más presente que las notas internas
-                voice_weight = 1.28 if v_i == len(c_freqs) - 1 else (1.05 if v_i == 0 else 0.76)
-                voice_sig = (
-                    0.62 * np.sin(2.0 * math.pi * vf_det * tv)
-                    + 0.26 * np.sin(2.0 * math.pi * (vf_det * 2.0) * tv + 0.3)
-                    + 0.12 * np.sin(2.0 * math.pi * (vf_det * 3.0) * tv)
-                ) * env_c[: seg_len - strum_offset] * voice_weight * 0.16
-                pan_l = 0.64 - 0.11 * v_i
-                pan_r = 0.36 + 0.11 * v_i
-                flex_L[b_start + strum_offset : b_end] += voice_sig * pan_l
-                flex_R[b_start + strum_offset : b_end] += voice_sig * pan_r
+                r_len = seg_len - strum_offset
+                is_top = v_i == len(c_freqs) - 1
+                vel_r = 0.96 if is_top else (0.82 if v_i == 0 else 0.68)
+                pan_r = -0.35 + 0.70 * (v_i / max(1, len(c_freqs) - 1))
+                rl, rr = synthesize_rhodes_electromechanical(
+                    vf, r_len, velocity=vel_r, sample_rate=sample_rate, tremolo_hz=4.0, tremolo_depth=0.20, stereo_pan=pan_r, seed=2100 + b * 11 + v_i
+                )
+                flex_L[b_start + strum_offset : b_end] += rl * 0.34
+                flex_R[b_start + strum_offset : b_end] += rr * 0.34
 
-        # Ley 3: Frase Melódica Call & Response con Delay/Reverb Throw en la segunda mitad del compás
-        # El Lead canta en los tiempos 1 y 2; en los tiempos 3 y 4 calla y se abre la cola espacial (Delay Throw)
-        call_len = min(int(beat_sec * 1.75 * sample_rate), seg_len)
-        if call_len > 0:
-            tl = np.arange(call_len, dtype=np.float64) / sample_rate
-            f_lead = c_freqs[-1] * 2.0
-            env_lead = np.clip(tl / 0.015, 0.0, 1.0) * np.exp(-tl / (beat_sec * 0.9))
-            lead_dry = np.tanh(1.6 * np.sin(2.0 * math.pi * f_lead * tl + 0.25 * np.sin(2.0 * math.pi * 5.5 * tl))) * env_lead * 0.14
-            lead_L[b_start : b_start + call_len] += lead_dry * 0.52
-            lead_R[b_start : b_start + call_len] += lead_dry * 0.48
+        # Ley 3: Frase Melódica Karplus-Strong Pluck Call & Response (alternando preguntas y respuestas)
+        if b % 2 == 0 or b == 3:
+            call_len = min(int(beat_sec * 1.65 * sample_rate), seg_len)
+            if call_len > 32:
+                f_lead = c_freqs[-1] * (2.0 if b % 4 == 0 else 1.5)
+                ks_note = synthesize_karplus_strong_pluck(
+                    f_lead, call_len, velocity=0.88, brightness=0.78, body_resonance=0.35, sample_rate=sample_rate, seed=3100 + b
+                )
+                lead_L[b_start : b_start + call_len] += ks_note * 0.24 * 0.56
+                lead_R[b_start : b_start + call_len] += ks_note * 0.24 * 0.44
 
-            # Eco de respuesta (Call & Response Delay Throw en tiempos 3 y 4 cuando el Lead ya calló)
-            delay_offset = int(beat_sec * 1.5 * sample_rate)
-            if b_start + delay_offset + call_len < n_samples:
-                echo_L = lead_dry * 0.38
-                echo_R = np.roll(lead_dry, int(0.014 * sample_rate)) * 0.38  # Efecto Haas binaural en la cola
-                lead_L[b_start + delay_offset : b_start + delay_offset + call_len] += echo_L
-                lead_R[b_start + delay_offset : b_start + delay_offset + call_len] += echo_R
+    # Suavizado Hanning en curvas de sidechain + Limpieza de barro en FLEX + Eco Dub 2800 Hz sin comb filtering
+    sc_kern = np.hanning(max(3, int(0.0045 * sample_rate)))
+    sc_kern /= np.sum(sc_kern)
+    sc_sub = np.convolve(sc_sub, sc_kern, mode="same")
+    sc_high = np.convolve(sc_high, sc_kern, mode="same")
 
-    # Aplicar Sidechain Multibanda a 140 Hz (92% en Subgrave, 20% en Armónicos/FLEX)
-    bass_sc = bass_bus * sc_sub
+    flex_L, flex_R = carve_polyphonic_mud(flex_L, flex_R, sample_rate=sample_rate, air_lpf_hz=15200.0)
+    lead_L, lead_R = apply_noncommutative_dub_echo(
+        lead_L,
+        lead_R,
+        delay_sec=step16_sec * 3.0,
+        feedback=0.38,
+        lpf_hz=2800.0,
+        wet=0.36,
+        sample_rate=sample_rate,
+    )
+
+    # Aplicar Sidechain Multibanda LR4 Zero-Phase a 140 Hz
+    b_low, b_high = lr4_zero_phase_crossover(bass_bus, 140.0, sample_rate=sample_rate)
+    bass_sc = b_low * sc_sub + b_high * sc_high
     flex_L_sc = (flex_L + lead_L + reverse_swell_L) * sc_high
     flex_R_sc = (flex_R + lead_R + reverse_swell_R) * sc_high
 
-    mix_L = kick_bus * 0.78 + bass_sc * 0.56 + flex_L_sc + perc_L + pink_bed
-    mix_R = kick_bus * 0.78 + bass_sc * 0.56 + flex_R_sc + perc_R + pink_bed
+    mix_L = kick_bus * 0.78 + bass_sc * 0.56 + flex_L_sc + perc_L
+    mix_R = kick_bus * 0.78 + bass_sc * 0.56 + flex_R_sc + perc_R
 
-    # Ley 7: Soft Clipper Maestro (tanh) que preserva el Crest Factor >= 9.5 dB
+    mix_L, mix_R = apply_coherent_shared_room(
+        mix_L, mix_R, sample_rate=sample_rate, rt60_sec=0.72, pre_delay_ms=18.0, wet=0.12, room_style="chamber_warm"
+    )
+    mix_L, mix_R = apply_spectral_balance_eq(mix_L, mix_R, sample_rate=sample_rate, sub_gain_db=-1.4, mud_cut_db=-2.0, presence_gain_db=2.2, air_gain_db=1.8)
+    mix_L += tape_bed_L
+    mix_R += tape_bed_R
+
+    mix_L, mix_R = enforce_low_end_mono(mix_L, mix_R, cutoff_hz=120.0, sample_rate=sample_rate)
+
+    # Ley 7: Soft Clipper Maestro 4x oversampled que preserva Crest Factor >= 9.5 dB
     peak = max(float(np.max(np.abs(mix_L))), float(np.max(np.abs(mix_R))), 1e-6)
-    mix_L = np.tanh((mix_L / peak) * 1.16) / math.tanh(1.16) * 0.89
-    mix_R = np.tanh((mix_R / peak) * 1.16) / math.tanh(1.16) * 0.89
+    mix_L = oversampled_soft_saturate(mix_L / peak, drive_db=1.3, threshold_db=-2.2, asymmetry=0.01) * 0.89
+    mix_R = oversampled_soft_saturate(mix_R / peak, drive_db=1.3, threshold_db=-2.2, asymmetry=0.01) * 0.89
+    mix_L = apply_zero_crackle_envelope(mix_L, sample_rate=sample_rate, attack_ms=5.0, release_ms=20.0)
+    mix_R = apply_zero_crackle_envelope(mix_R, sample_rate=sample_rate, attack_ms=5.0, release_ms=20.0)
 
     wav_path = BOUNCES_DIR / f"RAE_Full_Human_Producer_Masterpiece_{int(bpm)}BPM.wav"
-    stereo = np.column_stack((mix_L, mix_R))
-    pcm16 = np.clip(stereo * 32767.0, -32768, 32767).astype("<i2")
-    with wave.open(str(wav_path), "wb") as wf:
-        wf.setnchannels(2)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(pcm16.tobytes())
+    write_pcm_wav(wav_path, mix_L, mix_R, sample_rate=sample_rate, bit_depth=16, dither=True)
 
-    rubin = compute_rubin_metrics(mix_L, mix_R)
+    stereo = np.column_stack((mix_L, mix_R))
+    rubin = compute_rubin_metrics(mix_L, mix_R, sample_rate=sample_rate)
     lufs = compute_integrated_lufs(stereo, sample_rate)
     dbtp = compute_true_peak_dbtp(stereo)
 
@@ -1353,7 +1541,6 @@ def synthesize_deep_studio_human_laws_8_to_14(
     step16_sec = beat_sec / 4.0
     total_sec = bars * bar_sec
     n_samples = int(total_sec * sample_rate)
-    t_global = np.arange(n_samples, dtype=np.float64) / sample_rate
 
     rng = np.random.default_rng(777)
 
@@ -1385,7 +1572,7 @@ def synthesize_deep_studio_human_laws_8_to_14(
         idx0 = int(b_time * sample_rate)
         k_len = min(int(beat_sec * 0.90 * sample_rate), n_samples - idx0)
         if k_len > 0:
-            tk = np.arange(k_len, dtype=np.float64) / sample_rate
+            tk = make_time_axis(k_len, sample_rate)
             # Pultec curve: fundamental reforzada (x1.22 ~ +1.7 dB extra sobre sub) y barrido rápido que evita estacionarse en 105 Hz
             f_k = (
                 key_root_hz
@@ -1396,11 +1583,17 @@ def synthesize_deep_studio_human_laws_8_to_14(
             sub_boost = 0.18 * np.sin(2.0 * math.pi * key_root_hz * tk) * np.exp(-tk / 0.15)
             env_k = (1.0 - np.exp(-tk / 0.0006)) * np.exp(-tk / 0.14)
             click_snap = 0.55 * np.sin(2.0 * math.pi * 1480.0 * tk) * np.exp(-tk / 0.0045)
-            k_wave = np.tanh((np.sin(ph_k) * env_k + sub_boost) * 1.15) / math.tanh(1.15) + click_snap
+            k_wave = apply_zero_crackle_envelope(
+                oversampled_soft_saturate(np.sin(ph_k) * env_k + sub_boost, drive_db=1.2) + click_snap,
+                sample_rate=sample_rate,
+                attack_ms=1.0,
+                release_ms=10.0,
+            )
             drum_dry_L[idx0 : idx0 + k_len] += k_wave * 0.85
             drum_dry_R[idx0 : idx0 + k_len] += k_wave * 0.85
 
-            duck_s = 0.92 * np.exp(-((tk / (0.16 * 0.85)) ** 1.35))
+            sc_att = 0.5 * (1.0 - np.cos(np.pi * np.clip(tk / 0.006, 0.0, 1.0)))
+            duck_s = 0.92 * sc_att * np.exp(-((tk / (0.16 * 0.85)) ** 1.35))
             sc_sub[idx0 : idx0 + k_len] = np.minimum(sc_sub[idx0 : idx0 + k_len], 1.0 - duck_s)
 
     # Ley 8 y Ley 9: Foley Orgánico Fuera de Rejilla (+-14 ms) + Respiración de Decay de Hi-Hat (11 ms -> 58 ms)
@@ -1416,7 +1609,7 @@ def synthesize_deep_studio_human_laws_8_to_14(
         tau_hat = 0.011 + 0.047 * (u_phrase ** 1.6)
         h_len = min(int(tau_hat * 4.5 * sample_rate), n_samples - st_idx)
         if h_len > 0:
-            th = np.arange(h_len, dtype=np.float64) / sample_rate
+            th = make_time_axis(h_len, sample_rate)
             hat_wave = (
                 0.45 * np.sin(2.0 * math.pi * 7120.0 * th)
                 + 0.35 * np.sin(2.0 * math.pi * 9680.0 * th)
@@ -1431,7 +1624,7 @@ def synthesize_deep_studio_human_laws_8_to_14(
             f_idx = max(0, min(n_samples - 1, int((st_time + offgrid_shift) * sample_rate)))
             fl_len = min(int(0.048 * sample_rate), n_samples - f_idx)
             if fl_len > 0:
-                tf = np.arange(fl_len, dtype=np.float64) / sample_rate
+                tf = make_time_axis(fl_len, sample_rate)
                 # Resonador modal de madera/metal corto (Foley micro-texture)
                 f_modal = 1420.0 + 380.0 * ((s16 * 7) % 5)
                 foley_hit = (
@@ -1443,20 +1636,25 @@ def synthesize_deep_studio_human_laws_8_to_14(
                 foley_R[f_idx : f_idx + fl_len] += foley_hit * (1.0 - pan_f)
                 foley_events_count += 1
 
-        # Bajo Transistor Bass con hueco Pultec en 105 Hz (fundamental en 49 Hz + armónico 3.º en 147 Hz, atenuando el 2.º en 98 Hz)
+        # Bajo Transistor Bass con hueco Pultec en 105 Hz y envolvente zero-crackle
         if step_in_bar in (1, 2, 3, 6, 7, 10, 11, 14):
             b_idx = int((st_time + 0.0065) * sample_rate)
             b_len = min(int(step16_sec * 0.82 * sample_rate), n_samples - b_idx)
             if b_len > 0:
-                tb = np.arange(b_len, dtype=np.float64) / sample_rate
+                tb = make_time_axis(b_len, sample_rate)
                 fb = key_root_hz
-                env_b = (1.0 - np.exp(-tb / 0.003)) * np.exp(-tb / 0.11)
-                # Pultec voicing: fuerte 1.º armónico (49 Hz) y 3.º armónico (147 Hz), 2.º armónico (98 Hz) atenuado -4 dB
-                b_sig = (
-                    0.72 * np.sin(2.0 * math.pi * fb * tb)
-                    + 0.08 * np.sin(2.0 * math.pi * (fb * 2.0) * tb)
-                    + 0.28 * np.tanh(2.1 * np.sin(2.0 * math.pi * (fb * 3.0) * tb))
-                ) * env_b
+                env_b = np.exp(-tb / 0.11)
+                b_sig = apply_zero_crackle_envelope(
+                    (
+                        0.72 * np.sin(2.0 * math.pi * fb * tb)
+                        + 0.08 * np.sin(2.0 * math.pi * (fb * 2.0) * tb)
+                        + 0.28 * oversampled_soft_saturate(np.sin(2.0 * math.pi * (fb * 3.0) * tb), drive_db=4.8)
+                    )
+                    * env_b,
+                    sample_rate=sample_rate,
+                    attack_ms=5.0,
+                    release_ms=10.0,
+                )
                 bass_bus[b_idx : b_idx + b_len] += b_sig * 0.56
 
     # Ley 13: Nota Pedal Aguda Sostenida (5.ª justa D5 = 3 * 2 * f0) con Delayed Vibrato (entra tras 180 ms a 5.4 Hz)
@@ -1467,7 +1665,7 @@ def synthesize_deep_studio_human_laws_8_to_14(
         seg_len = b_end - b_start
         if seg_len <= 0:
             continue
-        tp = np.arange(seg_len, dtype=np.float64) / sample_rate
+        tp = make_time_axis(seg_len, sample_rate)
         # El vibrato es 0 durante los primeros 180 ms y luego crece suavemente hasta +-14 cents a 5.4 Hz
         vib_depth_onset = np.clip((tp - 0.180) / 0.350, 0.0, 1.0)
         inst_f_pedal = pedal_freq * (1.0 + 0.008 * vib_depth_onset * np.sin(2.0 * math.pi * 5.4 * tp))
@@ -1490,7 +1688,7 @@ def synthesize_deep_studio_human_laws_8_to_14(
         # Lead activo en la primera mitad del compás (excita el detector de envolvente para excavar -2.8 dB en FLEX)
         call_len = min(int(beat_sec * 1.8 * sample_rate), seg_len)
         if call_len > 0:
-            tl = np.arange(call_len, dtype=np.float64) / sample_rate
+            tl = make_time_axis(call_len, sample_rate)
             env_l = np.clip(tl / 0.015, 0.0, 1.0) * np.exp(-tl / (beat_sec * 0.55))
             lead_wave = np.tanh(1.5 * np.sin(2.0 * math.pi * (key_root_hz * 8.0) * tl)) * env_l * 0.11
             lead_L[b_start : b_start + call_len] += lead_wave * 0.51
@@ -1498,38 +1696,45 @@ def synthesize_deep_studio_human_laws_8_to_14(
             lead_env_detector[b_start : b_start + call_len] = env_l
 
     # Ley 14: Sidechain Espectral Dinámico (cuando el Lead canta, FLEX se atenúa -2.8 dB ~ factor 0.72 en presencia)
+    sc_kern = np.hanning(max(3, int(0.0045 * sample_rate)))
+    sc_kern /= np.sum(sc_kern)
+    sc_sub = np.convolve(sc_sub, sc_kern, mode="same")
     sc_high = 1.0 - 0.22 * (1.0 - sc_sub)
+    flex_mid_L, flex_mid_R = carve_polyphonic_mud(flex_mid_L, flex_mid_R, sample_rate=sample_rate)
     spectral_pocket_gain = (1.0 - 0.28 * lead_env_detector) * sc_high
     flex_carved_L = flex_mid_L * spectral_pocket_gain
     flex_carved_R = flex_mid_R * spectral_pocket_gain
 
-    # Ley 11: Compresión Paralela Nueva York en Bus de Batería (82% Dry Transitorio + 18% NY Crush Bus Saturado)
-    ny_crush_L = np.tanh(drum_dry_L * 2.1) / math.tanh(2.1) * 0.65
-    ny_crush_R = np.tanh(drum_dry_R * 2.1) / math.tanh(2.1) * 0.65
+    # Ley 11: Compresión Paralela Nueva York en Bus de Batería (82% Dry Transitorio + 18% NY Crush Bus 4x OS)
+    ny_crush_L = oversampled_soft_saturate(drum_dry_L, drive_db=5.5) * 0.65
+    ny_crush_R = oversampled_soft_saturate(drum_dry_R, drive_db=5.5) * 0.65
     drum_bus_L = 0.82 * drum_dry_L + 0.18 * ny_crush_L + foley_L
     drum_bus_R = 0.82 * drum_dry_R + 0.18 * ny_crush_R + foley_R
 
-    bass_sc = bass_bus * sc_sub * 0.78
-    # Cama analógica sutil
-    analog_floor = 0.0015 * np.sin(2.0 * math.pi * 60.0 * t_global)
+    b_low, b_high = lr4_zero_phase_crossover(bass_bus, 140.0, sample_rate=sample_rate)
+    bass_sc = (b_low * sc_sub + b_high * sc_high) * 0.78
+    tape_l, tape_r = generate_warm_analog_tape_bed(
+        n_samples, sample_rate=sample_rate, level_dbfs=-57.0, seed=777
+    )
 
-    mix_L = drum_bus_L * 1.15 + bass_sc + flex_carved_L + pedal_L * sc_high + lead_L + analog_floor
-    mix_R = drum_bus_R * 1.15 + bass_sc + flex_carved_R + pedal_R * sc_high + lead_R + analog_floor
+    mix_L = drum_bus_L * 1.15 + bass_sc + flex_carved_L + pedal_L * sc_high + lead_L
+    mix_R = drum_bus_R * 1.15 + bass_sc + flex_carved_R + pedal_R * sc_high + lead_R
+    mix_L, mix_R = apply_coherent_shared_room(
+        mix_L, mix_R, sample_rate=sample_rate, rt60_sec=0.56, pre_delay_ms=18.0, wet=0.09
+    )
+    mix_L += tape_l
+    mix_R += tape_r
+    mix_L, mix_R = enforce_low_end_mono(mix_L, mix_R, cutoff_hz=120.0, sample_rate=sample_rate)
 
     peak = max(float(np.max(np.abs(mix_L))), float(np.max(np.abs(mix_R))), 1e-6)
-    mix_L = (mix_L / peak) * 0.89
-    mix_R = (mix_R / peak) * 0.89
+    mix_L = apply_zero_crackle_envelope((mix_L / peak) * 0.89, sample_rate=sample_rate, attack_ms=5.0, release_ms=20.0)
+    mix_R = apply_zero_crackle_envelope((mix_R / peak) * 0.89, sample_rate=sample_rate, attack_ms=5.0, release_ms=20.0)
 
     wav_path = BOUNCES_DIR / f"RAE_Deep_Studio_Human_Laws_8_to_14_{int(bpm)}BPM.wav"
-    stereo = np.column_stack((mix_L, mix_R))
-    pcm16 = np.clip(stereo * 32767.0, -32768, 32767).astype("<i2")
-    with wave.open(str(wav_path), "wb") as wf:
-        wf.setnchannels(2)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(pcm16.tobytes())
+    write_pcm_wav(wav_path, mix_L, mix_R, sample_rate=sample_rate, bit_depth=16, dither=True)
 
-    rubin = compute_rubin_metrics(mix_L, mix_R)
+    stereo = np.column_stack((mix_L, mix_R))
+    rubin = compute_rubin_metrics(mix_L, mix_R, sample_rate=sample_rate)
     lufs = compute_integrated_lufs(stereo, sample_rate)
     dbtp = compute_true_peak_dbtp(stereo)
 
@@ -1645,55 +1850,75 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
     # Progresión de raíces Penrose Stair: Ab1 (51.91 Hz), Bb1 (58.27 Hz), C2 (65.41 Hz), F1 (43.65 Hz)
     penrose_roots_hz = [51.913, 58.270, 65.406, 43.654]
 
-    # 1. Secuencia Evolutiva de 128 Pasos: Maceo FM Metallic Arp + Minimoog Driving Bass + MPC 62% Swing Hats
+    # Preload curated ModeAudio Round-Robin kits & cymbals (graceful deterministic fallback on CI)
+    kick_pool = get_round_robin_drum_pool("kick", count=6, sample_rate=sample_rate, max_sec=0.65)
+    clap_pool = get_round_robin_drum_pool("clap", count=6, sample_rate=sample_rate, max_sec=0.55)
+    ch_pool = get_round_robin_drum_pool("closed_hat", count=6, sample_rate=sample_rate, max_sec=0.32)
+    oh_pool = get_round_robin_drum_pool("open_hat", count=6, sample_rate=sample_rate, max_sec=0.60)
+    shaker_pool = get_round_robin_drum_pool("shaker", count=6, sample_rate=sample_rate, max_sec=0.35)
+    cymbal_pool = get_round_robin_drum_pool("cymbal", count=4, sample_rate=sample_rate, max_sec=1.5)
+    open_choke = None
+
+    # 1. Secuencia Evolutiva de 128/256 Pasos: Arp Evolutivo (A->A'->B->Turnaround), Bajo Minimoog ZDF y Percusión ModeAudio
     for step in range(render_steps):
         bar_i = step // 16
+        phrase_pos = bar_i % 4
         step_in_bar = step % 16
         step_mod_128 = step % 128
         u_128 = step_mod_128 / 127.0
-        # 62% MPC Swing en semicorcheas impares
+        u_track = step / max(1, render_steps - 1)
         swing_sec = 0.0145 if (step % 2 == 1) else 0.0
         st_time = step * step16_sec + swing_sec
         st_idx = int(st_time * sample_rate)
+        if st_idx >= n_samples:
+            continue
 
-        root_bar_hz = penrose_roots_hz[bar_i % 4]
+        root_bar_hz = penrose_roots_hz[phrase_pos]
         is_bridge = 2 <= bar_i < 4  # Puente atmosférico AIR Moon Safari antes del impacto en Paso 64
+        is_intro = bar_i < 2
+        is_pre_climax_drop = (bar_i == 11) and (step_in_bar >= 8)
+        is_outro = bar_i >= 14
+        outro_scale = max(0.38, 1.0 - 0.55 * ((step - 14 * 16) / max(1, 2 * 16))) if is_outro else 1.0
 
-        # Arpegio FM Metálico Industrial (Maceo Plex) con modulación de índice FM a lo largo de 128 pasos
-        ratio_arp = hybrid_ratios[arp_pattern_indices[(step + bar_i * 3) % len(arp_pattern_indices)]]
-        octave_mul = 4.0 if (step_in_bar not in (3, 7, 11, 15)) else 8.0
+        # Fraseo A -> A' -> B -> Turnaround con espacio negativo real (silencios respirables)
+        arp_rest = (
+            (is_intro and step_in_bar >= 10)
+            or (phrase_pos == 1 and step_in_bar in (8, 9, 10))
+            or (phrase_pos == 2 and step_in_bar in (12, 13))
+            or is_pre_climax_drop
+        )
+        contour_shift = (0, 3, 5, 11)[phrase_pos]
+        ratio_arp = hybrid_ratios[arp_pattern_indices[(step + contour_shift) % len(arp_pattern_indices)]]
+        octave_mul = 8.0 if (step_in_bar in (3, 7, 15) and phrase_pos in (1, 3)) else 4.0
         f_arp = root_bar_hz * octave_mul * ratio_arp
-        arp_len = min(int(step16_sec * 0.82 * sample_rate), n_samples - st_idx)
-        if arp_len > 0:
-            ta = np.arange(arp_len, dtype=np.float64) / sample_rate
-            fm_index = (0.45 if is_bridge else 1.35) + 0.85 * math.sin(math.pi * u_128)
-            env_a = (1.0 - np.exp(-ta / 0.0022)) * np.exp(-ta / (0.068 + 0.035 * u_128))
-            modulator = fm_index * np.sin(2.0 * math.pi * (f_arp * 2.002) * ta) * np.exp(-ta / 0.042)
-            arp_sig = (
-                0.72 * np.sin(2.0 * math.pi * f_arp * ta + modulator)
-                + 0.28 * np.tanh(2.1 * np.sin(2.0 * math.pi * (f_arp * 1.5) * ta))
-            ) * env_a * (0.085 if is_bridge else 0.135)
 
-            # Eco Dub 3/16 (AIR Moon Safari Space)
-            pan_a = 0.5 + 0.34 * math.sin(2.0 * math.pi * step / 12.0)
-            arp_L[st_idx : st_idx + arp_len] += arp_sig * pan_a
-            arp_R[st_idx : st_idx + arp_len] += arp_sig * (1.0 - pan_a)
+        if not arp_rest:
+            arp_len = min(int(step16_sec * 0.84 * sample_rate), n_samples - st_idx)
+            if arp_len > 24:
+                ta = make_time_axis(arp_len, sample_rate)
+                fm_index = (0.35 if (is_bridge or is_intro) else 1.15) + 0.75 * math.sin(math.pi * u_track)
+                env_a = np.exp(-ta / (0.072 + 0.045 * math.sin(math.pi * u_128)))
+                # Blend Karplus-Strong / FM Metallic + PolyBLEP saw edge filtered dynamically through ZDF ladder
+                modulator = fm_index * np.sin(2.0 * math.pi * (f_arp * 2.002) * ta) * np.exp(-ta / 0.045)
+                fm_edge = 0.55 * np.sin(2.0 * math.pi * f_arp * ta + modulator) + 0.45 * polyblep_saw(f_arp, arp_len, sample_rate=sample_rate)
+                arp_cutoff = (720.0 if (is_bridge or is_intro) else 1350.0) + 2850.0 * (0.5 - 0.5 * math.cos(math.pi * u_track))
+                arp_filt = zdf_moog_ladder_filter(fm_edge, cutoff_hz=arp_cutoff * np.exp(-ta / 0.14) + 420.0, resonance=0.38, drive=1.28, sample_rate=sample_rate)
+                arp_gain = (0.14 if (is_bridge or is_intro) else 0.21) * outro_scale
+                arp_sig = apply_zero_crackle_envelope(arp_filt * env_a * arp_gain, sample_rate, attack_ms=2.2, release_ms=10.0)
 
-            dub_delay_samples = int(3.0 * step16_sec * sample_rate)
-            dub_idx = st_idx + dub_delay_samples
-            if dub_idx + arp_len < n_samples:
-                arp_L[dub_idx : dub_idx + arp_len] += arp_sig * (1.0 - pan_a) * 0.28
-                arp_R[dub_idx : dub_idx + arp_len] += arp_sig * pan_a * 0.28
+                pan_a = 0.5 + 0.36 * math.sin(2.0 * math.pi * step / 12.0 + 0.5 * phrase_pos)
+                arp_L[st_idx : st_idx + arp_len] += arp_sig * pan_a
+                arp_R[st_idx : st_idx + arp_len] += arp_sig * (1.0 - pan_a)
 
         midi_pitch = max(36, min(96, int(round(69 + 12.0 * math.log2(f_arp / 440.0)))))
         tick_pos = step * (ppq // 4) + (3 if step % 2 == 1 else 0)
-        vel_arp = int(84 + 26 * math.sin(math.pi * u_128))
+        vel_arp = int((84 + 26 * math.sin(math.pi * u_128)) * outro_scale)
         if step < 128:
             fsc_builder.add_note(
                 pos_ticks=tick_pos,
                 pitch=midi_pitch,
                 duration_ticks=18,
-                velocity=vel_arp,
+                velocity=max(24, min(127, vel_arp)),
                 pan=int(64 + 32 * math.sin(2.0 * math.pi * step / 12.0)),
             )
             notes_128_count += 1
@@ -1701,95 +1926,100 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
             pos_ticks=tick_pos,
             pitch=midi_pitch,
             duration_ticks=18,
-            velocity=vel_arp,
+            velocity=max(24, min(127, vel_arp)),
             channel_index=ch_arp,
         )
 
-        # Hi-Hats Crispos con 62% MPC Swing + Snare Ghost Notes & Clap Pre-Snap Flams (Ley 1)
-        if not is_bridge or (step_in_bar in (4, 12)):
-            hh_len = min(int(0.058 * sample_rate), n_samples - st_idx)
-            if hh_len > 0:
-                thh = np.arange(hh_len, dtype=np.float64) / sample_rate
+        # Round-Robin ModeAudio Percusión: Closed/Open Hats (con Choke Group), Shakers & Claps
+        if not is_pre_climax_drop:
+            if not is_bridge and (not is_intro or step_in_bar in (2, 6, 10, 14)):
                 is_offbeat = step_in_bar % 4 == 2
-                hh_decay = 0.042 if is_offbeat else 0.015
-                hh_gain = 0.115 if is_offbeat else 0.048
-                if is_bridge:
-                    hh_gain *= 0.40
-                metallic_hat = (
-                    0.35 * np.sin(2.0 * math.pi * 7820.0 * thh)
-                    + 0.25 * np.sin(2.0 * math.pi * 10450.0 * thh)
-                    + 0.40 * rng.normal(0.0, 1.0, hh_len)
-                ) * np.exp(-thh / hh_decay) * hh_gain
-                perc_L[st_idx : st_idx + hh_len] += metallic_hat * 0.58
-                perc_R[st_idx : st_idx + hh_len] += metallic_hat * 0.42
+                vel_h = (0.92 if is_offbeat else (0.58 if step_in_bar % 2 == 0 else 0.38)) * outro_scale
+                if is_intro:
+                    vel_h *= 0.45
+                if is_offbeat and oh_pool:
+                    hit = shape_velocity_sample(oh_pool[(step + bar_i) % len(oh_pool)], vel_h, sample_rate)
+                    open_choke = _mix_drum_hit(perc_L, perc_R, st_idx, hit, gain=0.22, pan=0.16, sample_rate=sample_rate)
+                elif (not is_offbeat) and ch_pool:
+                    hit = shape_velocity_sample(ch_pool[(step + bar_i * 3) % len(ch_pool)], vel_h, sample_rate)
+                    _mix_drum_hit(perc_L, perc_R, st_idx, hit, gain=0.125, pan=-0.14, choke_range=open_choke, sample_rate=sample_rate)
+                    open_choke = None
+                else:
+                    hh_len = min(int((0.18 if is_offbeat else 0.055) * sample_rate), n_samples - st_idx)
+                    if hh_len > 16:
+                        hit_hh = synthesize_analog_hihat_cymbal(hh_len, is_open=is_offbeat, velocity=vel_h, sample_rate=sample_rate, seed=700 + step)
+                        res_c = _mix_drum_hit(
+                            perc_L, perc_R, st_idx, hit_hh,
+                            gain=0.20 if is_offbeat else 0.11,
+                            pan=0.14 if is_offbeat else -0.12,
+                            choke_range=None if is_offbeat else open_choke,
+                            sample_rate=sample_rate,
+                        )
+                        open_choke = res_c if is_offbeat else None
 
-            # Clap Analógico Satin Jackets en tiempos 2 y 4 (pasos 4 y 12) con Pre-Snap Flam (-11 ms)
-            if not is_bridge and step_in_bar in (4, 12):
+                # Subtle offbeat shaker ghost texture in groove (bars 4..13)
+                if 4 <= bar_i <= 13 and step_in_bar % 2 == 1 and shaker_pool:
+                    sh_hit = shape_velocity_sample(shaker_pool[(step * 3) % len(shaker_pool)], 0.55 * outro_scale, sample_rate)
+                    _mix_drum_hit(perc_L, perc_R, st_idx, sh_hit, gain=0.068, pan=0.24 if (step % 4 == 1) else -0.24, sample_rate=sample_rate)
+
+            # Clap Round-Robin en tiempos 2 y 4 (bar >= 4) con Pre-Snap Flam (-11 ms) y pickup beat en turnaround
+            is_clap_hit = (bar_i >= 4) and (step_in_bar in (4, 12) or (phrase_pos == 3 and step_in_bar == 15))
+            if is_clap_hit:
                 flam_idx = max(0, st_idx - int(0.011 * sample_rate))
-                cl_len = min(int(0.11 * sample_rate), n_samples - flam_idx)
-                if cl_len > 0:
-                    tcl = np.arange(cl_len, dtype=np.float64) / sample_rate
-                    clap_env = (
-                        0.45 * np.exp(-tcl / 0.008)
-                        + 0.55 * np.exp(-np.maximum(0.0, tcl - 0.011) / 0.038)
-                    )
-                    clap_sig = (
-                        rng.normal(0.0, 1.0, cl_len) * 0.70
-                        + 0.30 * np.sin(2.0 * math.pi * 1180.0 * tcl)
-                    ) * clap_env * 0.16
-                    perc_L[flam_idx : flam_idx + cl_len] += clap_sig * 0.52
-                    perc_R[flam_idx : flam_idx + cl_len] += clap_sig * 0.48
+                c_vel = (0.48 if step_in_bar == 15 else 0.94) * outro_scale
+                if clap_pool:
+                    hit_fl = shape_velocity_sample(clap_pool[(step + 1) % len(clap_pool)], c_vel * 0.42, sample_rate)
+                    hit_mn = shape_velocity_sample(clap_pool[(step + bar_i) % len(clap_pool)], c_vel, sample_rate)
+                    _mix_drum_hit(perc_L, perc_R, flam_idx, hit_fl, gain=0.14, pan=-0.22, sample_rate=sample_rate)
+                    _mix_drum_hit(perc_L, perc_R, st_idx, hit_mn, gain=0.34, pan=0.08, sample_rate=sample_rate)
+                else:
+                    cl_len = min(int(0.11 * sample_rate), n_samples - flam_idx)
+                    if cl_len > 16:
+                        tcl = make_time_axis(cl_len, sample_rate)
+                        clap_env = 0.45 * np.exp(-tcl / 0.008) + 0.55 * np.exp(-np.maximum(0.0, tcl - 0.011) / 0.038)
+                        sos_c = signal.butter(2, [min(0.35, 850.0 / (0.5 * sample_rate)), min(0.85, 7200.0 / (0.5 * sample_rate))], btype="band", output="sos")
+                        clap_sig = apply_zero_crackle_envelope(signal.sosfilt(sos_c, rng.normal(0.0, 1.0, cl_len)) * clap_env * 0.35 * c_vel, sample_rate, 0.8, 10.0)
+                        perc_L[flam_idx : flam_idx + cl_len] += clap_sig * 0.52
+                        perc_R[flam_idx : flam_idx + cl_len] += clap_sig * 0.48
 
-        # Bajo Minimoog Driving Bassline (Maceo Plex x Satin Jackets) en Laid-Back Pocket (+6.8 ms)
-        # Cero crujidos: ventana de ataque/cola raised-cosine (0.0 en extremos) + filtro Moog Ladder suave
-        if not is_bridge:
+        # Minimoog ZDF Ladder Driving Bassline (Laid-Back +6.8 ms, phrase rests, octave fills & macro cutoff arc)
+        bass_skip = is_bridge or is_intro or is_pre_climax_drop or (phrase_pos == 2 and step_in_bar in (12, 13))
+        if not bass_skip:
             b_idx = int((st_time + 0.0068) * sample_rate)
             b_len = min(int(step16_sec * 0.85 * sample_rate), n_samples - b_idx)
-            if b_len > 0:
-                tb = np.arange(b_len, dtype=np.float64) / sample_rate
-                oct_jump = 2.0 if (step_in_bar in (2, 3, 6, 7, 10, 11, 14, 15)) else 1.0
+            if b_len > 24:
+                tb = make_time_axis(b_len, sample_rate)
+                oct_jump = 2.0 if (step_in_bar in (2, 3, 6, 7, 10, 11, 14, 15) or (phrase_pos == 3 and step_in_bar == 15)) else 1.0
                 fb = root_bar_hz * oct_jump
-                # Ataque suave raised-cosine de 5 ms + caída exponencial + fade-out raised-cosine de 10 ms a 0 exacto
-                att_samples = max(1, int(0.005 * sample_rate))
-                rel_samples = max(1, int(0.010 * sample_rate))
-                env_b = np.exp(-tb / 0.095)
-                if b_len > att_samples:
-                    env_b[:att_samples] *= 0.5 * (1.0 - np.cos(np.pi * np.arange(att_samples) / att_samples))
-                if b_len > rel_samples:
-                    env_b[-rel_samples:] *= 0.5 * (1.0 + np.cos(np.pi * np.arange(rel_samples) / rel_samples))
-
-                b_scale = 0.72 if bar_i < 4 else 1.05
-                # Síntesis aditiva de armónicos de escalera Moog (band-limited < 380 Hz, cero aliasing/crujido)
-                harm_env2 = np.exp(-tb / 0.055)
-                harm_env3 = np.exp(-tb / 0.032)
                 raw_moog = (
-                    0.76 * np.sin(2.0 * math.pi * fb * tb)
-                    + 0.18 * harm_env2 * np.sin(2.0 * math.pi * (fb * 2.0) * tb)
-                    + 0.06 * harm_env3 * np.sin(2.0 * math.pi * (fb * 3.0) * tb)
+                    0.54 * polyblep_saw(fb * 0.998, b_len, sample_rate=sample_rate)
+                    + 0.38 * polyblep_pulse(fb * 1.002, b_len, sample_rate=sample_rate, duty=0.42)
+                    + 0.25 * np.sin(2.0 * math.pi * root_bar_hz * tb)
                 )
-                b_wave = np.tanh(raw_moog * 1.18) / math.tanh(1.18) * env_b * 0.58 * b_scale
+                macro_fc = 340.0 + 1150.0 * (0.5 - 0.5 * math.cos(math.pi * u_track))
+                step_fc = macro_fc * (0.45 + 0.95 * np.exp(-tb / 0.068)) + (260.0 if oct_jump > 1.5 else 160.0)
+                filt_moog = zdf_moog_ladder_filter(raw_moog, cutoff_hz=step_fc, resonance=0.36, drive=1.42, sample_rate=sample_rate)
+                env_b = np.exp(-tb / 0.115)
+                b_wave = apply_zero_crackle_envelope(filt_moog * env_b * 0.56 * outro_scale, sample_rate, attack_ms=5.0, release_ms=10.0)
                 bass_bus[b_idx : b_idx + b_len] += b_wave
                 flp_builder.add_note(
                     pos_ticks=tick_pos + 2,
                     pitch=max(24, min(72, int(round(69 + 12.0 * math.log2(fb / 440.0))))),
                     duration_ticks=18,
-                    velocity=112 if bar_i >= 4 else 88,
+                    velocity=max(32, min(127, int((112 if bar_i >= 4 else 88) * outro_scale))),
                     channel_index=ch_bass,
                 )
 
-    # 2. Fender Rhodes 73 (Satin Jackets Penrose Chords) + Solina String Ensemble (AIR Moon Safari)
+    # 2. Fender Rhodes 73 Electromecánico + Solina String Ensemble BBD + Reverse Cymbal Transitions
     for bar_i in range(bars):
         b_start = int(bar_i * bar_sec * sample_rate)
         b_end = min(n_samples, int((bar_i + 1) * bar_sec * sample_rate))
         seg_len = b_end - b_start
-        if seg_len <= 0:
+        if seg_len <= 32:
             continue
-        tb = np.arange(seg_len, dtype=np.float64) / sample_rate
-
-        # Acordes Penrose Stair en frecuencias exactas (Abmaj9 -> Bb13 -> Cm9 -> Fm9 / Cmaj9 Picardy en puente)
+        phrase_pos = bar_i % 4
         is_picardy_bar = bar_i in (3, 7, 15)
         if is_picardy_bar:
-            # Cmaj9 Picardy Euphoria (AIR x Satin Jackets)
             chord_freqs = [130.81, 164.81, 196.00, 246.94, 293.66]
         else:
             chord_freqs = [
@@ -1797,22 +2027,45 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
                 [116.54, 174.61, 220.00, 293.66, 349.23],  # Bb9
                 [130.81, 155.56, 196.00, 233.08, 293.66],  # Cm9
                 [87.31, 130.81, 174.61, 207.65, 261.63],   # Fm9
-            ][bar_i % 4]
+            ][phrase_pos]
+        voiced_freqs = _voice_lead_frequencies(chord_freqs, phrase_pos + (1 if bar_i >= 8 else 0))
 
-        # AIR Moon Safari Solina String Ensemble (Ensemble Chorus Triple-LFO)
-        solina_presence = 1.30 if (2 <= bar_i < 4) else 0.78
-        env_solina = np.clip(tb / 0.22, 0.0, 1.0) * np.exp(-tb / (bar_sec * 0.92))
-        for v_c, fc in enumerate(chord_freqs):
-            vib_lfo = 1.0 + 0.0042 * np.sin(2.0 * math.pi * 5.6 * tb + v_c * 1.1) + 0.0018 * np.sin(2.0 * math.pi * 0.85 * tb)
-            ph_c = 2.0 * math.pi * np.cumsum(fc * 2.0 * vib_lfo) / sample_rate
-            s_voice = (
-                0.55 * np.sin(ph_c)
-                + 0.30 * np.tanh(1.6 * np.sin(2.0 * ph_c + 0.5))
-                + 0.15 * np.sin(3.0 * ph_c + 1.2)
-            ) * env_solina * 0.044 * solina_presence
-            pan_c = 0.20 + 0.60 * (v_c / max(1, len(chord_freqs) - 1))
-            solina_L[b_start:b_end] += s_voice * pan_c
-            solina_R[b_start:b_end] += s_voice * (1.0 - pan_c)
+        # Transiciones Reverse Cymbal Swell hacia Paso 64 (Bar 4) y Clímax (Bar 12)
+        if bar_i in (4, 12) and b_start > 0:
+            sw_len = min(int(beat_sec * 1.75 * sample_rate), b_start)
+            if sw_len > 64:
+                if cymbal_pool:
+                    cym = cymbal_pool[bar_i % len(cymbal_pool)]
+                    cym_s = cym[: min(len(cym), sw_len), :]
+                    rev = cym_s[::-1].copy()
+                    tsw = np.linspace(0.0, 1.0, len(rev), dtype=np.float64)
+                    env_sw = (np.sin(0.5 * math.pi * tsw) ** 2.2) * 0.34
+                    rev_l = apply_zero_crackle_envelope(rev[:, 0] * env_sw, sample_rate, attack_ms=30.0, release_ms=6.0)
+                    rev_r = apply_zero_crackle_envelope(rev[:, 1] * env_sw, sample_rate, attack_ms=30.0, release_ms=6.0)
+                    perc_L[b_start - len(rev_l) : b_start] += rev_l
+                    perc_R[b_start - len(rev_r) : b_start] += rev_r
+                else:
+                    sw_h = synthesize_analog_hihat_cymbal(sw_len, is_open=True, velocity=0.95, sample_rate=sample_rate)[::-1].copy()
+                    sw_h = apply_zero_crackle_envelope(sw_h * 0.25, sample_rate, attack_ms=30.0, release_ms=6.0)
+                    perc_L[b_start - sw_len : b_start] += sw_h * 0.45
+                    perc_R[b_start - sw_len : b_start] += sw_h * 0.55
+
+        # AIR Moon Safari Solina String Ensemble (ZDF Ladder + 3-Phase BBD Stereo Chorus)
+        sol_vel = 1.08 if (2 <= bar_i < 4) else (0.58 if bar_i < 2 else (0.68 if bar_i >= 14 else 0.88))
+        sol_fc = 1800.0 + 2200.0 * (bar_i / max(1, bars - 1))
+        tb_s = make_time_axis(seg_len, sample_rate)
+        cutoff_sol = sol_fc * (0.65 + 0.35 * np.sin(math.pi * tb_s / bar_sec))
+        sol_l, sol_r = synthesize_string_ensemble_pad(
+            [f * 2.0 for f in voiced_freqs[:4]],
+            seg_len,
+            velocity=sol_vel,
+            sample_rate=sample_rate,
+            cutoff_curve=cutoff_sol,
+            seed=1974 + bar_i * 19,
+        )
+        solina_L[b_start:b_end] += sol_l * 0.72
+        solina_R[b_start:b_end] += sol_r * 0.72
+        for fc in voiced_freqs:
             flp_builder.add_note(
                 pos_ticks=bar_i * ppq * 4,
                 pitch=max(36, min(96, int(round(69 + 12.0 * math.log2((fc * 2.0) / 440.0))))),
@@ -1821,30 +2074,29 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
                 channel_index=ch_solina,
             )
 
-        # Satin Jackets Fender Rhodes 73 Electric Piano (Strumming +12 ms/voz + Top-Note Voicing +28%)
-        for chord_beat in (0.0, 1.5, 2.5):
+        # Satin Jackets Fender Rhodes 73 Electromechanical (Hammer Bark + Magnetic Pickup + Voice Leading)
+        comp_beats = (0.0, 2.5) if (bar_i < 2 or bar_i >= 14) else ((0.0, 1.5, 2.5) if phrase_pos % 2 == 0 else (0.0, 1.25, 3.0))
+        rhodes_bar_gain = 0.65 if (2 <= bar_i < 4) else (0.72 if bar_i >= 14 else 0.92)
+        for cb_idx, chord_beat in enumerate(comp_beats):
             st_base = b_start + int(chord_beat * beat_sec * sample_rate)
-            for v_idx, fr in enumerate(chord_freqs):
+            dur_beats = 1.65 if cb_idx == len(comp_beats) - 1 else 1.15
+            for v_idx, fr in enumerate(voiced_freqs):
                 r_pos = st_base + int(v_idx * 0.012 * sample_rate)
-                r_len = min(int(beat_sec * 1.45 * sample_rate), n_samples - r_pos)
-                if r_len > 0:
-                    tr = np.arange(r_len, dtype=np.float64) / sample_rate
-                    top_boost = 1.28 if (v_idx == len(chord_freqs) - 1) else 1.0
-                    env_r = (1.0 - np.exp(-tr / 0.0018)) * np.exp(-tr / 0.36)
-                    tine_bell = 0.28 * np.sin(2.0 * math.pi * (fr * 7.0) * tr) * np.exp(-tr / 0.028)
-                    rhodes_note = (
-                        0.72 * np.sin(2.0 * math.pi * fr * tr + 0.35 * np.sin(2.0 * math.pi * fr * 2.0 * tr) * np.exp(-tr / 0.12))
-                        + tine_bell
-                    ) * env_r * 0.072 * top_boost
-                    # Tremolo Autopanner analógico del Rhodes 73 (4.2 Hz)
-                    pan_trem = 0.5 + 0.32 * np.sin(2.0 * math.pi * 4.2 * tr + v_idx * 0.4)
-                    rhodes_L[r_pos : r_pos + r_len] += rhodes_note * pan_trem
-                    rhodes_R[r_pos : r_pos + r_len] += rhodes_note * (1.0 - pan_trem)
+                r_len = min(int(beat_sec * dur_beats * sample_rate), n_samples - r_pos)
+                if r_len > 24:
+                    is_top = v_idx == len(voiced_freqs) - 1
+                    vel_r = (0.98 if is_top else (0.82 if v_idx == 0 else 0.68)) * rhodes_bar_gain
+                    pan_r = -0.36 + 0.72 * (v_idx / max(1, len(voiced_freqs) - 1))
+                    r_l, r_r = synthesize_rhodes_electromechanical(
+                        fr, r_len, velocity=vel_r, sample_rate=sample_rate, tremolo_hz=4.2, tremolo_depth=0.22, stereo_pan=pan_r, seed=1973 + bar_i * 23 + v_idx
+                    )
+                    rhodes_L[r_pos : r_pos + r_len] += r_l * 0.34
+                    rhodes_R[r_pos : r_pos + r_len] += r_r * 0.34
                     flp_builder.add_note(
                         pos_ticks=bar_i * ppq * 4 + int(chord_beat * ppq) + v_idx * 3,
                         pitch=max(48, min(96, int(round(69 + 12.0 * math.log2(fr / 440.0))))),
                         duration_ticks=ppq,
-                        velocity=102 if v_idx == len(chord_freqs) - 1 else 82,
+                        velocity=102 if is_top else 82,
                         channel_index=ch_rhodes,
                     )
 
@@ -1855,33 +2107,40 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
         bar_i = beat // 4
         if bar_i < 4:
             continue
+        # Bar 11 Beats 3-4 tension dropout before Bar 12 climax impact!
+        if bar_i == 11 and (beat % 4 >= 2):
+            continue
         b_time = beat * beat_sec
         idx0 = int(b_time * sample_rate)
-        k_len = min(int(beat_sec * 0.92 * sample_rate), n_samples - idx0)
+        k_len = min(int(beat_sec * 0.90 * sample_rate), n_samples - idx0)
         if k_len > 0:
-            tk = np.arange(k_len, dtype=np.float64) / sample_rate
-            # Barrido Maceo Plex: 3800 Hz transient click -> 165 Hz chest punch -> 49 Hz G1 sub anchor
+            tk = make_time_axis(k_len, sample_rate)
             f_k = (
                 key_root_hz
-                + (165.0 - key_root_hz) * np.exp(-tk / 0.031)
-                + (3800.0 - 165.0) * np.exp(-tk / 0.0032)
+                + (155.0 - key_root_hz) * np.exp(-tk / 0.028)
+                + (2400.0 - 155.0) * np.exp(-tk / 0.0030)
             )
             ph_k = 2.0 * math.pi * np.cumsum(f_k) / sample_rate
             env_k = (1.0 - np.exp(-tk / 0.0005)) * np.exp(-tk / 0.175)
-            click_k = 0.48 * np.sin(2.0 * math.pi * 3800.0 * tk) * np.exp(-tk / 0.0022)
-            # Pultec Sub-Boost en 49 Hz + Rumble Industrial de Caverna en la cola
+            click_k = 0.16 * np.sin(2.0 * math.pi * 2400.0 * tk) * np.exp(-tk / 0.0038)
             sub_pultec = 0.22 * np.sin(2.0 * math.pi * key_root_hz * tk) * np.exp(-tk / 0.19)
-            rumble_tail = (
-                0.12
-                * np.sin(2.0 * math.pi * (key_root_hz * 0.995) * tk + 0.6)
-                * np.clip((tk - 0.08) / 0.06, 0.0, 1.0)
-                * np.exp(-tk / 0.26)
+            k_synth = apply_zero_crackle_envelope(
+                oversampled_soft_saturate(np.sin(ph_k) * env_k + sub_pultec, drive_db=2.0, oversample=4) + click_k,
+                sample_rate,
+                attack_ms=0.4,
+                release_ms=12.0,
             )
-            k_wave = (
-                np.tanh((np.sin(ph_k) * env_k + sub_pultec + rumble_tail) * 1.55) / math.tanh(1.55)
-                + click_k
-            )
-            kick_bus[idx0 : idx0 + k_len] += k_wave * 0.96
+            if kick_pool:
+                k_rr = shape_velocity_sample(kick_pool[beat % len(kick_pool)], 1.0 if beat % 4 == 0 else 0.93, sample_rate)
+                sos_k_top = signal.butter(2, min(0.45, 92.0 / (0.5 * sample_rate)), btype="high", output="sos")
+                k_top = signal.sosfilt(sos_k_top, 0.5 * (k_rr[:, 0] + k_rr[:, 1]))
+                n_k = min(len(k_top), k_len)
+                k_wave = k_synth.copy()
+                k_wave[:n_k] = 0.62 * k_synth[:n_k] + 0.48 * k_top[:n_k]
+            else:
+                k_wave = k_synth
+            k_fade = 0.65 if bar_i >= 15 else 0.94
+            kick_bus[idx0 : idx0 + k_len] += k_wave * k_fade
             kick_hits_rendered += 1
             flp_builder.add_note(
                 pos_ticks=beat * ppq,
@@ -1891,47 +2150,84 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
                 channel_index=ch_kick,
             )
 
-            # Curva de Sidechain continua con rampa de ataque suave de 6 ms (Cero Click / Cero Discontinuidad)
             sc_attack_ramp = 0.5 * (1.0 - np.cos(np.pi * np.clip(tk / 0.006, 0.0, 1.0)))
             duck_s = 0.93 * sc_attack_ramp * np.exp(-((tk / (0.17 * 0.85)) ** 1.35))
             sc_sub[idx0 : idx0 + k_len] = np.minimum(sc_sub[idx0 : idx0 + k_len], 1.0 - duck_s)
 
-    # 4. MEZCLA QUIRÚRGICA MULTICANAL (SURGICAL MIX ENGINE - LEYES RAE 1 A 14)
-    # Suavizado pasa-bajos de la envolvente de sidechain (tau = 4 ms) para eliminar cualquier derivada brusca
+    # 4. MEZCLA QUIRÚRGICA MULTICANAL + ESPACIO + EQUILIBRIO PERCEPTUAL REAL (Zero <250 Hz Mud)
     sc_kernel_len = max(3, int(0.004 * sample_rate))
     sc_kernel = np.hanning(sc_kernel_len)
     sc_kernel /= np.sum(sc_kernel)
     sc_sub = np.convolve(sc_sub, sc_kernel, mode="same")
     sc_high = 1.0 - 0.22 * (1.0 - sc_sub)
-    bass_sc = bass_bus * sc_sub
+    bass_sub, bass_high = lr4_zero_phase_crossover(bass_bus, 140.0, sample_rate)
+    bass_sc = bass_sub * sc_sub + bass_high * sc_high
 
-    # Ley 11: Compresión Paralela Nueva York en Bus de Batería/Percusión (82% Dry Transitorio + 18% NY Crush)
     drum_raw_L = kick_bus + perc_L
     drum_raw_R = kick_bus + perc_R
-    ny_crush_L = np.tanh(drum_raw_L * 2.05) / math.tanh(2.05) * 0.64
-    ny_crush_R = np.tanh(drum_raw_R * 2.05) / math.tanh(2.05) * 0.64
+    ny_crush_L = oversampled_soft_saturate(drum_raw_L, drive_db=1.8, oversample=4) * 0.64
+    ny_crush_R = oversampled_soft_saturate(drum_raw_R, drive_db=1.8, oversample=4) * 0.64
     stem_drums_L = 0.82 * drum_raw_L + 0.18 * ny_crush_L
     stem_drums_R = 0.82 * drum_raw_R + 0.18 * ny_crush_R
 
-    # Ley 14: Sidechain Espectral Dinámico en 2 kHz (el Solina/Arp excava -2.6 dB en el Rhodes para no chocar)
-    solina_env = np.clip(np.abs(solina_L + solina_R) * 4.5, 0.0, 1.0)
-    rhodes_pocket_gain = (1.0 - 0.25 * solina_env) * sc_high
+    arp_L, arp_R = apply_noncommutative_dub_echo(
+        arp_L,
+        arp_R,
+        sample_rate=sample_rate,
+        delay_sec=3.0 * step16_sec,
+        feedback=0.36,
+        wet=0.30,
+        lpf_hz=3200.0,
+    )
+    arp_L, arp_R = carve_polyphonic_mud(arp_L, arp_R, sample_rate=sample_rate, hpf_hz=175.0, mud_hz=260.0, air_lpf_hz=15200.0)
+    rhodes_L, rhodes_R = carve_polyphonic_mud(rhodes_L, rhodes_R, sample_rate=sample_rate, hpf_hz=145.0, mud_hz=235.0, air_lpf_hz=15200.0)
+    solina_L, solina_R = carve_polyphonic_mud(solina_L, solina_R, sample_rate=sample_rate, hpf_hz=155.0, mud_hz=240.0, air_lpf_hz=15200.0)
 
-    stem_bass_L = bass_sc * 0.88
-    stem_bass_R = bass_sc * 0.88
-    stem_arp_L = arp_L * sc_high
-    stem_arp_R = arp_R * sc_high
-    stem_rhodes_L = rhodes_L * rhodes_pocket_gain
-    stem_rhodes_R = rhodes_R * rhodes_pocket_gain
-    stem_solina_L = solina_L * sc_high
-    stem_solina_R = solina_R * sc_high
+    solina_env = np.clip(np.abs(solina_L + solina_R) * 4.0, 0.0, 1.0)
+    rhodes_pocket_gain = (1.0 - 0.22 * solina_env) * sc_high
 
-    # Cama analógica cálida AIR Moon Safari (-46 dBFS)
-    t_all = np.arange(n_samples, dtype=np.float64) / sample_rate
-    analog_floor = 0.0012 * np.sin(2.0 * math.pi * key_root_hz * t_all)
+    stem_bass_L = bass_sc * 0.64
+    stem_bass_R = bass_sc * 0.64
+    stem_arp_L = arp_L * sc_high * 0.95
+    stem_arp_R = arp_R * sc_high * 0.95
+    stem_rhodes_L = rhodes_L * rhodes_pocket_gain * 1.15
+    stem_rhodes_R = rhodes_R * rhodes_pocket_gain * 1.15
+    stem_solina_L = solina_L * sc_high * 1.10
+    stem_solina_R = solina_R * sc_high * 1.10
 
-    mix_L = stem_drums_L + stem_bass_L + stem_arp_L + stem_rhodes_L + stem_solina_L + analog_floor
-    mix_R = stem_drums_R + stem_bass_R + stem_arp_R + stem_rhodes_R + stem_solina_R + analog_floor
+    harm_L, harm_R = apply_wdf_warm_saturator(
+        stem_arp_L + stem_rhodes_L + stem_solina_L,
+        stem_arp_R + stem_rhodes_R + stem_solina_R,
+        sample_rate=sample_rate,
+        drive_db=1.8,
+        mix=0.38,
+    )
+
+    space_L, space_R = apply_coherent_shared_room(
+        harm_L,
+        harm_R,
+        sample_rate=sample_rate,
+        pre_delay_ms=18.0,
+        rt60_sec=1.35,
+        wet=0.14,
+        room_style="chamber_warm",
+        stereo_spread=0.38,
+    )
+    floor_L, floor_R = generate_warm_analog_tape_bed(n_samples, sample_rate, level_dbfs=-57.0, seed=128)
+
+    mix_L = stem_drums_L + stem_bass_L + space_L + floor_L
+    mix_R = stem_drums_R + stem_bass_R + space_R + floor_R
+
+    mix_L, mix_R = apply_spectral_balance_eq(
+        mix_L,
+        mix_R,
+        sample_rate=sample_rate,
+        sub_gain_db=-1.6,
+        mud_cut_db=-2.2,
+        presence_gain_db=2.2,
+        air_gain_db=2.0,
+    )
+    mix_L, mix_R = enforce_low_end_mono(mix_L, mix_R, cutoff_hz=120.0, sample_rate=sample_rate)
 
     # Calibración de Headroom Premaster (-3.2 dBFS peak para alimentar la cadena de Mastering de 5 etapas)
     peak = max(float(np.max(np.abs(mix_L))), float(np.max(np.abs(mix_R))), 1e-6)
@@ -1943,15 +2239,14 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
     stems_dir.mkdir(parents=True, exist_ok=True)
 
     def _write_pcm24(path_out: Path, left_ch: np.ndarray, right_ch: np.ndarray) -> str:
-        st_arr = np.column_stack((left_ch, right_ch))
-        i32 = np.clip(st_arr * 8388607.0, -8388608, 8388607).astype("<i4")
-        b24 = i32.flatten().view(np.uint8).reshape(-1, 4)[:, :3]
-        with wave.open(str(path_out), "wb") as w_out:
-            w_out.setnchannels(2)
-            w_out.setsampwidth(3)
-            w_out.setframerate(sample_rate)
-            w_out.writeframes(b24.tobytes())
-        return str(path_out)
+        return write_pcm_wav(
+            str(path_out),
+            left_ch,
+            right_ch,
+            sample_rate=sample_rate,
+            bit_depth=24,
+            dither=False,
+        )
 
     # Exportar los 5 Stems individuales mezclados a 24-bit / 48 kHz
     exported_stems = {
@@ -2002,7 +2297,7 @@ def synthesize_andras_lindstrom_128step_balearic_opening(
     master_report = master_audio_reverse_engineered(
         input_wav=str(premaster_wav_path),
         output_wav=str(mastered_local_path),
-        profile_name="deep_house",
+        profile_name="club_organic_vst3",
         custom_target_lufs=-10.2,
         custom_target_dbtp=-0.5,
         bit_depth=24,

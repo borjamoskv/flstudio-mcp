@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 deconstruct_dj_architectures.py
@@ -14,6 +13,7 @@ Protocolo C5-REAL (Cortafuegos 16):
 - Extracción de interfaces, latencias y modelos de consenso para SWARM-1000.
 """
 
+import os
 import json
 import subprocess
 from pathlib import Path

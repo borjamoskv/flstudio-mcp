@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 Dark Cyber-Flamenco 7:20 Zenith Engine — AFX / Aphex Twin Electronic Edition
@@ -24,6 +23,7 @@ Exporta:
 - FL Studio Project: ~/Music/LIBRARY/04-Stems/FL_Studio/Bounces/Projects/Dark_Cyber_Flamenco_AFX_720.flp
 """
 
+import os
 import math
 import sys
 import time

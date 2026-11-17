@@ -16,8 +16,13 @@ import argparse
 from pathlib import Path
 
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent
+if str(WORKSPACE_DIR) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_DIR))
+
+from scripts.bounces_paths import resolve_bounces_dir  # noqa: E402
+
 RECORDED_DIR = WORKSPACE_DIR / "samples" / "recorded"
-BOUNCES_DIR = Path.home() / "Music" / "FL Studio Bounces"
+BOUNCES_DIR = resolve_bounces_dir()
 
 RECORDED_DIR.mkdir(parents=True, exist_ok=True)
 BOUNCES_DIR.mkdir(parents=True, exist_ok=True)

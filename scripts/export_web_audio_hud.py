@@ -8,6 +8,11 @@ cockpit at ~/Music/FL Studio Bounces/fl_studio_cyber_hud.html.
 from pathlib import Path
 from typing import Optional
 
+try:
+    from scripts.bounces_paths import resolve_bounces_dir
+except ImportError:
+    from bounces_paths import resolve_bounces_dir
+
 HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -431,7 +436,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
 def export_web_audio_hud(output_path: Optional[Path] = None) -> Path:
     if output_path is None:
-        output_path = Path.home() / "Music/FL Studio Bounces/fl_studio_cyber_hud.html"
+        output_path = resolve_bounces_dir() / "fl_studio_cyber_hud.html"
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
@@ -444,6 +449,6 @@ export_cyber_hud = export_web_audio_hud
 
 
 if __name__ == "__main__":
-    out = Path.home() / "Music/FL Studio Bounces/fl_studio_cyber_hud.html"
+    out = resolve_bounces_dir() / "fl_studio_cyber_hud.html"
     export_web_audio_hud(out)
     print(f"✅ Generated Standalone Cyber HUD v10.0: {out} ({out.stat().st_size / 1024:.1f} KB)")

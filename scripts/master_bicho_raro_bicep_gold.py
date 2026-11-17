@@ -1,4 +1,3 @@
-import os
 #!/usr/bin/env python3
 """
 GOLD MASTER BICEP EDIT DSP ENGINE C5-REAL
@@ -12,6 +11,7 @@ Integra:
 5. Limiter / Soft-Clipper Multibanda de Masterización comercial para fijar -11.5 LUFS / -1.0 dBFS True Peak.
 """
 
+import os
 import numpy as np
 import soundfile as sf
 from scipy import signal
