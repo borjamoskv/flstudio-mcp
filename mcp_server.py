@@ -14,6 +14,7 @@ Aligned with:
 - Live AppleScript Window & Export Automation
 """
 
+import io
 import sys
 import json
 import os
@@ -26,8 +27,10 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Tuple
 
+import anyio
 import mido
 from mcp.server.fastmcp import FastMCP
+from mcp.server.stdio import stdio_server
 
 # ═══════════════════════════════════════════════════════════════
 # Paths & Invariants
@@ -37,23 +40,24 @@ SCRIPTS_DIR = BASE_DIR / "scripts"
 SCALINGS_DIR = BASE_DIR / "scalings"
 SAMPLES_DIR = BASE_DIR / "samples"
 
-FL_SETTINGS = Path.home() / "Documents/Image-Line/FL Studio/Settings"
-FL_PIANOROLL = FL_SETTINGS / "Piano roll scripts"
-FL_HARDWARE = FL_SETTINGS / "Hardware"
-FL_TUNING = FL_SETTINGS / "Tuning"
-
 SKILLS_DIR = Path.home() / ".gemini/config/skills/flstudio-mcp-production"
 SKILLS_EXAMPLES = SKILLS_DIR / "examples"
 SKILLS_SCRIPTS = SKILLS_DIR / "scripts"
-
-MUSIC_DIR = Path.home() / "Music"
-MUSIC_BOUNCES_DIR = MUSIC_DIR / "FL Studio Bounces"
-MUSIC_BOUNCES_DIR.mkdir(parents=True, exist_ok=True)
 
 # Add scripts directory to path for legacy and custom modules
 sys.path.insert(0, str(SCRIPTS_DIR))
 sys.path.insert(0, str(BASE_DIR))
 sys.path.insert(0, str(SKILLS_SCRIPTS))
+
+from scripts.bounces_paths import resolve_bounces_dir, resolve_fl_user_dir  # noqa: E402
+
+FL_SETTINGS = resolve_fl_user_dir() / "Settings"
+FL_PIANOROLL = FL_SETTINGS / "Piano roll scripts"
+FL_HARDWARE = FL_SETTINGS / "Hardware"
+FL_TUNING = FL_SETTINGS / "Tuning"
+
+MUSIC_DIR = Path.home() / "Music"
+MUSIC_BOUNCES_DIR = resolve_bounces_dir()
 
 # ═══════════════════════════════════════════════════════════════
 # Logging Configuration
@@ -62,8 +66,122 @@ logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
     datefmt="%H:%M:%S",
+    stream=sys.stderr,
 )
 logger = logging.getLogger("FLStudio-MCP")
+
+# ═══════════════════════════════════════════════════════════════
+# Security & Path Confinement Invariants
+# ═══════════════════════════════════════════════════════════════
+ALLOWED_SCALA_TEMPERAMENTS: frozenset[str] = frozenset({
+    "all",
+    "12-tet",
+    "19-tet",
+    "24-tet",
+    "31-tet",
+    "41-tet",
+    "53-tet",
+    "72-tet",
+    "werckmeister-3",
+    "kirnberger-3",
+    "pythagorean-12",
+    "quarter-comma-meantone",
+    "makam-bayati",
+    "makam-rast",
+    "makam-hijaz",
+    "makam-saba",
+    "makam-sikah",
+    "that-bhairav",
+    "that-todi",
+    "that-yaman",
+    "just-intonation-5limit",
+    "just-intonation-7limit",
+    "harmonic-series-8-16",
+    "bohlen-pierce",
+    "wendy-carlos-alpha",
+    "wendy-carlos-beta",
+    "locrian-neutral2nd",
+})
+
+
+def _allowed_media_roots() -> Tuple[Path, ...]:
+    """Return approved root directories for binary/project file inspection."""
+    return (
+        BASE_DIR,
+        SAMPLES_DIR,
+        SCALINGS_DIR,
+        MUSIC_BOUNCES_DIR,
+        FL_SETTINGS,
+        resolve_fl_user_dir(),
+    )
+
+
+def _resolve_confined_child(
+    base_dir: Path,
+    raw_name: str,
+    allowed_suffixes: Tuple[str, ...] = (".py", ".pyscript"),
+    default_suffix: str = ".py",
+) -> Tuple[Optional[Path], Optional[str]]:
+    """Validate a flat filename and ensure it resolves strictly inside base_dir without symlinks."""
+    if not isinstance(raw_name, str) or not raw_name.strip():
+        return None, "Invalid script name: empty name."
+    if "\x00" in raw_name or any(ord(c) < 32 for c in raw_name):
+        return None, "Invalid script name: control characters are not allowed."
+
+    name = raw_name.strip()
+    if "/" in name or "\\" in name or ".." in name or name.startswith("."):
+        return None, "Invalid script name: path traversal or separators are not allowed."
+
+    if not name.endswith(allowed_suffixes):
+        name = f"{name}{default_suffix}"
+
+    if Path(name).name != name:
+        return None, "Invalid script name: nested paths are not allowed."
+
+    resolved_base = base_dir.resolve()
+    candidate = base_dir / name
+    if candidate.is_symlink():
+        return None, f"Refusing symlink target inside {resolved_base}."
+
+    resolved_target = candidate.resolve()
+    if resolved_target.parent != resolved_base or not resolved_target.is_relative_to(resolved_base):
+        return None, f"Invalid script path: target escapes {resolved_base}."
+
+    return resolved_target, None
+
+
+def _resolve_confined_read_path(
+    raw_path: str,
+    allowed_roots: Tuple[Path, ...],
+) -> Tuple[Optional[Path], Optional[str]]:
+    """Validate and resolve a file path, confining it to approved root directories."""
+    if not isinstance(raw_path, str) or not raw_path.strip():
+        return None, "Invalid file path: empty path."
+    if "\x00" in raw_path:
+        return None, "Invalid file path: NUL byte not allowed."
+
+    expanded = Path(os.path.expanduser(raw_path.strip()))
+    if ".." in expanded.parts:
+        return None, f"Access denied: path traversal ('..') is not allowed: {raw_path}"
+
+    resolved_roots = tuple(root.resolve() for root in allowed_roots)
+    candidate_resolved = expanded.resolve()
+    if not any(
+        candidate_resolved != root and candidate_resolved.is_relative_to(root)
+        for root in resolved_roots
+    ):
+        return None, f"Access denied: path is outside allowed directories: {expanded}"
+
+    if expanded.is_symlink():
+        return None, f"Access denied: symbolic links are not permitted: {expanded}"
+
+    if not candidate_resolved.exists():
+        return None, f"File does not exist: {candidate_resolved}"
+    if not candidate_resolved.is_file():
+        return None, f"Not a regular file: {candidate_resolved}"
+
+    return candidate_resolved, None
+
 
 # ═══════════════════════════════════════════════════════════════
 # Initialize FastMCP Server
@@ -566,16 +684,16 @@ def fl_open_project_or_midi(file_path: str, auto_confirm: bool = True) -> str:
     Opens an FLP project or imports a MIDI file directly into FL Studio 2025,
     optionally auto-confirming the import dialog via macOS System Events.
     """
-    path = os.path.expanduser(file_path)
-    if not os.path.exists(path):
-        return f"File does not exist: {path}"
+    path, path_err = _resolve_confined_read_path(file_path, _allowed_media_roots())
+    if path_err or path is None:
+        return path_err or f"File does not exist: {file_path}"
 
     try:
-        subprocess.run(["open", "-a", "FL Studio 2025", path], check=True)
+        subprocess.run(["open", "-a", "FL Studio 2025", str(path)], check=True, stdout=subprocess.DEVNULL)
         time.sleep(1.5)
         if auto_confirm:
             apple_script = 'tell application "System Events" to tell process "OsxFL" to key code 36'
-            subprocess.run(["osascript", "-e", apple_script], check=False)
+            subprocess.run(["osascript", "-e", apple_script], check=False, stdout=subprocess.DEVNULL)
         logger.info("Opened %s in FL Studio 2025", path)
         return f"Opened '{path}' in FL Studio 2025 with import confirmed."
     except Exception as e:
@@ -643,19 +761,45 @@ def fl_generate_scala_tunings(temperament: str = "all") -> str:
     Generates and installs Scala (.scl) and Keyboard Mapping (.kbm) profiles
     directly into FL Studio's Settings/Tuning directory with formal octave closure.
     Available temperaments: 'all', '12-tet', '19-tet', '24-tet', '31-tet', '41-tet',
-    '53-tet', '72-tet', 'werckmeister-3', 'kirnberger-3', 'makam-bayati', 'makam-rast',
-    'makam-hijaz', 'that-bhairav', 'that-yaman', 'just-intonation-5limit', 'bohlen-pierce',
-    'wendy-carlos-alpha', 'locrian-neutral2nd'.
+    '53-tet', '72-tet', 'werckmeister-3', 'kirnberger-3', 'pythagorean-12',
+    'quarter-comma-meantone', 'makam-bayati', 'makam-rast', 'makam-hijaz',
+    'makam-saba', 'makam-sikah', 'that-bhairav', 'that-todi', 'that-yaman',
+    'just-intonation-5limit', 'just-intonation-7limit', 'harmonic-series-8-16',
+    'bohlen-pierce', 'wendy-carlos-alpha', 'wendy-carlos-beta', 'locrian-neutral2nd'.
     """
+    if not isinstance(temperament, str) or not temperament.strip():
+        return "Error: Invalid temperament; expected a non-empty temperament identifier."
+
+    temperament_norm = temperament.strip().lower()
+    if temperament_norm not in ALLOWED_SCALA_TEMPERAMENTS:
+        logger.warning("Rejected unsupported Scala temperament: %r", temperament)
+        return (
+            f"Error: Unsupported temperament '{temperament}'. "
+            f"Allowed values: {', '.join(sorted(ALLOWED_SCALA_TEMPERAMENTS))}."
+        )
+
     try:
         generator_script = SKILLS_SCRIPTS / "scala_generator.py"
         if not generator_script.exists():
             generator_script = SCRIPTS_DIR / "scala_generator.py"
-            
-        cmd = f"python3 '{generator_script}' --temperament {temperament} --output-dir '{FL_TUNING}'"
-        subprocess.run(cmd, shell=True, check=True)
-        logger.info("Generated Scala tuning '%s' to %s", temperament, FL_TUNING)
-        return f"Scala tuning profiles for '{temperament}' compiled and deployed to {FL_TUNING}."
+        if not generator_script.is_file():
+            return f"Error: Scala generator script not found at {generator_script}"
+
+        cmd = [
+            sys.executable,
+            str(generator_script),
+            "--temperament",
+            temperament_norm,
+            "--output-dir",
+            str(FL_TUNING),
+        ]
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info("Generated Scala tuning '%s' to %s", temperament_norm, FL_TUNING)
+        return f"Scala tuning profiles for '{temperament_norm}' compiled and deployed to {FL_TUNING}."
+    except subprocess.CalledProcessError as e:
+        stderr_msg = (e.stderr or "").strip()
+        logger.error("fl_generate_scala_tunings failed (%s): %s", e.returncode, stderr_msg or e)
+        return f"Error generating Scala tunings: {stderr_msg or e}"
     except Exception as e:
         logger.error("fl_generate_scala_tunings failed: %s", e)
         return f"Error generating Scala tunings: {e}"
@@ -701,16 +845,16 @@ def fl_deploy_custom_piano_roll_script(script_name: str, code_content: str, over
     ~/Documents/Image-Line/FL Studio/Settings/Piano roll scripts/.
     Requires either createScore() or createDialog() + apply(form).
     """
-    if not script_name.endswith((".py", ".pyscript")):
-        script_name += ".py"
+    target_path, path_err = _resolve_confined_child(FL_PIANOROLL, script_name)
+    if path_err or target_path is None:
+        return path_err or "Invalid script name."
 
-    target_path = FL_PIANOROLL / script_name
     if target_path.exists() and not overwrite:
         return f"Script already exists at {target_path}. Set overwrite=True to replace."
 
     # Validate AST
     try:
-        tree = ast.parse(code_content, filename=script_name)
+        tree = ast.parse(code_content, filename=target_path.name)
     except SyntaxError as se:
         return f"SyntaxError in script at line {se.lineno}: {se.msg}"
 
@@ -721,10 +865,20 @@ def fl_deploy_custom_piano_roll_script(script_name: str, code_content: str, over
         return f"Missing required entrypoints: script must define 'createScore()' or 'createDialog()' + 'apply(form)'. Found: {func_names}"
 
     FL_PIANOROLL.mkdir(parents=True, exist_ok=True)
-    target_path.write_text(code_content, encoding="utf-8")
+    flags = os.O_WRONLY | os.O_CREAT | (os.O_TRUNC if overwrite else os.O_EXCL)
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(target_path, flags, 0o644)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(code_content)
+    except OSError as exc:
+        logger.error("Failed writing Piano Roll script '%s': %s", target_path.name, exc)
+        return f"Error deploying Piano Roll script '{target_path.name}': {exc}"
+
     mode = "Interactive Dialog" if has_dialog_apply else "Direct Batch"
-    logger.info("Deployed custom Piano Roll script: %s [%s]", script_name, mode)
-    return f"Successfully deployed '{script_name}' [{mode}] to {target_path}."
+    logger.info("Deployed custom Piano Roll script: %s [%s]", target_path.name, mode)
+    return f"Successfully deployed '{target_path.name}' [{mode}] to {target_path}."
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -737,9 +891,9 @@ def fl_inspect_binary_header(file_path: str) -> Dict[str, Any]:
     or an uncompressed RIFF WAVE (.wav) stem, extracting sample rate, bit depth,
     duration, PPQ resolution, and bars.
     """
-    path = Path(os.path.expanduser(file_path))
-    if not path.exists():
-        return {"error": f"File does not exist: {path}"}
+    path, path_err = _resolve_confined_read_path(file_path, _allowed_media_roots())
+    if path_err or path is None:
+        return {"error": path_err or f"File does not exist: {file_path}"}
 
     with open(path, "rb") as f:
         data = f.read(256)
@@ -791,9 +945,9 @@ def fl_analyze_audio_spectrum(file_path: str) -> Dict[str, Any]:
     Performs comprehensive spectral, loudness (ITU-R BS.1770 / EBU R128),
     crest factor (dynamic punch), spectral centroid, and exergy audit on a WAV audio stem.
     """
-    path = Path(os.path.expanduser(file_path))
-    if not path.exists():
-        return {"error": f"Audio file not found: {path}"}
+    path, path_err = _resolve_confined_read_path(file_path, _allowed_media_roots())
+    if path_err or path is None:
+        return {"error": path_err or f"Audio file not found: {file_path}"}
     try:
         from scripts.spectral_audio_auditor import analyze_audio_spectrum
         return analyze_audio_spectrum(path)
@@ -808,9 +962,9 @@ def fl_decompile_binary_preset(file_path: str) -> Dict[str, Any]:
     Decompiles and parses raw FL Studio binary project (.flp) or plugin preset (.fst)
     chunks, extracting channel headers, event streams, and binary metadata.
     """
-    path = Path(os.path.expanduser(file_path))
-    if not path.exists():
-        return {"error": f"File not found: {path}"}
+    path, path_err = _resolve_confined_read_path(file_path, _allowed_media_roots())
+    if path_err or path is None:
+        return {"error": path_err or f"File not found: {file_path}"}
     try:
         from scripts.fl_fst_decompiler_and_patcher_builder import FLBinaryDecompiler
         decompiler = FLBinaryDecompiler(str(path))
@@ -1607,6 +1761,50 @@ def fl_master_audio_ebu_r128(
     except Exception as e:
         logger.error(f"Failed to master audio: {e}")
         return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_master_audio_club_c5(
+    input_wav: Optional[str] = None,
+    output_wav: Optional[str] = None,
+    profile_name: str = "club_c5",
+    target_lufs: Optional[float] = None,
+    target_true_peak_dbtp: Optional[float] = None,
+    bit_depth: int = 24,
+) -> Dict[str, Any]:
+    """
+    Applies the C5-REAL 5-stage Reverse-Engineered FL Studio Mastering chain:
+    - True-bypass DC removal + zero-phase Linkwitz-Riley LR4 (<120 Hz) mono-maker
+    - Program-dependent VCA glue compression
+    - Bilinear BS.1770-4 gated integrated loudness & LRA
+    - 4x oversampled lookahead True-Peak brickwall limiter + high-pass TPDF dither
+    - Rubin acoustic audit (Crest >= 8.5 dB, LPC <120 Hz >= 0.95, SFM < 0.15).
+    """
+    try:
+        from scripts.mastering_reverse_engine_fl import master_audio_reverse_engineered
+
+        in_file = input_wav or str(MUSIC_BOUNCES_DIR / "Dark_Cyber_Flamenco_Audio_Preview_16Bars.wav")
+        res = master_audio_reverse_engineered(
+            input_wav=in_file,
+            output_wav=output_wav,
+            profile_name=profile_name,
+            custom_target_lufs=target_lufs,
+            custom_target_dbtp=target_true_peak_dbtp,
+            bit_depth=bit_depth,
+        )
+        logger.info(
+            "Club C5 Master (%s: %s -> %s LUFS, %s dBTP) -> %s",
+            profile_name,
+            res.get("lufs_before"),
+            res.get("lufs_after"),
+            res.get("true_peak_dbtp_after"),
+            res.get("output_file"),
+        )
+        return res
+    except Exception as e:
+        logger.error(f"Failed to run Club C5 mastering: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
 
 @mcp.tool()
 def fl_morph_spectral_cross_synthesis(
@@ -3159,12 +3357,159 @@ def fl_rae_produce_andras_lindstrom_balearic_opener(
     )
 
 
+@mcp.tool()
+def fl_generate_structured_arrangement(
+    template_name: str = "satin_maceo_air_hybrid_64",
+    output_path: Optional[str] = None,
+    bpm_override: Optional[float] = None,
+) -> Dict[str, Any]:
+    """
+    Genera un arreglo MIDI multi-sección de exactitud determinista por ticks absolutos
+    con bolsillo rítmico diferencial, micro-rasgueo de acordes, False Drop pre-drop vacuum,
+    fills cada 8 compases y salidas RC Living Exits.
+    Templates: deep_house_classic, melodic_techno_maceo, air_moon_safari_dreampop,
+               satin_maceo_air_hybrid_64, dub_techno_basic_channel_64.
+    """
+    try:
+        import mido
+        from scripts.arrangement_structure_engine import (
+            ARRANGEMENT_TEMPLATES,
+            generate_arrangement_midi,
+        )
+
+        midi_path = generate_arrangement_midi(
+            template_name=template_name,
+            output_path=output_path,
+            bpm_override=bpm_override,
+        )
+        template = ARRANGEMENT_TEMPLATES[template_name]
+        total_bars = sum(int(sec["bars"]) for sec in template["sections"])
+        mid = mido.MidiFile(midi_path)
+        return {
+            "status": "SUCCESS",
+            "template_name": template_name,
+            "bpm": bpm_override or template["bpm"],
+            "key": template["key"],
+            "total_bars": total_bars,
+            "sections_count": len(template["sections"]),
+            "tracks_count": len(mid.tracks),
+            "midi_file": midi_path,
+            "available_templates": list(ARRANGEMENT_TEMPLATES.keys()),
+        }
+    except Exception as e:
+        logger.error(f"fl_generate_structured_arrangement failed: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_remix_mira_ninita_deep_house(
+    source_audio: Optional[str] = None,
+    vocal_stem: Optional[str] = None,
+    keep_other: bool = False,
+    source_bpm_override: Optional[float] = None,
+    source_tuning_cents: Optional[float] = None,
+    profile_name: str = "deep_house",
+    total_bars: int = 64,
+    output_dir: Optional[str] = None,
+    deploy_fl_assets: bool = True,
+) -> Dict[str, Any]:
+    """
+    Genera y masteriza el remix Deep House a 122 BPM de 'Mira Niñita' (Los Jaivas) a 48 kHz / 24-bit:
+      - Armonía Fmaj9 -> Cmaj9 -> G6add9 -> G13sus4 en hemiola 6/8-sobre-4/4 con Rhodes/Celesta y Charango.
+      - Motivos canónicos de Quena andina + Estribillo ('C5 x5 -> B4 -> A4 -> G4'), Kick 49 Hz, Subgrave +6 ms.
+      - Falso Drop en Compás 60 (pulsos 3-4 con lecho analógico -57 dBFS y eco dub no-conmutativo), Living Exit en 64.
+      - Modo híbrido opcional con Demucs (--source-audio / --vocal-stem) y corrección de deriva de cinta vintage.
+      - Exporta Master WAV 48k/24b, MP3 320k, Stems, MIDI Tipo 1, .flp, .pyscript, .scl y audita vía Rubin Gate.
+    """
+    try:
+        from scripts.mira_ninita_deep_house_122 import build_mira_ninita_deep_house_122
+
+        return build_mira_ninita_deep_house_122(
+            source_audio=source_audio,
+            vocal_stem=vocal_stem,
+            keep_other=keep_other,
+            source_bpm_override=source_bpm_override,
+            source_tuning_cents=source_tuning_cents,
+            profile_name=profile_name,
+            total_bars=total_bars,
+            output_dir=output_dir,
+            deploy_fl_assets=deploy_fl_assets,
+        )
+    except Exception as e:
+        logger.error(f"fl_remix_mira_ninita_deep_house failed: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
+@mcp.tool()
+def fl_produce_cosmic_house_122(
+    total_bars: int = 64,
+    bpm: float = 122.0,
+    profile_name: str = "deep_house",
+    output_dir: Optional[str] = None,
+    deploy_fl_assets: bool = True,
+) -> Dict[str, Any]:
+    """
+    Produces the 64-bar @ 122 BPM COSMIC HOUSE track at 48 kHz / 24-bit:
+      - Intro (Bars 1-16): pulsating 4-on-the-floor kicks (49 Hz G1), syncopated +6 ms bass, retro synth arps.
+      - Verses (Bars 17-24, 45-52): floating airy Rhodes keys and subtle analog cosmic pads.
+      - Pre-Choruses (Bars 25-32, 53-60): sweeping filtered disco guitars (+ Bar 60 beats 3-4 False Drop).
+      - Drops (Bars 33-44, 61-64): swirling phase-coherent analog leads and dynamic percussion + Living Exit.
+      - Exports Master WAV, 10 discrete stems, SMF Type 1 MIDI, .flp, .pyscript, .scl & Rubin/Zero-Crackle receipt.
+    """
+    try:
+        from scripts.cosmic_house_groove_122 import build_cosmic_house_122
+
+        return build_cosmic_house_122(
+            total_bars=total_bars,
+            bpm=bpm,
+            profile_name=profile_name,
+            output_dir=output_dir,
+            deploy_fl_assets=deploy_fl_assets,
+        )
+    except Exception as e:
+        logger.error(f"fl_produce_cosmic_house_122 failed: {e}")
+        return {"status": "ERROR", "error": str(e)}
+
+
 # ═══════════════════════════════════════════════════════════════
 # ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
+def _redirect_stdout_to_stderr() -> Any:
+    """Redirect Python sys.stdout to sys.stderr while returning the original stdout stream."""
+    original_stdout = sys.stdout
+    sys.stdout = sys.stderr
+    return original_stdout
+
+
+async def _serve_stdio_with_protocol_stdout(original_stdout: Any) -> None:
+    """Serve MCP JSON-RPC on original_stdout while keeping sys.stdout pointed at sys.stderr."""
+    buffer = getattr(original_stdout, "buffer", None)
+    wrapper: Optional[io.TextIOWrapper] = None
+    if buffer is not None:
+        wrapper = io.TextIOWrapper(buffer, encoding="utf-8")
+        protocol_stdout = anyio.wrap_file(wrapper)
+    else:
+        protocol_stdout = anyio.wrap_file(original_stdout)
+
+    try:
+        async with stdio_server(stdout=protocol_stdout) as (read_stream, write_stream):
+            await mcp._mcp_server.run(
+                read_stream,
+                write_stream,
+                mcp._mcp_server.create_initialization_options(),
+            )
+    finally:
+        if wrapper is not None:
+            try:
+                wrapper.flush()
+            finally:
+                wrapper.detach()
+
+
 def main() -> None:
+    original_stdout = _redirect_stdout_to_stderr()
     logger.info("Starting FL Studio SOTA MCP Server v21.0 Hyper-Spatial Continuum on stdio transport…")
-    mcp.run()
+    anyio.run(_serve_stdio_with_protocol_stdout, original_stdout)
 
 
 if __name__ == "__main__":
