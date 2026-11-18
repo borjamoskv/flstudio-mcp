@@ -88,9 +88,9 @@ KICK_ROOT_HZ = 49.00  # G1 (quinta justa de Do, zona de impacto 48-55 Hz)
 MPC_SWING = 0.565
 BASS_BEHIND_BEAT_SEC = 0.006
 
-RUBIN_LINTER_PATH = Path(
-    "/Users/borjafernandezangulo/.gemini/config/skills/"
-    "c5-rubin-acoustic-linter/scripts/audit_acoustic_exergy.py"
+RUBIN_LINTER_PATH = (
+    Path.home()
+    / ".gemini/config/skills/c5-rubin-acoustic-linter/scripts/audit_acoustic_exergy.py"
 )
 
 # Progresión característica en C Frigio / pedal Do:

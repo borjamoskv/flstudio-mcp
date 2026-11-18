@@ -84,9 +84,9 @@ BAR_DURATION_SEC = (6.0 / QUARTER_BPM) * 60.0  # 3.125 s exactos por compás
 SAMPLE_RATE = 48000
 D4_REF_HZ = 440.0 * (2.0 ** (-7.0 / 12.0))  # 293.6647679174076 Hz
 
-RUBIN_LINTER_PATH = Path(
-    "/Users/borjafernandezangulo/.gemini/config/skills/"
-    "c5-rubin-acoustic-linter/scripts/audit_acoustic_exergy.py"
+RUBIN_LINTER_PATH = (
+    Path.home()
+    / ".gemini/config/skills/c5-rubin-acoustic-linter/scripts/audit_acoustic_exergy.py"
 )
 
 # Cents exactos respecto a D4 (0.00c)
